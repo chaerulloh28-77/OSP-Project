@@ -1,0 +1,1264 @@
+import React, { useState } from 'react';
+import { 
+  ArrowUpDown, 
+  ArrowUp, 
+  ArrowDown, 
+  Edit3, 
+  Trash2, 
+  Eye, 
+  ExternalLink,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Layers,
+  Check,
+  Building,
+  AlertCircle,
+  Plus,
+  RotateCcw,
+  Calendar,
+  Hash,
+  Tag,
+  FolderKanban,
+  FileText,
+  MapPin,
+  Compass,
+  Activity,
+  Flag,
+  UserCheck,
+  Network,
+  Cable,
+  HardHat,
+  ClipboardCheck,
+  Shield,
+  FolderPlus,
+  SearchX,
+  SlidersHorizontal
+} from 'lucide-react';
+import { ProjectData, ColumnDefinition, TabKey } from '../types/project';
+import { TabVisualIcon } from './TabVisualIcon';
+import { PriorityBadge, getPriorityMeta } from './PriorityBadge';
+import {
+  TAHUN_OPTIONS,
+  PROJECT_STATUS_OPTIONS,
+  STATUS_PENGAJUAN_PO_OPTIONS,
+  APD_RELOKASI_OPTIONS,
+  KMZ_RELOKASI_OPTIONS,
+  APD_LINKNET_OPTIONS,
+  STATUS_SURVEY_OPTIONS,
+  BA_SURVEY_OPTIONS,
+  SPH_BOQ_OPTIONS,
+  STATUS_PENGAJUAN_PROJECT_OPTIONS,
+  PLAN_PENGAMBILAN_MATERIAL_OPTIONS,
+  STATUS_MATERIAL_LOCATION_OPTIONS,
+  STATUS_DOKUMEN_CLOSING_OPTIONS,
+  STATUS_AUDIT_OPTIONS,
+  STATUS_MATERIAL_OPTIONS,
+  STATUS_PULLING_CABLE_FO_OPTIONS,
+  STATUS_PULLING_CABLE_COAX_OPTIONS,
+  STATUS_CO_OPTIONS,
+  LAPORAN_OPNAME_OPTIONS,
+  CLOSING_SAP_OPTIONS,
+  PRIORITY_OPTIONS,
+} from '../data/dropdownOptions';
+
+interface TableViewProps {
+  columns: ColumnDefinition[];
+  data: ProjectData[];
+  activeTab: TabKey;
+  isCompact?: boolean;
+  onEdit: (project: ProjectData) => void;
+  onDelete: (project: ProjectData) => void;
+  onViewDetail: (project: ProjectData) => void;
+  onJumpToTab: (tab: TabKey, project: ProjectData) => void;
+  onQuickUpdateCell?: (projectId: string, field: keyof ProjectData, value: string) => void;
+  onNewProject?: () => void;
+}
+
+export const TableView: React.FC<TableViewProps> = ({
+  columns,
+  data,
+  activeTab,
+  isCompact = false,
+  onEdit,
+  onDelete,
+  onViewDetail,
+  onJumpToTab,
+  onQuickUpdateCell,
+  onNewProject,
+}) => {
+  // Default sort strictly by No. ascending to match Project List sequence
+  const [sortKey, setSortKey] = useState<keyof ProjectData | null>('no');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  const [activeActionMenuId, setActiveActionMenuId] = useState<string | null>(null);
+  
+  // Pagination State for ultra-fast, smooth rendering: 50, 100, 200, or 0 (All)
+  const [pageSize, setPageSize] = useState<number>(50);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Reset page when tab or filtered dataset size changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, data.length]);
+
+  // Inline quick editing state
+  const [editingCell, setEditingCell] = useState<{ id: string; key: keyof ProjectData } | null>(null);
+  const [cellTempText, setCellTempText] = useState('');
+
+  // Close popup menu on click outside
+  React.useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-action-menu]')) {
+        setActiveActionMenuId(null);
+      }
+    };
+    if (activeActionMenuId) {
+      document.addEventListener('click', handleDocumentClick);
+    }
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, [activeActionMenuId]);
+
+  // Sorting handler - toggles asc -> desc -> fallback to 'no' asc
+  const handleSort = (key: keyof ProjectData) => {
+    if (sortKey === key) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        setSortKey('no');
+        setSortDirection('asc');
+      }
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
+
+  // Process data sorting: guaranteed numerical order for No.
+  const sortedData = React.useMemo(() => {
+    const key = sortKey || 'no';
+    return [...data].sort((a, b) => {
+      const valA = a[key] ?? '';
+      const valB = b[key] ?? '';
+
+      if (key === 'no' || (typeof valA === 'number' && typeof valB === 'number')) {
+        const numA = Number(valA) || 0;
+        const numB = Number(valB) || 0;
+        return sortDirection === 'asc' ? numA - numB : numB - numA;
+      }
+      
+      const strA = String(valA).toLowerCase();
+      const strB = String(valB).toLowerCase();
+      return sortDirection === 'asc'
+        ? strA.localeCompare(strB, 'id-ID', { numeric: true })
+        : strB.localeCompare(strA, 'id-ID', { numeric: true });
+    });
+  }, [data, sortKey, sortDirection]);
+
+  // Pagination calculation
+  const totalItems = sortedData.length;
+  const totalPages = pageSize === 0 ? 1 : Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedData = React.useMemo(() => {
+    if (pageSize === 0) return sortedData;
+    const startIndex = (safeCurrentPage - 1) * pageSize;
+    return sortedData.slice(startIndex, startIndex + pageSize);
+  }, [sortedData, safeCurrentPage, pageSize]);
+
+  // Handle cell edit submit
+  const commitCellEdit = (projectId: string, key: keyof ProjectData) => {
+    if (onQuickUpdateCell) {
+      onQuickUpdateCell(projectId, key, cellTempText);
+    }
+    setEditingCell(null);
+  };
+
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status) {
+      case 'Critical':
+      case 'Urgent':
+      case 'Top Priority':
+      case 'P1':
+        return 'text-rose-700 bg-rose-50 border border-rose-300 font-bold';
+      case 'High':
+      case 'P2':
+        return 'text-amber-700 bg-amber-50 border border-amber-300 font-semibold';
+      case 'Medium':
+      case 'P3':
+        return 'text-sky-700 bg-sky-50 border border-sky-300 font-medium';
+      case 'Normal':
+        return 'text-blue-700 bg-blue-50 border border-blue-200 font-medium';
+      case 'Low':
+        return 'text-slate-600 bg-slate-100 border border-slate-300 font-medium';
+      case 'In Progress':
+      case 'Pulling Cable':
+      case 'Released':
+      case 'Release':
+      case 'Approved':
+      case 'Done':
+      case 'Done survey':
+      case 'Ada':
+      case 'Sudah Audit':
+      case 'Sudah BA':
+      case 'Approval completed SAP':
+      case 'Approval BALAP':
+      case 'Approval BAST':
+      case 'Teco done':
+        return 'text-emerald-700 bg-emerald-50 border border-emerald-200/60 font-medium';
+      case 'Review Dinas':
+      case 'Masih Review Dinas':
+      case 'Not Yet':
+      case 'Belum':
+      case 'Belum ada':
+      case 'Belum di Audit':
+      case 'Belum ada BA':
+      case 'Request':
+      case 'Submit':
+      case 'Submit dokumen SAP':
+      case 'Completed waspang mobility':
+      case 'Drafting':
+        return 'text-amber-700 bg-amber-50 border border-amber-200/60 font-medium';
+      case 'Cancelled':
+      case 'Project Cancel':
+      case 'No need MR':
+      case 'No Need MR':
+      case 'No Need PO':
+        return 'text-rose-700 bg-rose-50 border border-rose-200/60 font-medium';
+      case 'Project Not Started':
+      case 'No COAX':
+        return 'text-slate-600 bg-slate-100 border border-slate-200 font-medium';
+      default:
+        return 'text-slate-700 bg-slate-50 border border-slate-200/60';
+    }
+  };
+
+  const getColIcon = (key: string) => {
+    switch (key) {
+      case 'no': return <Hash className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'pmoId': return <Tag className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'projectCategory': return <Layers className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'projectId': return <FolderKanban className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'projectDescription': return <FileText className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'zona': return <MapPin className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'areaKota': return <Compass className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'projectStatus': return <Activity className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'priority': return <Flag className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'quarter': return <Calendar className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'picSectionHead': return <UserCheck className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'namaVendor': return <Building className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'panjangRelokasi':
+      case 'pullingFoPanjangSelesai':
+      case 'pullingFoPanjangTotal':
+        return <Network className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'panjangRelokasiCoax':
+      case 'pullingCoaxPanjangSelesai':
+      case 'pullingCoaxPanjangTotal':
+        return <Cable className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'statusConstruction':
+      case 'statusLabor':
+      case 'statusMaterial':
+        return <HardHat className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'statusAudit':
+      case 'statusSurvey':
+      case 'baSurvey':
+        return <ClipboardCheck className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      case 'apdRelokasi':
+      case 'apdLinknet':
+        return <Shield className="w-3 h-3 text-sky-200/90 shrink-0" />;
+      default:
+        return null;
+    }
+  };
+
+  if (sortedData.length === 0) {
+    if (data.length === 0) {
+      return (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-xs flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-500/15 to-blue-500/10 border border-sky-500/20 flex items-center justify-center text-sky-600 mb-4 shadow-sm">
+            <FolderPlus className="w-8 h-8" />
+          </div>
+          <h3 className="text-base font-bold text-slate-800 mb-1">Daftar Project Masih Bersih (0 Proyek)</h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto mb-5 leading-relaxed">
+            Belum ada proyek dalam sistem. Silakan klik tombol di bawah untuk mulai menginput data proyek baru secara manual dengan cepat dan mudah.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {onNewProject && (
+              <button
+                type="button"
+                onClick={onNewProject}
+                className="flex items-center gap-2 px-4.5 py-2.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 active:bg-sky-700 rounded-xl shadow-md shadow-sky-600/20 hover:shadow-sky-600/30 transition-all cursor-pointer active:scale-98"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tambah Data Project Baru</span>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-xs flex flex-col items-center justify-center">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 mb-3 shadow-2xs">
+          <SearchX className="w-7 h-7" />
+        </div>
+        <h3 className="text-sm font-bold text-slate-700 mb-1">Tidak ada data ditemukan</h3>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          Tidak ada data project yang sesuai dengan kata kunci pencarian atau filter yang aktif. Silakan sesuaikan kriteria pencarian Anda.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col">
+      {/* Spreadsheet Container with custom horizontal scroll */}
+      <div className="overflow-x-auto custom-scrollbar relative max-h-[calc(100vh-270px)]">
+        <table className="w-full text-xs border-collapse">
+          {/* Table Header matching Excel Blue screenshots */}
+          <thead>
+            <tr className="excel-header-bg text-white border-b excel-header-border sticky top-0 z-20 shadow-xs">
+              {/* Fixed Left Actions Header */}
+              <th className={`${isCompact ? 'py-1 px-2' : 'py-2.5 px-3'} font-semibold text-center w-[110px] sticky left-0 z-30 excel-header-bg shadow-[2px_0_4px_-1px_rgba(0,0,0,0.2)]`}>
+                <div className="flex items-center justify-center gap-1.5">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-sky-200" />
+                  <span>Aksi</span>
+                </div>
+              </th>
+
+              {/* Dynamic Columns from Tab Definition */}
+              {columns.map((col) => {
+                const isSorted = sortKey === col.key;
+                const colIcon = getColIcon(col.key);
+                return (
+                  <th
+                    key={col.key}
+                    style={{ minWidth: col.width || '130px', width: col.width }}
+                    onClick={() => handleSort(col.key)}
+                    className={`${isCompact ? 'py-1 px-2 text-[11px]' : 'py-2.5 px-3'} font-semibold text-white border-r border-sky-600/40 select-none cursor-pointer hover:bg-[#346f96] transition-colors`}
+                  >
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 truncate">
+                        {colIcon}
+                        <span className="truncate">{col.label}</span>
+                      </div>
+                      <div className="flex items-center shrink-0">
+                        {isSorted ? (
+                          sortDirection === 'asc' ? (
+                            <ArrowUp className="w-3.5 h-3.5 text-sky-200" />
+                          ) : (
+                            <ArrowDown className="w-3.5 h-3.5 text-sky-200" />
+                          )
+                        ) : (
+                          <div className="flex items-center text-sky-200/70 hover:text-white">
+                            {/* Excel-like dropdown arrow */}
+                            <div className="w-3 h-3 bg-sky-800/60 rounded-xs flex items-center justify-center">
+                              <ChevronDown className="w-2.5 h-2.5" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+
+          {/* Table Body */}
+          <tbody className="divide-y divide-slate-150">
+            {paginatedData.map((row, index) => {
+              const isEven = index % 2 === 0;
+              const isHovered = hoveredRowId === row.id;
+
+              return (
+                <tr
+                  key={row.id}
+                  onMouseEnter={() => setHoveredRowId(row.id)}
+                  onMouseLeave={() => setHoveredRowId(null)}
+                  className={`transition-colors ${
+                    isHovered
+                      ? 'bg-sky-50/70'
+                      : isEven
+                      ? 'bg-white'
+                      : 'bg-slate-50/50'
+                  }`}
+                >
+                  {/* Fixed Sticky Action Column */}
+                  <td className={`${isCompact ? 'py-1 px-1.5' : 'py-2 px-2.5'} text-center sticky left-0 z-10 border-r border-slate-200 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)] ${
+                    isHovered ? 'bg-sky-50/90' : isEven ? 'bg-white' : 'bg-slate-50'
+                  }`}>
+                    <div className="flex items-center justify-center gap-1">
+                      {/* View Drawer Button */}
+                      <button
+                        onClick={() => onViewDetail(row)}
+                        title="Lihat Detail Semua Tab"
+                        className="p-1 rounded text-slate-500 hover:text-sky-600 hover:bg-sky-100/60 transition-colors cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Edit Modal Button */}
+                      <button
+                        onClick={() => onEdit(row)}
+                        title="Edit Project Lengkap"
+                        className="p-1 rounded text-slate-500 hover:text-amber-600 hover:bg-amber-100/60 transition-colors cursor-pointer"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => onDelete(row)}
+                        title="Hapus Project"
+                        className="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-100/60 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Cross Tab Navigator Menu Trigger */}
+                      <div className="relative" data-action-menu>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveActionMenuId(activeActionMenuId === row.id ? null : row.id);
+                          }}
+                          title="Navigasi ke Tab Terkait"
+                          className="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-indigo-100/60 transition-colors cursor-pointer"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Dropdown for Cross Tab Navigation */}
+                        {activeActionMenuId === row.id && (
+                          <div 
+                            onMouseLeave={() => setActiveActionMenuId(null)}
+                            className="absolute left-full top-0 ml-1 z-50 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-1.5 text-left"
+                          >
+                            <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 border-b border-slate-100">
+                              Loncat ke Tab untuk {row.pmoId}
+                            </div>
+                            <button
+                              onClick={() => {
+                                onJumpToTab('project-list', row);
+                                setActiveActionMenuId(null);
+                              }}
+                              className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
+                            >
+                              <TabVisualIcon tabKey="project-list" size="sm" variant="badge" />
+                              <span>Tab 1. Project List</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                onJumpToTab('construction-plan', row);
+                                setActiveActionMenuId(null);
+                              }}
+                              className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
+                            >
+                              <TabVisualIcon tabKey="construction-plan" size="sm" variant="badge" />
+                              <span>Tab 2. Construction & Plan</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                onJumpToTab('status-project', row);
+                                setActiveActionMenuId(null);
+                              }}
+                              className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
+                            >
+                              <TabVisualIcon tabKey="status-project" size="sm" variant="badge" />
+                              <span>Tab 3. Status Project</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                onJumpToTab('status-construction', row);
+                                setActiveActionMenuId(null);
+                              }}
+                              className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
+                            >
+                              <TabVisualIcon tabKey="status-construction" size="sm" variant="badge" />
+                              <span>Tab 4. Status Construction</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                onJumpToTab('project-tracking-pipeline', row);
+                                setActiveActionMenuId(null);
+                              }}
+                              className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
+                            >
+                              <TabVisualIcon tabKey="project-tracking-pipeline" size="sm" variant="badge" />
+                              <span>Tab 5. Tracking Pipeline</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Dynamic Cell Values */}
+                  {columns.map((col) => {
+                    const rawValue = row[col.key];
+                    const isCellEditing = editingCell?.id === row.id && editingCell?.key === col.key;
+                    const valueStr = rawValue !== undefined && rawValue !== null ? String(rawValue) : '';
+
+                    return (
+                      <td
+                        key={col.key}
+                        onDoubleClick={() => {
+                          if (onQuickUpdateCell && col.key !== 'no') {
+                            setEditingCell({ id: row.id, key: col.key });
+                            setCellTempText(valueStr);
+                          }
+                        }}
+                        className={`${isCompact ? 'py-1 px-2 text-[11px]' : 'py-2 px-3 text-xs'} text-slate-800 border-r border-slate-200/70 whitespace-nowrap text-${col.align || 'left'} ${
+                          col.isNumeric ? 'font-mono tabular-nums' : ''
+                        }`}
+                      >
+                        {isCellEditing ? (
+                          col.key === 'picSectionHead' ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={cellTempText}
+                                placeholder="Nama PIC..."
+                                onChange={(e) => {
+                                  setCellTempText(e.target.value);
+                                  if (onQuickUpdateCell) {
+                                    onQuickUpdateCell(row.id, col.key, e.target.value);
+                                  }
+                                }}
+                                onBlur={() => commitCellEdit(row.id, col.key)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') commitCellEdit(row.id, col.key);
+                                }}
+                                className="w-full px-1.5 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium"
+                              />
+                              <button
+                                onClick={() => commitCellEdit(row.id, col.key)}
+                                className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : col.key === 'projectStatus' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {PROJECT_STATUS_OPTIONS.map((st) => (
+                                <option key={st} value={st}>{st}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'zona' ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={cellTempText}
+                                placeholder="Zona..."
+                                onChange={(e) => {
+                                  setCellTempText(e.target.value);
+                                  if (onQuickUpdateCell) {
+                                    onQuickUpdateCell(row.id, col.key, e.target.value);
+                                  }
+                                }}
+                                onBlur={() => commitCellEdit(row.id, col.key)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') commitCellEdit(row.id, col.key);
+                                }}
+                                className="w-full px-1.5 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium"
+                              />
+                              <button
+                                onClick={() => commitCellEdit(row.id, col.key)}
+                                className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : col.key === 'tahun' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Kosong -</option>
+                              {TAHUN_OPTIONS.map((y) => (
+                                <option key={y} value={y}>{y}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'apdRelokasi' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Kosong -</option>
+                              {APD_RELOKASI_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'kmzRelokasi' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Kosong -</option>
+                              {KMZ_RELOKASI_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusAudit' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Kosong -</option>
+                              {STATUS_AUDIT_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'apdLinknet' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Kosong -</option>
+                              {APD_LINKNET_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusSurvey' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Kosong -</option>
+                              {STATUS_SURVEY_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'baSurvey' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Kosong -</option>
+                              {BA_SURVEY_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'sphBoq' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Kosong -</option>
+                              {SPH_BOQ_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusPengajuanProject' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {STATUS_PENGAJUAN_PROJECT_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusPengajuanPo' || col.key === 'statusPengajuanMr' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {STATUS_PENGAJUAN_PO_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'planPengambilanMaterial' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {PLAN_PENGAMBILAN_MATERIAL_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusMaterialLocation' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {STATUS_MATERIAL_LOCATION_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusDokumenClosing' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {STATUS_DOKUMEN_CLOSING_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusMaterial' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {STATUS_MATERIAL_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusPullingCableFo' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {STATUS_PULLING_CABLE_FO_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusPullingCableCoax' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {STATUS_PULLING_CABLE_COAX_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusCo' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {STATUS_CO_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'laporanOpname' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {LAPORAN_OPNAME_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'closingSap' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {CLOSING_SAP_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'priority' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {PRIORITY_OPTIONS.map((p) => {
+                                const meta = getPriorityMeta(p);
+                                return (
+                                  <option key={p} value={p}>
+                                    [L{meta.level}] {p} - {meta.levelName}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          ) : col.key === 'quarter' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {['Q1-26', 'Q2-26', 'Q3-26', 'Q4-26', '-'].map((q) => (
+                                <option key={q} value={q}>
+                                  {q}
+                                </option>
+                              ))}
+                            </select>
+                          ) : col.key === 'projectCategory' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              {['GOV IPPJU', 'GOV APJATEL', 'GOV SJUT'].map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                            </select>
+                          ) : col.key === 'namaVendor' ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={cellTempText}
+                                placeholder="Nama Vendor..."
+                                onChange={(e) => {
+                                  setCellTempText(e.target.value);
+                                  if (onQuickUpdateCell) {
+                                    onQuickUpdateCell(row.id, col.key, e.target.value);
+                                  }
+                                }}
+                                onBlur={() => commitCellEdit(row.id, col.key)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') commitCellEdit(row.id, col.key);
+                                }}
+                                className="w-full px-1.5 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium"
+                              />
+                              <button
+                                onClick={() => commitCellEdit(row.id, col.key)}
+                                className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : col.key === 'projectCreateDate' ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="date"
+                                autoFocus
+                                value={cellTempText}
+                                onChange={(e) => {
+                                  setCellTempText(e.target.value);
+                                  if (onQuickUpdateCell) {
+                                    onQuickUpdateCell(row.id, col.key, e.target.value);
+                                  }
+                                }}
+                                onBlur={() => commitCellEdit(row.id, col.key)}
+                                className="w-full px-1.5 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-mono cursor-pointer"
+                              />
+                              <button
+                                onClick={() => commitCellEdit(row.id, col.key)}
+                                className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={cellTempText}
+                                onChange={(e) => setCellTempText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') commitCellEdit(row.id, col.key);
+                                  if (e.key === 'Escape') setEditingCell(null);
+                                }}
+                                onBlur={() => commitCellEdit(row.id, col.key)}
+                                className="w-full px-1.5 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs"
+                              />
+                              <button
+                                onClick={() => commitCellEdit(row.id, col.key)}
+                                className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )
+                        ) : col.key === 'pmoId' ? (
+                          <button
+                            onClick={() => onViewDetail(row)}
+                            className="font-mono font-semibold text-sky-700 hover:text-sky-900 hover:underline cursor-pointer"
+                          >
+                            {valueStr}
+                          </button>
+                        ) : col.key === 'projectDescription' ? (
+                          <span
+                            onClick={() => onViewDetail(row)}
+                            title={valueStr}
+                            className="font-medium text-slate-900 hover:text-sky-700 cursor-pointer block truncate max-w-[280px]"
+                          >
+                            {valueStr}
+                          </span>
+                        ) : col.key === 'projectCreateDate' ? (
+                          valueStr ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-medium text-sky-800 bg-sky-50/80 border border-sky-200">
+                              <Calendar className="w-3 h-3 text-sky-600 shrink-0" />
+                              <span>{valueStr}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 italic text-[11px] inline-flex items-center justify-center gap-1">
+                              <Calendar className="w-3 h-3 text-slate-300 shrink-0" />
+                              <span>Pilih tanggal</span>
+                            </span>
+                          )
+                        ) : (col.key === 'pullingCableFoProgress' || col.key === 'pullingCableCoaxProgress' || col.key === 'pullingCableProgress' || col.key === 'galianSipilProgress') && valueStr ? (
+                          valueStr === 'N/A' || valueStr === 'No COAX' ? (
+                            <span className="inline-block px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 bg-slate-50 border border-slate-200">
+                              {valueStr}
+                            </span>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1.5 min-w-[90px]">
+                              <div className="w-16 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className={`h-2 rounded-full transition-all duration-300 ${
+                                    valueStr === '100%' || valueStr.toLowerCase() === 'done'
+                                      ? 'bg-emerald-500'
+                                      : col.key === 'galianSipilProgress'
+                                      ? 'bg-amber-500'
+                                      : col.key === 'pullingCableFoProgress'
+                                      ? 'bg-sky-600'
+                                      : col.key === 'pullingCableCoaxProgress'
+                                      ? 'bg-purple-600'
+                                      : 'bg-indigo-600'
+                                  }`}
+                                  style={{ width: `${Math.min(100, Math.max(0, parseInt(valueStr, 10) || (valueStr.toLowerCase() === 'done' ? 100 : 0)))}%` }}
+                                />
+                              </div>
+                              <span className={`font-mono text-[11px] font-bold ${
+                                valueStr === '100%' || valueStr.toLowerCase() === 'done' ? 'text-emerald-700' : 'text-slate-700'
+                              }`}>
+                                {valueStr}
+                              </span>
+                            </div>
+                          )
+                        ) : (col.key === 'panjangRelokasi' || col.key === 'panjangRelokasiCoax' || col.key === 'pullingFoPanjangSelesai' || col.key === 'pullingFoPanjangTotal' || col.key === 'pullingCoaxPanjangSelesai' || col.key === 'pullingCoaxPanjangTotal' || col.key === 'galianPanjangSelesai' || col.key === 'galianPanjangTotal' || col.key === 'pullingPanjangSelesai' || col.key === 'pullingPanjangTotal') ? (
+                          <span className="font-mono">
+                            {valueStr !== undefined && valueStr !== '' && valueStr !== null && Number(valueStr) > 0 ? (
+                              `${Number(valueStr).toLocaleString('id-ID')} m`
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </span>
+                        ) : col.key === 'priority' && valueStr ? (
+                          <PriorityBadge priority={valueStr} showLevel={true} size="xs" />
+                        ) : col.badgeType === 'category' && valueStr ? (
+                          <span className={`inline-block px-2 py-0.5 text-[11px] rounded font-semibold ${
+                            valueStr === 'GOV IPPJU'
+                              ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                              : valueStr === 'GOV APJATEL'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : valueStr === 'GOV SJUT'
+                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}>
+                            {valueStr}
+                          </span>
+                        ) : col.badgeType === 'status' && valueStr ? (
+                          <span className={`inline-block px-2 py-0.5 text-[11px] rounded ${getStatusBadgeStyle(valueStr)}`}>
+                            {valueStr}
+                          </span>
+                        ) : (
+                          <span className={!valueStr ? 'text-slate-300' : ''}>
+                            {valueStr || '-'}
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Spreadsheet Bottom Status Bar & Pagination */}
+      <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 flex flex-wrap items-center justify-between gap-3">
+        {/* Left: Summary & Per Page Selector */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 font-medium">
+            <span>Menampilkan:</span>
+            <strong className="text-slate-800 font-mono tabular-nums">
+              {totalItems === 0
+                ? 0
+                : `${(safeCurrentPage - 1) * (pageSize || totalItems) + 1} - ${
+                    pageSize === 0 ? totalItems : Math.min(safeCurrentPage * pageSize, totalItems)
+                  }`}
+            </strong>
+            <span>dari</span>
+            <strong className="text-sky-700 font-mono tabular-nums">{totalItems}</strong>
+            <span>proyek</span>
+          </div>
+
+          <div className="h-3.5 w-px bg-slate-300 hidden sm:block" />
+
+          {/* Rows per page selector */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-500 text-[11px]">Tampilkan:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="h-7 px-2 py-0.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded shadow-2xs focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+            >
+              <option value={50}>50 baris</option>
+              <option value={100}>100 baris</option>
+              <option value={200}>200 baris</option>
+              <option value={0}>Semua ({totalItems})</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Right: Pagination Navigation Controls */}
+        <div className="flex items-center gap-2">
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={safeCurrentPage === 1}
+                title="Halaman Pertama"
+                className="p-1 rounded bg-white border border-slate-200 text-slate-600 hover:bg-sky-50 hover:text-sky-700 disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+              >
+                <ChevronsLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safeCurrentPage === 1}
+                title="Halaman Sebelumnya"
+                className="p-1 rounded bg-white border border-slate-200 text-slate-600 hover:bg-sky-50 hover:text-sky-700 disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <span className="px-2 py-0.5 text-[11px] font-semibold text-slate-700 bg-white border border-slate-200 rounded shadow-2xs">
+                Hal {safeCurrentPage} / {totalPages}
+              </span>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safeCurrentPage === totalPages}
+                title="Halaman Selanjutnya"
+                className="p-1 rounded bg-white border border-slate-200 text-slate-600 hover:bg-sky-50 hover:text-sky-700 disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={safeCurrentPage === totalPages}
+                title="Halaman Terakhir"
+                className="p-1 rounded bg-white border border-slate-200 text-slate-600 hover:bg-sky-50 hover:text-sky-700 disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+              >
+                <ChevronsRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-slate-400 pl-2">
+            <span>· Terurut otomatis sesuai project list</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

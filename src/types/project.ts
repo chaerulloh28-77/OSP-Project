@@ -1,0 +1,168 @@
+/**
+ * Definition of Project Data and Tab Column Configurations
+ */
+
+export interface HhItem {
+  id: string;
+  type: string; // HH, HB, MH
+  size: string; // 80x80, 90x90, 100x100, 110x110, 120x120
+  qty: number | string;
+}
+
+export interface PoleItem {
+  id: string;
+  type: string; // Tiang 7, Tiang 8, Tiang 9
+  qty: number | string;
+}
+
+export interface GalvanisItem {
+  id: string;
+  size: string; // 2", 4", 6"
+  length: number | string; // Meter
+}
+
+export interface ProjectData {
+  id: string; // Internal unique identifier
+  no: number;
+  
+  // Tab 1: Project List Core Info
+  pmoId: string; // "PMO - ID", e.g. PMO-GOV-001
+  projectCategory: string; // "Project Category", e.g. GOV IPPJU, GOV Apjatel
+  projectId: string; // "Project ID", e.g. GOV0000747
+  projectDescription: string; // "Project Description", e.g. [Z1-GOV] IPPJU Ampera Raya
+  zona: string; // "Zona", e.g. Jabo 1
+  areaKota: string; // "Area/Kota", e.g. Central, West, East, South, North
+  projectStatus: string; // "Project Status", e.g. Masih Review Dinas, In Progress, Cancelled, Done
+  quarter: string; // "Quarter", e.g. Q1-26, Q2-26, Q3-26, Q4-26, -
+  picSectionHead: string; // "PIC / Section Head", e.g. Mega
+  priority?: string; // "Status Prioritas", e.g. Critical, High, Medium, Low, Normal
+
+  // Tab 2: Construction & Plan (from Image 2)
+  namaVendor: string; // "Nama Vendor", e.g. PT.NATAMA, PT.RPA, PT.ARKON, Belum Ada Vendor
+  dateSuratPerintahRelokasi: string; // "Date Surat Perintah Relokasi", e.g. 2026-07-18
+  bulan: string; // "Bulan", e.g. November, Januari
+  tahun: string; // "Tahun", e.g. 2023, 2024
+  panjangRelokasi: number | string; // "Panjang Relokasi FO", e.g. 10000, 8500, 2600
+  panjangRelokasiCoax?: number | string; // "Panjang Relokasi COAX", e.g. 3500, 1200
+  apdRelokasi: string; // "APD Relokasi", e.g. Belum, Sudah
+  kmzRelokasi: string; // "KMZ Relokasi", e.g. Belum, Sudah
+  statusAudit: string; // "Status Audit", e.g. Belum, Belum di Audit, Sudah Audit
+  apdLinknet: string; // "APD Internal", e.g. Not Yet, Done
+  statusSurvey: string; // "Status Survey", e.g. Belum, In Progress, Selesai
+  baSurvey: string; // "BA Survey", e.g. Belum ada BA, Sudah BA
+  ceMaterial: string; // "CE Material"
+  sphBoq: string; // "SPH/BOQ"
+  ceLn: string; // "CE LN"
+  apdLn: string; // "APD LN", e.g. 0
+  timelineRelokasi: string; // "Timeline Relokasi"
+  tanggalStartProject: string; // "Tanggal Start Project"
+  tanggalEndProject: string; // "Tanggal End Project"
+  estimasiPemutusan: string; // "Estimasi Pemutusan"
+  tanggalPemutusan: string; // "Tanggal Pemutusan"
+  remarksPlan: string; // "Remarks" in Tab 2
+
+  // Tab 3: Status Project (from Image 3)
+  statusPengajuanProject: string; // "Status Pengajuan Project", e.g. NOSA, Project Cancel, Submitted
+  projectCreateDate?: string; // "Project Create Date", e.g. 2026-03-15
+  mrNumber?: string; // "MR Number", e.g. 99434
+  tanggalPengajuanMr?: string; // "Tanggal Pengajuan MR" (Legacy)
+  tanggalPengajuanPo?: string; // "Tanggal Pengajuan PO" (Legacy)
+  statusPengajuanMr?: string; // "Status Pengajuan MR" (Legacy)
+  statusPengajuanPo?: string; // "Status Pengajuan PO" (Legacy)
+  poNumber?: string; // "PO Number" (Legacy)
+  planPengambilanMaterial: string; // "Plan Pengambilan Material"
+  statusMaterialLocation: string; // "Status Material Location"
+  pengajuanProjectRemarks: string; // "Pengajuan Project Remarks"
+  statusMaterialReturn: string; // "Status Material Return"
+  tanggalPlanReturn: string; // "Tanggal Plan Return"
+  tanggalReturn: string; // "Tanggal Return"
+  statusDokumenClosing: string; // "Status Dokumen Closing"
+  closingRemarks: string; // "Closing Remarks"
+  preProjectRemarks: string; // "Pre-Project Remarks"
+  remarksProject: string; // "Remarks" in Tab 3
+
+  // Tab 4: Status Construction (from Image 4)
+  statusConstruction: string; // "Status Construction", e.g. Project Not Started, Pulling Cable, Project Cancel, Completed
+  statusLabor: string; // "Status Labor", e.g. N/A, Assigned
+  statusMaterial: string; // "Status Material", e.g. N/A, Released, No Need MR
+  statusPullingCableFo: string; // "Status Pulling Cable FO", e.g. In Progress, Done, Not Started
+  pullingFoPanjangSelesai?: number | string; // Meter selesai FO
+  pullingFoPanjangTotal?: number | string; // Target meter FO
+  pullingCableFoProgress?: string; // "Pulling Cable FO Progress (Otomatis)", e.g. 100%, 50%, 0%
+  statusPullingCableCoax: string; // "Status Pulling Cable Coax", e.g. Done, In Progress, N/A
+  pullingCoaxPanjangSelesai?: number | string; // Meter selesai COAX
+  pullingCoaxPanjangTotal?: number | string; // Target meter COAX
+  pullingCableCoaxProgress?: string; // "Pulling Cable COAX Progress (Otomatis)", e.g. 100%, 50%, 0%
+  statusCo: string; // "Status CO", e.g. In Progress, Done, N/A
+  statusCoCoax: string; // "Status CO Coax"
+  laporanOpname: string; // "Laporan Opname", e.g. Not Yet, Submitted, Approved
+  closingSap: string; // "Closing SAP", e.g. Yes, No
+  kebutuhanMaterialPoSap: string; // "Kebutuhan Material PO SAP"
+  galianSipilProgress: string; // "Galian Sipil Progress", e.g. 45%, Done, Not Yet
+  galianAksesProgress: string; // "Galian Akses Progress"
+  galianCrossingProgress: string; // "Galian Crossing Progress"
+  installHhProgress: string; // "Install HH Progress"
+  installHhType?: string; // HH, HB, MH
+  installHhSize?: string; // 80x80, 90x90, 100x100, 110x110, 120x120
+  installHhQty?: number | string; // Unit
+  installHhItems?: HhItem[]; // Multiple HH, HB, MH items
+  installPoleType?: string; // Tiang 7, Tiang 8, Tiang 9
+  installPoleQty?: number | string; // Ea
+  installPoleItems?: PoleItem[]; // Multiple Pole items
+  installGalvanisSize?: string; // 2", 4", 6"
+  installGalvanisLength?: number | string; // Meter
+  installGalvanisItems?: GalvanisItem[]; // Multiple Galvanis items
+  installPoleProgress: string; // "Install Pole Progress"
+  galianPanjangSelesai?: number | string; // Meter galian selesai
+  galianPanjangTotal?: number | string; // Total meter target galian
+  pullingPanjangSelesai?: number | string; // Meter pulling selesai
+  pullingPanjangTotal?: number | string; // Total meter target pulling
+  pullingCableProgress: string; // "Pulling Cable Progress"
+  projectSapId: string; // "Project SAP ID", e.g. GOV0000747
+  remarksConstruction: string; // "Remarks" in Tab 4
+  pipelineStage?: string; // Pipeline Tracking Stage
+
+  // System metadata
+  updatedAt: string;
+}
+
+export type TabKey = 
+  | 'project-list' 
+  | 'construction-plan' 
+  | 'status-project' 
+  | 'status-construction' 
+  | 'project-tracking-pipeline'
+  | 'upload-document'
+  | 'pie-chart-analytics';
+
+export interface ColumnDefinition {
+  key: keyof ProjectData;
+  label: string;
+  width?: string;
+  isNumeric?: boolean;
+  align?: 'left' | 'center' | 'right';
+  badgeType?: 'status' | 'category' | 'vendor' | 'default';
+}
+
+export type PicSectionHead = string;
+
+export const PRIORITY_OPTIONS = [
+  'Critical',
+  'Urgent',
+  'Top Priority',
+  'High',
+  'Medium',
+  'Normal',
+  'Low',
+  'P1',
+  'P2',
+  'P3',
+] as const;
+export type PriorityLevel = typeof PRIORITY_OPTIONS[number];
+
+export interface BackupSnapshot {
+  timestamp: string;
+  count: number;
+  data: ProjectData[];
+  reason: string;
+}

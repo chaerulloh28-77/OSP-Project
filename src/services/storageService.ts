@@ -1,6 +1,7 @@
 import { ProjectData } from '../types/project';
 import { INITIAL_PROJECTS } from '../data/initialData';
 import { calculatePullingFoPercentage, calculatePullingCoaxPercentage, calculatePullingPercentage } from '../data/dropdownOptions';
+import { compareProjectsByPmoId } from '../utils/pmoIdHelpers';
 import * as XLSX from 'xlsx';
 import { 
   PROJECT_LIST_COLUMNS, 
@@ -19,9 +20,9 @@ const listeners: Set<ProjectChangeListener> = new Set();
  * Normalizes project properties for display and calculations
  */
 export function normalizeProject(p: ProjectData, idx: number): ProjectData {
-  let cat = p.projectCategory;
+  let cat = (p.projectCategory || '').trim();
   if (cat === 'GOV Apjatel') cat = 'GOV APJATEL';
-  if (cat === 'GOV Bina Marga' || cat === 'B2B Commercial' || cat === 'FTTH Relocation') {
+  if (cat === 'GOV Bina Marga' || cat === 'B2B Commercial') {
     cat = 'GOV SJUT';
   }
 

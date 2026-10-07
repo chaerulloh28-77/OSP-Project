@@ -66,7 +66,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
   const defaultStatuses = ['In Progress', 'Project Not Started', 'Review Dinas', 'Masih Review Dinas', 'MR/PO Approved', 'Cancelled', 'Completed'];
   const uniqueStatuses = Array.from(new Set([...defaultStatuses, ...allProjects.map((p) => p.projectStatus).filter(Boolean)]));
-  const categoryOptions = ['GOV IPPJU', 'GOV APJATEL', 'GOV SJUT'];
+  const defaultCategories = ['GOV IPPJU', 'GOV APJATEL', 'GOV SJUT', 'FTTH', 'IKR'];
+  const categoryOptions = Array.from(new Set([...defaultCategories, ...allProjects.map((p) => p.projectCategory).filter(Boolean)]));
   const quarterOptions = ['Q1-26', 'Q2-26', 'Q3-26', 'Q4-26'];
 
   const hasActiveFilters = Boolean(

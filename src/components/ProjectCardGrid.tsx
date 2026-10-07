@@ -153,8 +153,16 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
               </h3>
               
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200/60">
-                  {proj.projectCategory}
+                <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                  (proj.projectCategory || '').includes('FTTH')
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : (proj.projectCategory || '').includes('IKR')
+                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                    : (proj.projectCategory || '').includes('GOV') || (proj.projectCategory || '').includes('Goverment')
+                    ? 'bg-sky-50 text-sky-700 border-sky-200'
+                    : 'bg-slate-100 text-slate-700 border-slate-200/60'
+                }`}>
+                  {proj.projectCategory || 'Project'}
                 </span>
                 <span className="text-[11px] font-mono text-slate-400">
                   ID: {proj.projectId || '-'}

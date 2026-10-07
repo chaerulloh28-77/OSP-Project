@@ -36,7 +36,16 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { ProjectData } from '../types/project';
-import { DOCUMENT_SLOTS, DocumentSlotDefinition, UploadedFileMeta, DocumentTypeKey, DocumentFormatType } from '../types/document';
+import { 
+  DOCUMENT_SLOTS, 
+  GOV_DOCUMENT_SLOTS, 
+  FTTH_IKR_DOCUMENT_SLOTS, 
+  getDocumentSlots, 
+  DocumentSlotDefinition, 
+  UploadedFileMeta, 
+  DocumentTypeKey, 
+  DocumentFormatType 
+} from '../types/document';
 import { documentStorageService } from '../services/documentStorageService';
 import { ProjectDocumentDetailModal } from './ProjectDocumentDetailModal';
 import { DocumentCompletenessInfoModal } from './DocumentCompletenessInfoModal';
@@ -55,6 +64,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
 }) => {
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'complete' | 'incomplete' | 'zero'>('all');
   const [zonaFilter, setZonaFilter] = useState<string>('all');
   const [areaFilter, setAreaFilter] = useState<string>('all');
@@ -89,6 +99,9 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
 
   // Trigger re-render when a document is uploaded/deleted/edited
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Category list
+  const categoryList = ['all', 'GOV IPPJU', 'GOV APJATEL', 'GOV SJUT', 'FTTH', 'IKR'] as const;
 
   // Dynamic filter options extracted from projects
   const uniqueZonas = useMemo(() => {
@@ -134,6 +147,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (searchTerm.trim()) count++;
+    if (categoryFilter !== 'all') count++;
     if (statusFilter !== 'all') count++;
     if (zonaFilter !== 'all') count++;
     if (areaFilter !== 'all') count++;
@@ -141,11 +155,12 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
     if (picFilter !== 'all') count++;
     if (slotFilter !== 'all') count++;
     return count;
-  }, [searchTerm, statusFilter, zonaFilter, areaFilter, vendorFilter, picFilter, slotFilter]);
+  }, [searchTerm, categoryFilter, statusFilter, zonaFilter, areaFilter, vendorFilter, picFilter, slotFilter]);
 
   // Reset all filters to default
   const handleResetFilters = () => {
     setSearchTerm('');
+    setCategoryFilter('all');
     setStatusFilter('all');
     setZonaFilter('all');
     setAreaFilter('all');
@@ -161,6 +176,11 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
   // Filtered dataset
   const filteredData = useMemo(() => {
     return projects.filter((p) => {
+      // 0. Category Filter
+      if (categoryFilter !== 'all' && p.projectCategory !== categoryFilter) {
+        return false;
+      }
+
       // 1. Text Search across Description, Project ID, PMO ID, Vendor, PIC
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
@@ -194,16 +214,16 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
         return false;
       }
 
-      const rec = documentStorageService.getDocumentRecord(p);
-      const docsCount = Object.keys(rec.documents).length;
+      const { uploaded, total } = documentStorageService.getUploadedCount(p);
 
       // 6. Completeness status filter
-      if (statusFilter === 'complete' && docsCount < DOCUMENT_SLOTS.length) return false;
-      if (statusFilter === 'incomplete' && (docsCount === 0 || docsCount === DOCUMENT_SLOTS.length)) return false;
-      if (statusFilter === 'zero' && docsCount > 0) return false;
+      if (statusFilter === 'complete' && uploaded < total) return false;
+      if (statusFilter === 'incomplete' && (uploaded === 0 || uploaded === total)) return false;
+      if (statusFilter === 'zero' && uploaded > 0) return false;
 
       // 7. Slot specific filter (e.g. "missing:mr" or "has:mr")
       if (slotFilter !== 'all') {
+        const rec = documentStorageService.getDocumentRecord(p);
         const [mode, key] = slotFilter.split(':');
         const hasSlotDoc = Boolean(rec.documents[key as DocumentTypeKey]);
         if (mode === 'has' && !hasSlotDoc) return false;
@@ -215,6 +235,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
   }, [
     projects, 
     searchTerm, 
+    categoryFilter,
     statusFilter, 
     zonaFilter, 
     areaFilter, 
@@ -223,6 +244,23 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
     slotFilter, 
     refreshKey
   ]);
+
+  // Active Slots based on category filter
+  const activeSlots = useMemo(() => {
+    if (categoryFilter === 'FTTH') {
+      return getDocumentSlots('FTTH');
+    }
+    if (categoryFilter === 'IKR') {
+      return getDocumentSlots('IKR');
+    }
+    const isAllFtth = filteredData.length > 0 && filteredData.every(p => p.projectCategory === 'FTTH');
+    const isAllIkr = filteredData.length > 0 && filteredData.every(p => p.projectCategory === 'IKR');
+    const isAllFtthOrIkr = filteredData.length > 0 && filteredData.every(p => p.projectCategory === 'FTTH' || p.projectCategory === 'IKR');
+    if (isAllFtth) return getDocumentSlots('FTTH');
+    if (isAllIkr) return getDocumentSlots('IKR');
+    if (isAllFtthOrIkr) return FTTH_IKR_DOCUMENT_SLOTS;
+    return GOV_DOCUMENT_SLOTS;
+  }, [categoryFilter, filteredData]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
@@ -517,8 +555,70 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
         </div>
       </div>
 
-      {/* Comprehensive Filter Toolbar: Zona, Area, Vendor, PIC, Status, Search */}
+      {/* Comprehensive Filter Toolbar: Category, Zona, Area, Vendor, PIC, Status, Search */}
       <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
+        {/* Row 0: Category Filter Tabs */}
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1 mr-1">
+              <Layers className="w-3.5 h-3.5 text-indigo-500" />
+              Kategori Proyek:
+            </span>
+            {categoryList.map((cat) => {
+              const count = cat === 'all' 
+                ? projects.length 
+                : projects.filter(p => p.projectCategory === cat).length;
+              const isActive = categoryFilter === cat;
+              const isFtthOrIkr = cat === 'FTTH' || cat === 'IKR';
+
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => {
+                    setCategoryFilter(cat);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-2.5 py-1 text-xs rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isActive
+                      ? isFtthOrIkr
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <span>{cat === 'all' ? 'Semua Kategori' : cat}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                    isActive ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-700'
+                  }`}>
+                    {count}
+                  </span>
+                  {isFtthOrIkr && (
+                    <span className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold ${
+                      isActive ? 'bg-emerald-800 text-emerald-100' : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      6 Dok
+                    </span>
+                  )}
+                  {cat.startsWith('GOV') && (
+                    <span className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold ${
+                      isActive ? 'bg-indigo-800 text-indigo-100' : 'bg-indigo-100 text-indigo-800'
+                    }`}>
+                      11 Dok
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {(categoryFilter === 'FTTH' || categoryFilter === 'IKR') && (
+            <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
+              Format Dokumen {categoryFilter}: SPK, APD, KMZ, BA Survey, BOQ, Timeline (6 Dokumen)
+            </div>
+          )}
+        </div>
+
         {/* Upper Row: Search & Quick Status Filters */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search box */}
@@ -698,7 +798,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                 >
                   {(filteredData.length > 0 ? filteredData : projects).slice(0, 80).map((p) => (
                     <option key={p.id} value={p.pmoId}>
-                      {p.pmoId} - {p.projectDescription}
+                      {p.pmoId} - {p.projectDescription} ({p.projectCategory || 'GOV'})
                     </option>
                   ))}
                 </select>
@@ -714,11 +814,16 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                   onChange={(e) => setQuickUploadSlotKey(e.target.value as DocumentTypeKey)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
                 >
-                  {DOCUMENT_SLOTS.map((s) => (
-                    <option key={s.key} value={s.key}>
-                      {s.num}. {s.label} ({s.formatBadge})
-                    </option>
-                  ))}
+                  {(() => {
+                    const currentSelectedPmo = quickUploadProjectPmo || (filteredData[0]?.pmoId || projects[0]?.pmoId || '');
+                    const currentProj = projects.find(p => p.pmoId === currentSelectedPmo);
+                    const relevantSlots = currentProj ? getDocumentSlots(currentProj.projectCategory) : activeSlots;
+                    return relevantSlots.map((s) => (
+                      <option key={s.key} value={s.key}>
+                        {s.num}. {s.label} ({s.formatBadge})
+                      </option>
+                    ));
+                  })()}
                 </select>
               </div>
 
@@ -817,14 +922,14 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
           >
             <option value="all">Semua Jenis Dokumen</option>
             <optgroup label="Belum Upload (Kurang)">
-              {DOCUMENT_SLOTS.map((slot) => (
+              {activeSlots.map((slot) => (
                 <option key={`missing:${slot.key}`} value={`missing:${slot.key}`}>
                   Belum: #{slot.num} {slot.label}
                 </option>
               ))}
             </optgroup>
             <optgroup label="Sudah Upload (Lengkap)">
-              {DOCUMENT_SLOTS.map((slot) => (
+              {activeSlots.map((slot) => (
                 <option key={`has:${slot.key}`} value={`has:${slot.key}`}>
                   Ada: #{slot.num} {slot.label}
                 </option>
@@ -874,8 +979,8 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                   Aksi CRUD
                 </th>
 
-                {/* 13 Document Slot Headers */}
-                {DOCUMENT_SLOTS.map((slot) => (
+                {/* Document Slot Headers (Dynamic based on Category: 6 for FTTH/IKR, 11 for GOV) */}
+                {activeSlots.map((slot) => (
                   <th
                     key={slot.key}
                     className="px-3 py-2.5 font-bold uppercase tracking-wider text-[11px] min-w-[180px]"
@@ -897,7 +1002,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
               {paginatedData.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6 + DOCUMENT_SLOTS.length}
+                    colSpan={6 + activeSlots.length}
                     className="p-12 text-center text-slate-400 bg-slate-50/50"
                   >
                     <AlertCircle className="w-9 h-9 text-slate-300 mx-auto mb-2" />
@@ -921,14 +1026,15 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                   const globalIdx = (currentPage - 1) * pageSize + idx + 1;
                   const docRecord = documentStorageService.getDocumentRecord(project);
                   const docs = docRecord.documents;
-                  const uploadedCount = Object.keys(docs).length;
-                  const totalSlots = DOCUMENT_SLOTS.length; // 13
+                  const projectSlots = getDocumentSlots(project.projectCategory);
+                  const totalSlots = projectSlots.length;
+                  const uploadedCount = projectSlots.filter((s) => Boolean(docs[s.key])).length;
                   const missingCount = totalSlots - uploadedCount;
-                  const pct = Math.round((uploadedCount / totalSlots) * 100);
-                  const isFullyComplete = uploadedCount === totalSlots;
+                  const pct = totalSlots > 0 ? Math.round((uploadedCount / totalSlots) * 100) : 0;
+                  const isFullyComplete = totalSlots > 0 && uploadedCount === totalSlots;
 
                   // Missing slots list for hover tooltip
-                  const missingSlots = DOCUMENT_SLOTS.filter((s) => !docs[s.key]);
+                  const missingSlots = projectSlots.filter((s) => !docs[s.key]);
 
                   return (
                     <tr
@@ -1036,8 +1142,8 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                         </div>
                       </td>
 
-                      {/* 13 Document Slot Cells (CRUD In-Cell) */}
-                      {DOCUMENT_SLOTS.map((slot) => {
+                      {/* Document Slot Cells (CRUD In-Cell) */}
+                      {activeSlots.map((slot) => {
                         const file = docs[slot.key];
 
                         return (

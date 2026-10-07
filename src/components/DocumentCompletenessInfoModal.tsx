@@ -31,7 +31,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { ProjectData } from '../types/project';
-import { DOCUMENT_SLOTS, DocumentSlotDefinition, DocumentTypeKey } from '../types/document';
+import { DOCUMENT_SLOTS, getDocumentSlots, DocumentSlotDefinition, DocumentTypeKey } from '../types/document';
 import { documentStorageService } from '../services/documentStorageService';
 import { PriorityBadge } from './PriorityBadge';
 import { getPriorityMeta } from '../utils/priorityHelpers';
@@ -68,22 +68,20 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
   // Filter projects belonging to this status category
   const filteredCategoryProjects = useMemo(() => {
     return projects.filter((p) => {
-      const rec = documentStorageService.getDocumentRecord(p.id);
-      const docs = rec?.documents || {};
-      const uploadedCount = DOCUMENT_SLOTS.filter((s) => Boolean(docs[s.key]?.uploadedAt)).length;
+      const { uploaded, total } = documentStorageService.getUploadedCount(p);
 
       if (activeStatusTab === 'complete') {
-        return uploadedCount === totalSlotsCount;
+        return total > 0 && uploaded === total;
       }
       if (activeStatusTab === 'incomplete') {
-        return uploadedCount > 0 && uploadedCount < totalSlotsCount;
+        return uploaded > 0 && uploaded < total;
       }
       if (activeStatusTab === 'zero') {
-        return uploadedCount === 0;
+        return uploaded === 0;
       }
       return true;
     });
-  }, [projects, activeStatusTab, totalSlotsCount]);
+  }, [projects, activeStatusTab]);
 
   // Unique zonas in this category
   const availableZonas = useMemo(() => {
@@ -122,7 +120,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
 
     return slots.map((slot) => {
       const completedCount = filteredCategoryProjects.filter((p) => {
-        const rec = documentStorageService.getDocumentRecord(p.id);
+        const rec = documentStorageService.getDocumentRecord(p);
         return Boolean(rec?.documents?.[slot.key]?.uploadedAt);
       }).length;
 
@@ -145,11 +143,9 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
     let zero = 0;
 
     for (const p of projects) {
-      const rec = documentStorageService.getDocumentRecord(p.id);
-      const docs = rec?.documents || {};
-      const count = DOCUMENT_SLOTS.filter((s) => Boolean(docs[s.key]?.uploadedAt)).length;
-      if (count === totalSlotsCount) complete++;
-      else if (count > 0) incomplete++;
+      const { uploaded, total } = documentStorageService.getUploadedCount(p);
+      if (total > 0 && uploaded === total) complete++;
+      else if (uploaded > 0) incomplete++;
       else zero++;
     }
 
@@ -162,7 +158,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
       incompletePct: projects.length > 0 ? Math.round((incomplete / projects.length) * 100) : 0,
       zeroPct: projects.length > 0 ? Math.round((zero / projects.length) * 100) : 0,
     };
-  }, [projects, totalSlotsCount]);
+  }, [projects]);
 
   if (!isOpen) return null;
 
@@ -553,11 +549,13 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
             ) : (
               <div className="space-y-2.5 max-h-[380px] overflow-y-auto custom-scrollbar pr-1">
                 {displayProjects.map((proj) => {
-                  const rec = documentStorageService.getDocumentRecord(proj.id);
+                  const rec = documentStorageService.getDocumentRecord(proj);
                   const docs = rec?.documents || {};
-                  const uploadedSlots = DOCUMENT_SLOTS.filter((s) => Boolean(docs[s.key]?.uploadedAt));
-                  const missingSlots = DOCUMENT_SLOTS.filter((s) => !docs[s.key]?.uploadedAt);
-                  const uploadPct = Math.round((uploadedSlots.length / totalSlotsCount) * 100);
+                  const projectSlots = getDocumentSlots(proj.projectCategory);
+                  const projTotalSlots = projectSlots.length;
+                  const uploadedSlots = projectSlots.filter((s) => Boolean(docs[s.key]?.uploadedAt));
+                  const missingSlots = projectSlots.filter((s) => !docs[s.key]?.uploadedAt);
+                  const uploadPct = projTotalSlots > 0 ? Math.round((uploadedSlots.length / projTotalSlots) * 100) : 0;
 
                   return (
                     <div
@@ -576,6 +574,12 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
                           
                           {/* Priority Badge */}
                           <PriorityBadge priority={proj.priority || 'Normal'} size="xs" showLevel />
+
+                          {proj.projectCategory && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
+                              {proj.projectCategory}
+                            </span>
+                          )}
 
                           {proj.zona && (
                             <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">
@@ -602,7 +606,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
                         </div>
 
                         {/* Missing slots quick badge */}
-                        {missingSlots.length > 0 && missingSlots.length < totalSlotsCount && (
+                        {missingSlots.length > 0 && missingSlots.length < projTotalSlots && (
                           <div className="flex flex-wrap items-center gap-1 pt-0.5">
                             <span className="text-[10px] text-amber-700 font-bold flex items-center gap-1">
                               <AlertTriangle className="w-3 h-3 text-amber-500" />
@@ -624,7 +628,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
                         {missingSlots.length === 0 && (
                           <div className="flex items-center gap-1 pt-0.5 text-emerald-700 text-[10.5px] font-semibold">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Semua {totalSlotsCount} berkas lengkap dan tersimpan aman.</span>
+                            <span>Semua {projTotalSlots} berkas lengkap dan tersimpan aman.</span>
                           </div>
                         )}
                       </div>
@@ -634,7 +638,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
                         <div className="text-right">
                           <div className="flex items-center gap-1 justify-end font-mono font-bold text-xs">
                             <span className={uploadPct === 100 ? 'text-emerald-600' : uploadPct === 0 ? 'text-rose-500' : 'text-amber-600'}>
-                              {uploadedSlots.length}/{totalSlotsCount}
+                              {uploadedSlots.length}/{projTotalSlots}
                             </span>
                             <span className="text-slate-400 font-normal">({uploadPct}%)</span>
                           </div>

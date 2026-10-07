@@ -298,12 +298,13 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
         },
         {
           key: 'apd',
-          label: 'Status APD Relokasi',
+          label: 'Status APD Relokasi / FTTH / IKR',
           getData: (data) => {
             let ada = 0;
             let belum = 0;
             data.forEach((p) => {
-              if (p.apdRelokasi === 'Ada' || p.apdRelokasi === 'Sudah') ada++;
+              const apd = p.apdRelokasi || '';
+              if (apd === 'Ada' || apd === 'Sudah' || apd === 'APD FTTH' || apd === 'APD IKR') ada++;
               else belum++;
             });
             return [
@@ -312,26 +313,33 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                 label: 'Ada APD (Ready)',
                 value: ada,
                 color: '#10b981',
-                filterFn: (p) => p.apdRelokasi === 'Ada' || p.apdRelokasi === 'Sudah',
+                filterFn: (p) => {
+                  const apd = p.apdRelokasi || '';
+                  return apd === 'Ada' || apd === 'Sudah' || apd === 'APD FTTH' || apd === 'APD IKR';
+                },
               },
               {
                 id: 'apd-belum',
                 label: 'Belum Ada APD',
                 value: belum,
                 color: '#f43f5e',
-                filterFn: (p) => p.apdRelokasi !== 'Ada' && p.apdRelokasi !== 'Sudah',
+                filterFn: (p) => {
+                  const apd = p.apdRelokasi || '';
+                  return !(apd === 'Ada' || apd === 'Sudah' || apd === 'APD FTTH' || apd === 'APD IKR');
+                },
               },
             ];
           },
         },
         {
           key: 'kmz',
-          label: 'Status KMZ Relokasi',
+          label: 'Status KMZ Relokasi / FTTH / IKR',
           getData: (data) => {
             let ada = 0;
             let belum = 0;
             data.forEach((p) => {
-              if (p.kmzRelokasi === 'Ada' || p.kmzRelokasi === 'Sudah') ada++;
+              const kmz = p.kmzRelokasi || '';
+              if (kmz === 'Ada' || kmz === 'Sudah' || kmz === 'KMZ FTTH' || kmz === 'KMZ IKR') ada++;
               else belum++;
             });
             return [
@@ -340,14 +348,20 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                 label: 'Ada KMZ (Ready)',
                 value: ada,
                 color: '#0284c7',
-                filterFn: (p) => p.kmzRelokasi === 'Ada' || p.kmzRelokasi === 'Sudah',
+                filterFn: (p) => {
+                  const kmz = p.kmzRelokasi || '';
+                  return kmz === 'Ada' || kmz === 'Sudah' || kmz === 'KMZ FTTH' || kmz === 'KMZ IKR';
+                },
               },
               {
                 id: 'kmz-belum',
                 label: 'Belum Ada KMZ',
                 value: belum,
                 color: '#f59e0b',
-                filterFn: (p) => p.kmzRelokasi !== 'Ada' && p.kmzRelokasi !== 'Sudah',
+                filterFn: (p) => {
+                  const kmz = p.kmzRelokasi || '';
+                  return !(kmz === 'Ada' || kmz === 'Sudah' || kmz === 'KMZ FTTH' || kmz === 'KMZ IKR');
+                },
               },
             ];
           },

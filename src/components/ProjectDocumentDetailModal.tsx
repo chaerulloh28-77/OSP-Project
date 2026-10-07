@@ -25,7 +25,14 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { ProjectData } from '../types/project';
-import { DOCUMENT_SLOTS, DocumentSlotDefinition, UploadedFileMeta, DocumentTypeKey, DocumentFormatType } from '../types/document';
+import { 
+  DOCUMENT_SLOTS, 
+  getDocumentSlots, 
+  DocumentSlotDefinition, 
+  UploadedFileMeta, 
+  DocumentTypeKey, 
+  DocumentFormatType 
+} from '../types/document';
 import { documentStorageService } from '../services/documentStorageService';
 
 interface ProjectDocumentDetailModalProps {
@@ -63,10 +70,11 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
 
   const docRecord = documentStorageService.getDocumentRecord(project);
   const docs = docRecord.documents;
-  const uploadedCount = Object.keys(docs).length;
-  const totalSlots = DOCUMENT_SLOTS.length; // 13
+  const projectSlots = getDocumentSlots(project.projectCategory);
+  const totalSlots = projectSlots.length;
+  const uploadedCount = projectSlots.filter((s) => Boolean(docs[s.key])).length;
   const missingCount = totalSlots - uploadedCount;
-  const completionPct = Math.round((uploadedCount / totalSlots) * 100);
+  const completionPct = totalSlots > 0 ? Math.round((uploadedCount / totalSlots) * 100) : 0;
   const isFullyComplete = uploadedCount === totalSlots;
 
   const formatFileSize = (bytes: number) => {
@@ -80,7 +88,7 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
   const handleTriggerFileInput = (slotKey: DocumentTypeKey) => {
     setActiveSlot(slotKey);
     if (fileInputRef.current) {
-      const slotDef = DOCUMENT_SLOTS.find((s) => s.key === slotKey);
+      const slotDef = projectSlots.find((s) => s.key === slotKey);
       fileInputRef.current.accept = slotDef ? slotDef.accept : '*';
       fileInputRef.current.value = '';
       fileInputRef.current.click();
@@ -105,7 +113,7 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
       );
 
       if (result.success) {
-        const slotDef = DOCUMENT_SLOTS.find((s) => s.key === activeSlot);
+        const slotDef = projectSlots.find((s) => s.key === activeSlot);
         if (showToast) {
           showToast(`Dokumen "${slotDef?.label}" (${file.name}) berhasil diunggah.`);
         }
@@ -155,7 +163,7 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
   };
 
   const handleExecuteDelete = (slotKey: DocumentTypeKey) => {
-    const slotDef = DOCUMENT_SLOTS.find((s) => s.key === slotKey);
+    const slotDef = projectSlots.find((s) => s.key === slotKey);
     const success = documentStorageService.removeDocument(project, slotKey);
     setConfirmDeleteSlot(null);
 
@@ -199,7 +207,7 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
   };
 
   // Filter slots based on category & completeness
-  const filteredSlots = DOCUMENT_SLOTS.filter((slot) => {
+  const filteredSlots = projectSlots.filter((slot) => {
     if (categoryFilter !== 'all' && slot.category !== categoryFilter) {
       return false;
     }

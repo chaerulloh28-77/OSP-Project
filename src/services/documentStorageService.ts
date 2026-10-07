@@ -5,7 +5,13 @@
  * Includes Excel and CSV export for document completeness checklist.
  */
 
-import { DocumentTypeKey, ProjectDocumentRecord, UploadedFileMeta, DOCUMENT_SLOTS } from '../types/document';
+import { 
+  DocumentTypeKey, 
+  ProjectDocumentRecord, 
+  UploadedFileMeta, 
+  DOCUMENT_SLOTS, 
+  getDocumentSlots 
+} from '../types/document';
 import { ProjectData } from '../types/project';
 import * as XLSX from 'xlsx';
 
@@ -139,7 +145,8 @@ class DocumentStorageService {
     if (!record) return false;
 
     const pmoKey = project.pmoId || project.id;
-    DOCUMENT_SLOTS.forEach((slot) => {
+    const slots = getDocumentSlots(project.projectCategory);
+    slots.forEach((slot) => {
       this.fileDataMap.delete(`${pmoKey}_${slot.key}`);
     });
 
@@ -171,12 +178,13 @@ class DocumentStorageService {
     let incompleteProjects = 0;
     let zeroProjects = 0;
     let totalUploadedDocs = 0;
-    const totalSlots = DOCUMENT_SLOTS.length;
+    let maxDocsPossible = 0;
 
     projects.forEach((p) => {
-      const { uploaded } = this.getUploadedCount(p);
+      const { uploaded, total } = this.getUploadedCount(p);
       totalUploadedDocs += uploaded;
-      if (uploaded === totalSlots) {
+      maxDocsPossible += total;
+      if (uploaded === total && total > 0) {
         completeProjects++;
       } else if (uploaded === 0) {
         zeroProjects++;
@@ -185,7 +193,6 @@ class DocumentStorageService {
       }
     });
 
-    const maxDocsPossible = projects.length * totalSlots;
     const overallCompletenessPct = maxDocsPossible > 0 
       ? Math.round((totalUploadedDocs / maxDocsPossible) * 100) 
       : 0;
@@ -314,28 +321,30 @@ class DocumentStorageService {
   // Calculate completeness percentage (0 - 100%)
   public getCompletenessPercentage(project: ProjectData): number {
     const record = this.getDocumentRecord(project);
-    const totalSlots = DOCUMENT_SLOTS.length;
+    const slots = getDocumentSlots(project.projectCategory);
+    const totalSlots = slots.length;
     let uploadedCount = 0;
 
-    DOCUMENT_SLOTS.forEach((slot) => {
+    slots.forEach((slot) => {
       if (record.documents[slot.key]) {
         uploadedCount++;
       }
     });
 
-    return Math.round((uploadedCount / totalSlots) * 100);
+    return totalSlots > 0 ? Math.round((uploadedCount / totalSlots) * 100) : 0;
   }
 
   // Count uploaded vs total
   public getUploadedCount(project: ProjectData): { uploaded: number; total: number } {
     const record = this.getDocumentRecord(project);
+    const slots = getDocumentSlots(project.projectCategory);
     let uploaded = 0;
-    DOCUMENT_SLOTS.forEach((slot) => {
+    slots.forEach((slot) => {
       if (record.documents[slot.key]) {
         uploaded++;
       }
     });
-    return { uploaded, total: DOCUMENT_SLOTS.length };
+    return { uploaded, total: slots.length };
   }
 
   /**

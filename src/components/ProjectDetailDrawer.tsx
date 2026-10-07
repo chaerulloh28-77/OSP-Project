@@ -199,7 +199,11 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                   <span className="font-medium text-slate-800">{project.namaVendor || 'Belum Ada'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Date SP Relokasi</span>
+                  <span className="text-slate-400 block text-[11px]">
+                    {project.projectCategory === 'FTTH' || project.projectCategory === 'IKR'
+                      ? 'Tanggal PO'
+                      : 'Date SP Relokasi'}
+                  </span>
                   <span className="font-mono text-slate-800">{project.dateSuratPerintahRelokasi || '-'}</span>
                 </div>
                 <div>
@@ -232,12 +236,14 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                     {project.tanggalStartProject || '-'} s/d {project.tanggalEndProject || '-'}
                   </span>
                 </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Estimasi & Tgl Pemutusan</span>
-                  <span className="font-mono text-slate-800">
-                    {project.estimasiPemutusan || project.tanggalPemutusan || '-'}
-                  </span>
-                </div>
+                {!(project.projectCategory === 'FTTH' || project.projectCategory === 'IKR') && (
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Estimasi & Tgl Pemutusan</span>
+                    <span className="font-mono text-slate-800">
+                      {project.estimasiPemutusan || project.tanggalPemutusan || '-'}
+                    </span>
+                  </div>
+                )}
                 <div className="col-span-2 sm:col-span-3">
                   <span className="text-slate-400 block text-[11px]">Remarks Plan</span>
                   <p className="text-slate-700 italic bg-slate-50 p-2 rounded text-[11px]">
@@ -330,6 +336,32 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                   <span className="text-slate-400 block text-[11px]">Install HH / Pole</span>
                   <span className="font-medium text-slate-800">{project.installHhProgress || '-'} | {project.installPoleProgress || '-'}</span>
                 </div>
+                {(project.projectCategory === 'FTTH' || project.projectCategory === 'IKR' || project.ftthIkrSpecProgress || (project.pullingFoItems && project.pullingFoItems.length > 0)) && (
+                  <div className="col-span-2 sm:col-span-3 bg-emerald-50/70 border border-emerald-200 rounded p-2.5 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-emerald-900 font-bold block text-[11px]">Spesifikasi FTTH / IKR & Aksesoris:</span>
+                      {project.pullingFoItems && project.pullingFoItems.length > 0 && (
+                        <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100/90 px-1.5 py-0.2 rounded font-mono">
+                          {project.pullingFoItems.reduce((acc, c) => acc + (Number(c.length) || 0), 0).toLocaleString('id-ID')} m FO
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-mono text-emerald-950 text-[11px] font-medium leading-relaxed">
+                      {project.ftthIkrSpecProgress || 'Belum ada rincian spesifikasi FTTH / IKR'}
+                    </p>
+                    {project.pullingFoItems && project.pullingFoItems.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1 border-t border-emerald-200/80">
+                        {project.pullingFoItems.map((fo, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1 text-[10px] bg-white border border-emerald-300 rounded px-1.5 py-0.5 text-emerald-900 font-medium">
+                            <span className="font-semibold">{fo.type}</span>
+                            <span className="font-mono text-emerald-700 font-bold">({fo.length ? Number(fo.length).toLocaleString('id-ID') : 0}m)</span>
+                            {fo.status && <span className="text-[9px] text-slate-500">[{fo.status}]</span>}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <span className="text-slate-400 block text-[11px]">Laporan Opname & SAP</span>
                   <span className="text-slate-800">{project.laporanOpname || '-'} | Closing: {project.closingSap || '-'}</span>

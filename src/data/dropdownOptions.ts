@@ -19,17 +19,47 @@ export const TAHUN_OPTIONS = [
   '2027',
 ] as const;
 
-// APD Relokasi: Ada, Belum ada
+// APD Relokasi (GOV): Ada, Belum ada
 export const APD_RELOKASI_OPTIONS = [
   'Ada',
   'Belum ada',
 ] as const;
 
-// KMZ Relokasi: Ada, Belum ada
+// APD for FTTH & IKR: APD FTTH, APD IKR, Belum ada, Ada
+export const APD_FTTH_IKR_OPTIONS = [
+  'APD FTTH',
+  'APD IKR',
+  'Belum ada',
+] as const;
+
+// KMZ Relokasi (GOV): Ada, Belum ada
 export const KMZ_RELOKASI_OPTIONS = [
   'Ada',
   'Belum ada',
 ] as const;
+
+// KMZ for FTTH & IKR: KMZ FTTH, KMZ IKR, Belum ada, Ada
+export const KMZ_FTTH_IKR_OPTIONS = [
+  'KMZ FTTH',
+  'KMZ IKR',
+  'Belum ada',
+] as const;
+
+export function getApdOptions(category?: string): readonly string[] {
+  const cat = (category || '').toUpperCase().trim();
+  if (cat === 'FTTH' || cat === 'IKR') {
+    return APD_FTTH_IKR_OPTIONS;
+  }
+  return APD_RELOKASI_OPTIONS;
+}
+
+export function getKmzOptions(category?: string): readonly string[] {
+  const cat = (category || '').toUpperCase().trim();
+  if (cat === 'FTTH' || cat === 'IKR') {
+    return KMZ_FTTH_IKR_OPTIONS;
+  }
+  return KMZ_RELOKASI_OPTIONS;
+}
 
 // Priority options
 export const PRIORITY_OPTIONS = [
@@ -74,13 +104,30 @@ export const SPH_BOQ_OPTIONS = [
 
 // Status Project Master Options (including Review Dinas & Masih Review Dinas)
 export const PROJECT_STATUS_OPTIONS = [
-  'In Progress',
   'Project Not Started',
+  'In Progress',
   'Review Dinas',
   'Masih Review Dinas',
   'Cancelled',
   'Completed',
 ] as const;
+
+// Specific Project Status Options for FTTH & IKR
+export const FTTH_IKR_PROJECT_STATUS_OPTIONS = [
+  'Project Not Started',
+  'In Progress',
+  'Canceled',
+  'Completed',
+] as const;
+
+// Helper to get conditional project status options based on category
+export function getProjectStatusOptions(category?: string): readonly string[] {
+  const cat = (category || '').toUpperCase().trim();
+  if (cat === 'FTTH' || cat === 'IKR') {
+    return FTTH_IKR_PROJECT_STATUS_OPTIONS;
+  }
+  return PROJECT_STATUS_OPTIONS;
+}
 
 // Status Pengajuan PO / MR: Not Yet, Submit, Approved, Release, Released, N/A
 export const STATUS_PENGAJUAN_PO_OPTIONS = [
@@ -188,6 +235,61 @@ export const POLE_OPTIONS = ['Tiang 7', 'Tiang 8', 'Tiang 9'] as const;
 
 // Galvanis (meter): 2", 4", 6"
 export const GALVANIS_OPTIONS = ['2"', '4"', '6"'] as const;
+
+// FTTH & IKR Specification Options:
+// Pulling Cable FO Options:
+export const PULLING_FO_CABLE_TYPE_OPTIONS = [
+  'Cable FO 2 core Flat Type (Underground)',
+  'Cable FO 2 core Flat Type (Aerial)',
+  'Cable Fiber Optic 6 Core',
+  'Cable FO 12Core Loose Tube, Single Mode',
+  'Cable FO 24Core Loose Tube, Single Mode',
+  'Cable FO 48Core Loose Tube, Single Mode',
+] as const;
+
+// FAT (pcs): FAT 8 Core, FAT 16 Core, FAT 24 Core, FAT 32 Core, FAT 48 Core
+export const FAT_TYPE_OPTIONS = [
+  'FAT 8 Core',
+  'FAT 16 Core',
+  'FAT 24 Core',
+  'FAT 32 Core',
+  'FAT 48 Core',
+] as const;
+
+// FDT (pcs): FDT 48 Core, FDT 96 Core, FDT 144 Core, FDT 288 Core, FDT 576 Core
+export const FDT_TYPE_OPTIONS = [
+  'FDT 48 Core',
+  'FDT 96 Core',
+  'FDT 144 Core',
+  'FDT 288 Core',
+  'FDT 576 Core',
+] as const;
+
+// Slak Hanger (pcs): Standard, Bulat, Silang, Double Hanger
+export const SLACK_HANGER_OPTIONS = [
+  'Standard',
+  'Bulat',
+  'Silang',
+  'Double Hanger',
+] as const;
+
+// Splicing Cable / Spalcing: Joint Closure & Splicing types
+export const SPLICING_TYPE_OPTIONS = [
+  'Joint Closure 12 Core',
+  'Joint Closure 24 Core',
+  'Joint Closure 48 Core',
+  'Joint Closure 96 Core',
+  'Joint Closure 144 Core',
+  'Splicing FAT/FDT',
+  'OTDR & Splicing',
+] as const;
+
+// Status Splicing: Done, In Progress, Not Started
+export const SPLICING_STATUS_OPTIONS = [
+  'Done',
+  'In Progress',
+  'Not Started',
+] as const;
 
 /**
  * Helper to calculate Galian Sipil Progress percentage automatically:
@@ -323,4 +425,14 @@ export function calculatePullingPercentage(
   const total = Math.min(100, foWeight + coaxWeight);
   return `${total}%`;
 }
+
+// Project Categories: GOV IPPJU, GOV APJATEL, GOV SJUT, FTTH, IKR
+export const PROJECT_CATEGORY_OPTIONS = [
+  'GOV IPPJU',
+  'GOV APJATEL',
+  'GOV SJUT',
+  'FTTH',
+  'IKR',
+] as const;
+export type ProjectCategory = typeof PROJECT_CATEGORY_OPTIONS[number];
 

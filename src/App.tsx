@@ -295,7 +295,7 @@ export default function App() {
     const totalPanjangRelokasi = filteredProjects.reduce((acc, p) => acc + (Number(p.panjangRelokasi) || 0), 0);
     const doneSurveyCount = filteredProjects.filter((p) => p.statusSurvey === 'Done survey').length;
     const adaBaCount = filteredProjects.filter((p) => p.baSurvey === 'Ada' || p.baSurvey === 'Sudah BA').length;
-    const adaApdCount = filteredProjects.filter((p) => p.apdRelokasi === 'Ada').length;
+    const adaApdCount = filteredProjects.filter((p) => p.apdRelokasi === 'Ada' || p.apdRelokasi === 'APD FTTH' || p.apdRelokasi === 'APD IKR' || p.apdRelokasi === 'Sudah').length;
     const uniqueVendorsCount = new Set(filteredProjects.map((p) => p.namaVendor).filter(Boolean)).size;
 
     // 3. Status Project metrics

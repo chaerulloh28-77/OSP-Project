@@ -15,15 +15,34 @@ import {
   AlertCircle,
   GitCommit,
   Plus,
-  Trash2
+  Trash2,
+  Cable
 } from 'lucide-react';
-import { ProjectData, HhItem, PoleItem, GalvanisItem } from '../types/project';
+import { 
+  ProjectData, 
+  HhItem, 
+  PoleItem, 
+  GalvanisItem,
+  PullingFoItem,
+  FatItem,
+  FdtItem,
+  SlackHangerItem,
+  SplicingItem
+} from '../types/project';
 import { getPriorityMeta } from './PriorityBadge';
+import { PMO_OPTIONS, getPmoOption, PmoOption } from '../utils/pmoIdHelpers';
 import {
   TAHUN_OPTIONS,
   PRIORITY_OPTIONS,
+  PROJECT_CATEGORY_OPTIONS,
+  getProjectStatusOptions,
+  FTTH_IKR_PROJECT_STATUS_OPTIONS,
   APD_RELOKASI_OPTIONS,
   KMZ_RELOKASI_OPTIONS,
+  APD_FTTH_IKR_OPTIONS,
+  KMZ_FTTH_IKR_OPTIONS,
+  getApdOptions,
+  getKmzOptions,
   APD_LINKNET_OPTIONS,
   STATUS_SURVEY_OPTIONS,
   BA_SURVEY_OPTIONS,
@@ -43,6 +62,12 @@ import {
   HH_SIZE_OPTIONS,
   POLE_OPTIONS,
   GALVANIS_OPTIONS,
+  PULLING_FO_CABLE_TYPE_OPTIONS,
+  FAT_TYPE_OPTIONS,
+  FDT_TYPE_OPTIONS,
+  SLACK_HANGER_OPTIONS,
+  SPLICING_TYPE_OPTIONS,
+  SPLICING_STATUS_OPTIONS,
   calculateGalianPercentage,
   calculatePullingPercentage,
   calculatePullingFoPercentage,
@@ -65,6 +90,68 @@ export const formatPoleGalvanisSummary = (poles: PoleItem[] = [], galvs: Galvani
   if (validGalvs.length > 0) {
     parts.push(validGalvs.map(g => `Galv ${g.size} (${g.length}m)`).join(', '));
   }
+  return parts.join(' | ');
+};
+
+export const formatPullingFoSummary = (items: PullingFoItem[] = []): string => {
+  const valid = items.filter(it => it.length !== undefined && it.length !== '' && Number(it.length) > 0);
+  if (valid.length === 0) return '';
+  return valid.map(it => `${it.type} (${Number(it.length).toLocaleString('id-ID')}m)`).join(', ');
+};
+
+export const formatFatSummary = (items: FatItem[] = []): string => {
+  const valid = items.filter(it => it.qty !== undefined && it.qty !== '' && Number(it.qty) > 0);
+  if (valid.length === 0) return '';
+  return valid.map(it => `${it.type} (${it.qty} Pcs)`).join(', ');
+};
+
+export const formatFdtSummary = (items: FdtItem[] = []): string => {
+  const valid = items.filter(it => it.qty !== undefined && it.qty !== '' && Number(it.qty) > 0);
+  if (valid.length === 0) return '';
+  return valid.map(it => `${it.type} (${it.qty} Pcs)`).join(', ');
+};
+
+export const formatSlackHangerSummary = (items: SlackHangerItem[] = []): string => {
+  const valid = items.filter(it => it.qty !== undefined && it.qty !== '' && Number(it.qty) > 0);
+  if (valid.length === 0) return '';
+  return valid.map(it => `Slak Hanger ${it.type} (${it.qty} Pcs)`).join(', ');
+};
+
+export const formatSplicingSummary = (items: SplicingItem[] = []): string => {
+  const valid = items.filter(it => (it.qty !== undefined && it.qty !== '' && Number(it.qty) > 0) || (it.status && it.status !== 'Not Started'));
+  if (valid.length === 0) return '';
+  return valid.map(it => `${it.type}${it.qty ? ` (${it.qty} Core)` : ''}${it.status ? ` [${it.status}]` : ''}`).join(', ');
+};
+
+export const formatFtthIkrSpecSummary = (
+  pullingFo: PullingFoItem[] | number | string = [],
+  fatItems: FatItem[] = [],
+  fdtItems: FdtItem[] = [],
+  splicingItems: SplicingItem[] = [],
+  slackHangerItems: SlackHangerItem[] = []
+): string => {
+  const parts: string[] = [];
+  if (Array.isArray(pullingFo)) {
+    const pullingStr = formatPullingFoSummary(pullingFo);
+    if (pullingStr) {
+      parts.push(`Pulling FO: ${pullingStr}`);
+    }
+  } else if (pullingFo !== undefined && pullingFo !== '' && Number(pullingFo) > 0) {
+    parts.push(`Pulling FO: ${Number(pullingFo).toLocaleString('id-ID')}m`);
+  }
+
+  const fatStr = formatFatSummary(fatItems);
+  if (fatStr) parts.push(`FAT: ${fatStr}`);
+  
+  const fdtStr = formatFdtSummary(fdtItems);
+  if (fdtStr) parts.push(`FDT: ${fdtStr}`);
+  
+  const splStr = formatSplicingSummary(splicingItems);
+  if (splStr) parts.push(`Splicing: ${splStr}`);
+  
+  const slkStr = formatSlackHangerSummary(slackHangerItems);
+  if (slkStr) parts.push(slkStr);
+
   return parts.join(' | ');
 };
 
@@ -153,14 +240,65 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               length: initialData.installGalvanisLength ?? ''
             }];
 
+        const pullingFoItems: PullingFoItem[] = (initialData.pullingFoItems && initialData.pullingFoItems.length > 0)
+          ? initialData.pullingFoItems
+          : [{
+              id: '1',
+              type: initialData.pullingFoType || 'Cable FO 24Core Loose Tube, Single Mode',
+              length: initialData.pullingFoMeter ?? initialData.pullingFoPanjangTotal ?? initialData.panjangRelokasi ?? '',
+              status: initialData.statusPullingCableFo || 'In Progress'
+            }];
+
+        const fatItems: FatItem[] = (initialData.installFatItems && initialData.installFatItems.length > 0)
+          ? initialData.installFatItems
+          : [{
+              id: '1',
+              type: initialData.installFatType || 'FAT 8 Core',
+              qty: initialData.installFatQty ?? ''
+            }];
+
+        const fdtItems: FdtItem[] = (initialData.installFdtItems && initialData.installFdtItems.length > 0)
+          ? initialData.installFdtItems
+          : [{
+              id: '1',
+              type: initialData.installFdtType || 'FDT 96 Core',
+              qty: initialData.installFdtQty ?? ''
+            }];
+
+        const slackItems: SlackHangerItem[] = (initialData.installSlackHangerItems && initialData.installSlackHangerItems.length > 0)
+          ? initialData.installSlackHangerItems
+          : [{
+              id: '1',
+              type: initialData.installSlackHangerType || 'Standard',
+              qty: initialData.installSlackHangerQty ?? ''
+            }];
+
+        const splicingItems: SplicingItem[] = (initialData.splicingCableItems && initialData.splicingCableItems.length > 0)
+          ? initialData.splicingCableItems
+          : [{
+              id: '1',
+              type: 'Joint Closure 24 Core',
+              qty: initialData.splicingCableQty ?? '',
+              status: initialData.splicingCableStatus || 'Not Started'
+            }];
+
+        const pullingFoMeterVal = initialData.pullingFoMeter ?? initialData.pullingFoPanjangTotal ?? initialData.panjangRelokasi ?? '';
+
         setFormData({
           ...initialData,
           panjangRelokasiCoax: initialData.panjangRelokasiCoax ?? 0,
           installHhItems: hhItems,
           installPoleItems: poleItems,
           installGalvanisItems: galvItems,
+          pullingFoItems: pullingFoItems,
+          installFatItems: fatItems,
+          installFdtItems: fdtItems,
+          installSlackHangerItems: slackItems,
+          splicingCableItems: splicingItems,
+          pullingFoMeter: pullingFoMeterVal,
           installHhProgress: initialData.installHhProgress || formatHhSummary(hhItems),
           installPoleProgress: initialData.installPoleProgress || formatPoleGalvanisSummary(poleItems, galvItems),
+          ftthIkrSpecProgress: initialData.ftthIkrSpecProgress || formatFtthIkrSpecSummary(pullingFoItems, fatItems, fdtItems, splicingItems, slackItems),
         });
       } else {
         // Generate new project default template with automatic PMO-ID sequence
@@ -171,6 +309,11 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         const defaultHh: HhItem[] = [{ id: '1', type: 'HH', size: '80x80', qty: '' }];
         const defaultPole: PoleItem[] = [{ id: '1', type: 'Tiang 8', qty: '' }];
         const defaultGalv: GalvanisItem[] = [{ id: '1', size: '2"', length: '' }];
+        const defaultPullingFo: PullingFoItem[] = [{ id: '1', type: 'Cable FO 24Core Loose Tube, Single Mode', length: '', status: 'In Progress' }];
+        const defaultFat: FatItem[] = [{ id: '1', type: 'FAT 8 Core', qty: '' }];
+        const defaultFdt: FdtItem[] = [{ id: '1', type: 'FDT 96 Core', qty: '' }];
+        const defaultSlack: SlackHangerItem[] = [{ id: '1', type: 'Standard', qty: '' }];
+        const defaultSplicing: SplicingItem[] = [{ id: '1', type: 'Joint Closure 24 Core', qty: '', status: 'Not Started' }];
 
         setFormData({
           id: `proj-${Date.now()}`,
@@ -197,51 +340,32 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           apdLinknet: '',
           statusSurvey: '',
           baSurvey: '',
-          ceMaterial: '',
           sphBoq: '',
-          ceLn: '',
-          apdLn: '',
-          timelineRelokasi: '',
           tanggalStartProject: '',
           tanggalEndProject: '',
           estimasiPemutusan: '',
           tanggalPemutusan: '',
           remarksPlan: '',
-          statusPengajuanProject: 'Not Yet',
+          statusPengajuanProject: '',
           projectCreateDate: '',
           mrNumber: '',
-          tanggalPengajuanMr: '',
-          tanggalPengajuanPo: '',
-          statusPengajuanMr: 'N/A',
-          statusPengajuanPo: 'N/A',
-          poNumber: '',
-          planPengambilanMaterial: 'Not Yet',
-          statusMaterialLocation: 'Not Yet',
-          pengajuanProjectRemarks: '',
-          statusMaterialReturn: '',
-          tanggalPlanReturn: '',
-          tanggalReturn: '',
-          statusDokumenClosing: 'Not Yet',
-          closingRemarks: '',
-          preProjectRemarks: '',
+          planPengambilanMaterial: '',
+          statusMaterialLocation: '',
+          statusDokumenClosing: '',
           remarksProject: '',
           statusConstruction: 'Project Not Started',
-          statusLabor: 'N/A',
           statusMaterial: 'Not Yet',
           statusPullingCableFo: 'Not Yet',
-          pullingFoPanjangSelesai: 0,
-          pullingFoPanjangTotal: 1000,
-          pullingCableFoProgress: '0%',
           statusPullingCableCoax: 'Not Yet',
-          pullingCoaxPanjangSelesai: 0,
-          pullingCoaxPanjangTotal: 1000,
+          pullingCableFoProgress: '0%',
           pullingCableCoaxProgress: '0%',
-          statusCo: '',
-          statusCoCoax: '',
-          laporanOpname: '',
-          closingSap: '',
+          statusCo: 'Not Yet',
+          statusCoCoax: 'Not Yet',
+          laporanOpname: 'Not Yet',
+          closingSap: 'Not Yet',
+          projectSapId: '',
           kebutuhanMaterialPoSap: '',
-          galianSipilProgress: '',
+          galianSipilProgress: '0%',
           galianAksesProgress: '',
           galianCrossingProgress: '',
           installHhProgress: '',
@@ -255,11 +379,30 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           installGalvanisSize: '2"',
           installGalvanisLength: '',
           installGalvanisItems: defaultGalv,
+          pullingFoItems: defaultPullingFo,
+          pullingFoMeter: '',
+          pullingFoType: 'Cable FO 24Core Loose Tube, Single Mode',
+          installFatQty: '',
+          installFatType: 'FAT 8 Core',
+          installFatItems: defaultFat,
+          installFdtQty: '',
+          installFdtType: 'FDT 96 Core',
+          installFdtItems: defaultFdt,
+          installSlackHangerQty: '',
+          installSlackHangerType: 'Standard',
+          installSlackHangerItems: defaultSlack,
+          splicingCableQty: '',
+          splicingCableStatus: 'Not Started',
+          splicingCableItems: defaultSplicing,
+          ftthIkrSpecProgress: '',
           installPoleProgress: '',
-          pullingCableProgress: '',
-          projectSapId: '',
+          galianPanjangSelesai: 0,
+          galianPanjangTotal: 0,
+          pullingPanjangSelesai: 0,
+          pullingPanjangTotal: 0,
+          pullingCableProgress: '0%',
           remarksConstruction: '',
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
       }
     }
@@ -415,6 +558,349 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
       installPoleProgress: summary,
       installGalvanisSize: newItems[0]?.size || '2"',
       installGalvanisLength: newItems[0]?.length || '',
+    }));
+  };
+
+  // FTTH & IKR: Pulling Cable FO Multi-Item Handlers
+  const handleAddPullingFoItem = () => {
+    const newItem: PullingFoItem = {
+      id: Date.now().toString(),
+      type: 'Cable FO 24Core Loose Tube, Single Mode',
+      length: '',
+      status: 'In Progress',
+    };
+    const newItems = [...(formData.pullingFoItems || []), newItem];
+    const totalMeter = newItems.reduce((acc, curr) => acc + (Number(curr.length) || 0), 0);
+    const summary = formatFtthIkrSpecSummary(
+      newItems,
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      pullingFoItems: newItems,
+      pullingFoMeter: totalMeter > 0 ? totalMeter : (newItems[0]?.length || ''),
+      pullingFoPanjangTotal: totalMeter > 0 ? totalMeter : (newItems[0]?.length || ''),
+      ftthIkrSpecProgress: summary,
+      pullingFoType: newItems[0]?.type || 'Cable FO 24Core Loose Tube, Single Mode',
+    }));
+  };
+
+  const handleUpdatePullingFoItem = (id: string, field: keyof PullingFoItem, val: string | number) => {
+    const newItems = (formData.pullingFoItems || []).map((it) => {
+      if (it.id === id) {
+        return { ...it, [field]: val };
+      }
+      return it;
+    });
+    const totalMeter = newItems.reduce((acc, curr) => acc + (Number(curr.length) || 0), 0);
+    const summary = formatFtthIkrSpecSummary(
+      newItems,
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      pullingFoItems: newItems,
+      pullingFoMeter: totalMeter > 0 ? totalMeter : (newItems[0]?.length || ''),
+      pullingFoPanjangTotal: totalMeter > 0 ? totalMeter : (newItems[0]?.length || ''),
+      ftthIkrSpecProgress: summary,
+      pullingFoType: newItems[0]?.type || 'Cable FO 24Core Loose Tube, Single Mode',
+    }));
+  };
+
+  const handleRemovePullingFoItem = (id: string) => {
+    const current = formData.pullingFoItems || [];
+    if (current.length <= 1) return;
+    const newItems = current.filter((it) => it.id !== id);
+    const totalMeter = newItems.reduce((acc, curr) => acc + (Number(curr.length) || 0), 0);
+    const summary = formatFtthIkrSpecSummary(
+      newItems,
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      pullingFoItems: newItems,
+      pullingFoMeter: totalMeter > 0 ? totalMeter : (newItems[0]?.length || ''),
+      pullingFoPanjangTotal: totalMeter > 0 ? totalMeter : (newItems[0]?.length || ''),
+      ftthIkrSpecProgress: summary,
+      pullingFoType: newItems[0]?.type || 'Cable FO 24Core Loose Tube, Single Mode',
+    }));
+  };
+
+  // FTTH & IKR: FAT Multi-Item Handlers
+  const handleAddFatItem = () => {
+    const newItem: FatItem = {
+      id: Date.now().toString(),
+      type: 'FAT 8 Core',
+      qty: '',
+    };
+    const newItems = [...(formData.installFatItems || []), newItem];
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      newItems,
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installFatItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installFatType: newItems[0]?.type || 'FAT 8 Core',
+      installFatQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  const handleUpdateFatItem = (id: string, field: keyof FatItem, val: string | number) => {
+    const newItems = (formData.installFatItems || []).map((it) => {
+      if (it.id === id) {
+        return { ...it, [field]: val };
+      }
+      return it;
+    });
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      newItems,
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installFatItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installFatType: newItems[0]?.type || 'FAT 8 Core',
+      installFatQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  const handleRemoveFatItem = (id: string) => {
+    const current = formData.installFatItems || [];
+    if (current.length <= 1) return;
+    const newItems = current.filter((it) => it.id !== id);
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      newItems,
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installFatItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installFatType: newItems[0]?.type || 'FAT 8 Core',
+      installFatQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  // FTTH & IKR: FDT Multi-Item Handlers
+  const handleAddFdtItem = () => {
+    const newItem: FdtItem = {
+      id: Date.now().toString(),
+      type: 'FDT 96 Core',
+      qty: '',
+    };
+    const newItems = [...(formData.installFdtItems || []), newItem];
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      newItems,
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installFdtItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installFdtType: newItems[0]?.type || 'FDT 96 Core',
+      installFdtQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  const handleUpdateFdtItem = (id: string, field: keyof FdtItem, val: string | number) => {
+    const newItems = (formData.installFdtItems || []).map((it) => {
+      if (it.id === id) {
+        return { ...it, [field]: val };
+      }
+      return it;
+    });
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      newItems,
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installFdtItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installFdtType: newItems[0]?.type || 'FDT 96 Core',
+      installFdtQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  const handleRemoveFdtItem = (id: string) => {
+    const current = formData.installFdtItems || [];
+    if (current.length <= 1) return;
+    const newItems = current.filter((it) => it.id !== id);
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      newItems,
+      formData.splicingCableItems || [],
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installFdtItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installFdtType: newItems[0]?.type || 'FDT 96 Core',
+      installFdtQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  // FTTH & IKR: Slack Hanger Multi-Item Handlers
+  const handleAddSlackHangerItem = () => {
+    const newItem: SlackHangerItem = {
+      id: Date.now().toString(),
+      type: 'Standard',
+      qty: '',
+    };
+    const newItems = [...(formData.installSlackHangerItems || []), newItem];
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      newItems
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installSlackHangerItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installSlackHangerType: newItems[0]?.type || 'Standard',
+      installSlackHangerQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  const handleUpdateSlackHangerItem = (id: string, field: keyof SlackHangerItem, val: string | number) => {
+    const newItems = (formData.installSlackHangerItems || []).map((it) => {
+      if (it.id === id) {
+        return { ...it, [field]: val };
+      }
+      return it;
+    });
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      newItems
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installSlackHangerItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installSlackHangerType: newItems[0]?.type || 'Standard',
+      installSlackHangerQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  const handleRemoveSlackHangerItem = (id: string) => {
+    const current = formData.installSlackHangerItems || [];
+    if (current.length <= 1) return;
+    const newItems = current.filter((it) => it.id !== id);
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      formData.splicingCableItems || [],
+      newItems
+    );
+    setFormData((prev) => ({
+      ...prev,
+      installSlackHangerItems: newItems,
+      ftthIkrSpecProgress: summary,
+      installSlackHangerType: newItems[0]?.type || 'Standard',
+      installSlackHangerQty: newItems[0]?.qty || '',
+    }));
+  };
+
+  // FTTH & IKR: Splicing Multi-Item Handlers
+  const handleAddSplicingItem = () => {
+    const newItem: SplicingItem = {
+      id: Date.now().toString(),
+      type: 'Joint Closure 24 Core',
+      qty: '',
+      status: 'In Progress',
+    };
+    const newItems = [...(formData.splicingCableItems || []), newItem];
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      newItems,
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      splicingCableItems: newItems,
+      ftthIkrSpecProgress: summary,
+      splicingCableQty: newItems[0]?.qty || '',
+      splicingCableStatus: newItems[0]?.status || 'In Progress',
+    }));
+  };
+
+  const handleUpdateSplicingItem = (id: string, field: keyof SplicingItem, val: string | number) => {
+    const newItems = (formData.splicingCableItems || []).map((it) => {
+      if (it.id === id) {
+        return { ...it, [field]: val };
+      }
+      return it;
+    });
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      newItems,
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      splicingCableItems: newItems,
+      ftthIkrSpecProgress: summary,
+      splicingCableQty: newItems[0]?.qty || '',
+      splicingCableStatus: newItems[0]?.status || 'In Progress',
+    }));
+  };
+
+  const handleRemoveSplicingItem = (id: string) => {
+    const current = formData.splicingCableItems || [];
+    if (current.length <= 1) return;
+    const newItems = current.filter((it) => it.id !== id);
+    const summary = formatFtthIkrSpecSummary(
+      formData.pullingFoItems || formData.pullingFoMeter || [],
+      formData.installFatItems || [],
+      formData.installFdtItems || [],
+      newItems,
+      formData.installSlackHangerItems || []
+    );
+    setFormData((prev) => ({
+      ...prev,
+      splicingCableItems: newItems,
+      ftthIkrSpecProgress: summary,
+      splicingCableQty: newItems[0]?.qty || '',
+      splicingCableStatus: newItems[0]?.status || 'In Progress',
     }));
   };
 
@@ -769,11 +1255,63 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                       Otomatis Terurut
                     </span>
                   </div>
+
+                  {/* Quick PMO - ID Option Selector (PMO-GOV, PMO-FTTH, PMO-IKR) */}
+                  <div className="flex items-center gap-1 mb-1.5">
+                    {PMO_OPTIONS.map((opt) => {
+                      const currentPmoOpt = getPmoOption(formData.pmoId, formData.projectCategory);
+                      const isSelected = currentPmoOpt === opt.id;
+
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            const curId = formData.pmoId || '';
+                            const matchNum = curId.match(/\d+/g);
+                            const numStr = matchNum && matchNum.length > 0 ? matchNum[matchNum.length - 1] : '001';
+                            const padded = numStr.length < 3 ? numStr.padStart(3, '0') : numStr;
+                            const newPmoId = `${opt.id}-${padded}`;
+                            
+                            handleChange('pmoId', newPmoId);
+                            // Auto sync projectCategory
+                            if (opt.id === 'PMO-FTTH') {
+                              handleChange('projectCategory', 'FTTH');
+                            } else if (opt.id === 'PMO-IKR') {
+                              handleChange('projectCategory', 'IKR');
+                            } else if (opt.id === 'PMO-GOV' && (!formData.projectCategory || formData.projectCategory === 'FTTH' || formData.projectCategory === 'IKR')) {
+                              handleChange('projectCategory', 'GOV IPPJU');
+                            }
+                          }}
+                          className={`flex-1 py-1 px-1.5 text-[10px] font-mono font-bold rounded border transition-all cursor-pointer text-center ${
+                            isSelected
+                              ? opt.id === 'PMO-FTTH'
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs ring-1 ring-emerald-400'
+                                : opt.id === 'PMO-IKR'
+                                ? 'bg-purple-600 text-white border-purple-600 shadow-2xs ring-1 ring-purple-400'
+                                : 'bg-sky-600 text-white border-sky-600 shadow-2xs ring-1 ring-sky-400'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <input
                     type="text"
                     value={formData.pmoId || ''}
-                    onChange={(e) => handleChange('pmoId', e.target.value)}
-                    placeholder="e.g. PMO-GOV-863"
+                    onChange={(e) => {
+                      handleChange('pmoId', e.target.value);
+                      const detected = getPmoOption(e.target.value);
+                      if (detected === 'PMO-FTTH' && formData.projectCategory !== 'FTTH') {
+                        handleChange('projectCategory', 'FTTH');
+                      } else if (detected === 'PMO-IKR' && formData.projectCategory !== 'IKR') {
+                        handleChange('projectCategory', 'IKR');
+                      }
+                    }}
+                    placeholder="e.g. PMO-GOV-863, PMO-FTTH-012, PMO-IKR-005"
                     className={`w-full px-3 py-1.5 text-xs rounded-md border font-mono font-medium ${
                       errors.pmoId ? 'border-rose-500 bg-rose-50' : 'border-slate-300'
                     } focus:outline-none focus:ring-1 focus:ring-sky-500`}
@@ -785,12 +1323,37 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Project Category</label>
                   <select
                     value={formData.projectCategory || 'GOV IPPJU'}
-                    onChange={(e) => handleChange('projectCategory', e.target.value)}
+                    onChange={(e) => {
+                      const newCat = e.target.value;
+                      handleChange('projectCategory', newCat);
+
+                      // If switching to FTTH / IKR, validate project status
+                      if (newCat === 'FTTH' || newCat === 'IKR') {
+                        if (formData.projectStatus === 'Review Dinas' || formData.projectStatus === 'Masih Review Dinas') {
+                          handleChange('projectStatus', 'In Progress');
+                        }
+                        const curPmo = formData.pmoId || '';
+                        const matchNum = curPmo.match(/\d+/g);
+                        const numStr = matchNum && matchNum.length > 0 ? matchNum[matchNum.length - 1] : '001';
+                        const padded = numStr.length < 3 ? numStr.padStart(3, '0') : numStr;
+                        const prefix = newCat === 'FTTH' ? 'PMO-FTTH' : 'PMO-IKR';
+                        handleChange('pmoId', `${prefix}-${padded}`);
+                      } else {
+                        // GOV Category
+                        const curPmo = formData.pmoId || '';
+                        const matchNum = curPmo.match(/\d+/g);
+                        const numStr = matchNum && matchNum.length > 0 ? matchNum[matchNum.length - 1] : '001';
+                        const padded = numStr.length < 3 ? numStr.padStart(3, '0') : numStr;
+                        handleChange('pmoId', `PMO-GOV-${padded}`);
+                      }
+                    }}
                     className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer font-medium"
                   >
-                    <option value="GOV IPPJU">GOV IPPJU</option>
-                    <option value="GOV APJATEL">GOV APJATEL</option>
-                    <option value="GOV SJUT">GOV SJUT</option>
+                    {PROJECT_CATEGORY_OPTIONS.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -850,16 +1413,15 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Project Status</label>
                   <select
-                    value={formData.projectStatus || 'Masih Review Dinas'}
+                    value={formData.projectStatus || (formData.projectCategory === 'FTTH' || formData.projectCategory === 'IKR' ? 'Project Not Started' : 'Masih Review Dinas')}
                     onChange={(e) => handleChange('projectStatus', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium cursor-pointer"
                   >
-                    <option value="Review Dinas">Review Dinas</option>
-                    <option value="Masih Review Dinas">Masih Review Dinas</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Project Not Started">Project Not Started</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Completed">Completed</option>
+                    {getProjectStatusOptions(formData.projectCategory).map((st) => (
+                      <option key={st} value={st}>
+                        {st}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -912,275 +1474,297 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           )}
 
           {/* TAB 2: CONSTRUCTION & PLAN */}
-          {activeFormTab === 2 && (
-            <div className="space-y-4">
-              <div className="bg-sky-50/70 border border-sky-200/80 rounded-lg p-3 text-xs text-sky-800">
-                Detail Perencanaan & Kontraktor (Sheet 2: Construction & Plan).
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Vendor</label>
-                  <input
-                    type="text"
-                    value={formData.namaVendor || ''}
-                    onChange={(e) => handleChange('namaVendor', e.target.value)}
-                    placeholder="Contoh: PT. MENTARI, dll"
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Date Surat Perintah Relokasi</label>
-                  <input
-                    type="date"
-                    value={formData.dateSuratPerintahRelokasi || ''}
-                    onChange={(e) => handleChange('dateSuratPerintahRelokasi', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Bulan</label>
-                  <select
-                    value={formData.bulan || 'November'}
-                    onChange={(e) => handleChange('bulan', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                  >
-                    {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tahun</label>
-                  <select
-                    value={formData.tahun || '2024'}
-                    onChange={(e) => handleChange('tahun', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono cursor-pointer"
-                  >
-                    {TAHUN_OPTIONS.map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Panjang Relokasi FO, COAX & Galian Sipil */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-2.5">
-                <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <HardHat className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Panjang Relokasi FO, COAX & Galian Sipil</span>
-                  </span>
-                  <span className="text-[11px] font-mono font-medium text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
-                    Otomatis Terhubung ke Tab Status Construction
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Panjang Relokasi FO (m)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.panjangRelokasi !== undefined ? formData.panjangRelokasi : ''}
-                      onChange={(e) => handleChange('panjangRelokasi', e.target.value ? Number(e.target.value) : '')}
-                      placeholder="e.g. 10000"
-                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
-                    />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">
-                      Target Meter FO (Pulling Cable FO)
+          {activeFormTab === 2 && (() => {
+            const isFtthOrIkr = formData.projectCategory === 'FTTH' || formData.projectCategory === 'IKR';
+            return (
+              <div className="space-y-4">
+                <div className="bg-sky-50/70 border border-sky-200/80 rounded-lg p-3 text-xs text-sky-800 flex items-center justify-between">
+                  <span className="font-semibold">Detail Perencanaan & Kontraktor (Sheet 2: Construction & Plan).</span>
+                  {isFtthOrIkr && (
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Mode {formData.projectCategory} (Tanggal PO & Tanpa Pemutusan)
                     </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Vendor</label>
+                    <input
+                      type="text"
+                      value={formData.namaVendor || ''}
+                      onChange={(e) => handleChange('namaVendor', e.target.value)}
+                      placeholder="Contoh: PT. MENTARI, dll"
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Panjang Relokasi COAX (m)
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {isFtthOrIkr ? 'Tanggal PO' : 'Date Surat Perintah Relokasi'}
                     </label>
                     <input
-                      type="number"
-                      min="0"
-                      value={formData.panjangRelokasiCoax !== undefined ? formData.panjangRelokasiCoax : ''}
-                      onChange={(e) => handleChange('panjangRelokasiCoax', e.target.value ? Number(e.target.value) : '')}
-                      placeholder="e.g. 2500"
-                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                      type="date"
+                      value={formData.dateSuratPerintahRelokasi || ''}
+                      onChange={(e) => handleChange('dateSuratPerintahRelokasi', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
                     />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">
-                      Target Meter COAX (Pulling Cable COAX)
-                    </span>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Panjang Galian (m)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.galianPanjangTotal !== undefined ? formData.galianPanjangTotal : ''}
-                      onChange={(e) => handleChange('galianPanjangTotal', e.target.value ? Number(e.target.value) : '')}
-                      placeholder="e.g. 10000"
-                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
-                    />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">
-                      Target Meter (Galian Sipil)
-                    </span>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Bulan</label>
+                    <select
+                      value={formData.bulan || 'November'}
+                      onChange={(e) => handleChange('bulan', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    >
+                      {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tahun</label>
+                    <select
+                      value={formData.tahun || '2024'}
+                      onChange={(e) => handleChange('tahun', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono cursor-pointer"
+                    >
+                      {TAHUN_OPTIONS.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">APD Relokasi</label>
-                  <select
-                    value={formData.apdRelokasi || 'Belum ada'}
-                    onChange={(e) => handleChange('apdRelokasi', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-                  >
-                    {APD_RELOKASI_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
+                {/* Panjang Relokasi FO, COAX & Galian Sipil */}
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <HardHat className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Panjang Relokasi FO, COAX & Galian Sipil</span>
+                    </span>
+                    <span className="text-[11px] font-mono font-medium text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      Otomatis Terhubung ke Tab Status Construction
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Panjang Relokasi FO (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.panjangRelokasi !== undefined ? formData.panjangRelokasi : ''}
+                        onChange={(e) => handleChange('panjangRelokasi', e.target.value ? Number(e.target.value) : '')}
+                        placeholder="e.g. 10000"
+                        className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">
+                        Target Meter FO (Pulling Cable FO)
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Panjang Relokasi COAX (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.panjangRelokasiCoax !== undefined ? formData.panjangRelokasiCoax : ''}
+                        onChange={(e) => handleChange('panjangRelokasiCoax', e.target.value ? Number(e.target.value) : '')}
+                        placeholder="e.g. 2500"
+                        className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">
+                        Target Meter COAX (Pulling Cable COAX)
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Panjang Galian (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.galianPanjangTotal !== undefined ? formData.galianPanjangTotal : ''}
+                        onChange={(e) => handleChange('galianPanjangTotal', e.target.value ? Number(e.target.value) : '')}
+                        placeholder="e.g. 10000"
+                        className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">
+                        Target Meter (Galian Sipil)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {isFtthOrIkr ? 'APD' : 'APD Relokasi'}
+                    </label>
+                    <select
+                      value={formData.apdRelokasi || (isFtthOrIkr ? (formData.projectCategory === 'IKR' ? 'APD IKR' : 'APD FTTH') : 'Belum ada')}
+                      onChange={(e) => handleChange('apdRelokasi', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                    >
+                      {getApdOptions(formData.projectCategory).map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {isFtthOrIkr ? 'KMZ' : 'KMZ Relokasi'}
+                    </label>
+                    <select
+                      value={formData.kmzRelokasi || (isFtthOrIkr ? (formData.projectCategory === 'IKR' ? 'KMZ IKR' : 'KMZ FTTH') : 'Belum ada')}
+                      onChange={(e) => handleChange('kmzRelokasi', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                    >
+                      {getKmzOptions(formData.projectCategory).map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Status Audit</label>
+                    <select
+                      value={formData.statusAudit || 'Not Yet'}
+                      onChange={(e) => handleChange('statusAudit', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                    >
+                      {STATUS_AUDIT_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Survey, BA Survey & SPH/BOQ (APD Internal removed if FTTH / IKR) */}
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${isFtthOrIkr ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-3.5`}>
+                  {!isFtthOrIkr && (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">APD Internal</label>
+                      <select
+                        value={formData.apdLinknet || 'Not Yet'}
+                        onChange={(e) => handleChange('apdLinknet', e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                      >
+                        {APD_LINKNET_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Status Survey</label>
+                    <select
+                      value={formData.statusSurvey || 'Not Yet'}
+                      onChange={(e) => handleChange('statusSurvey', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                    >
+                      {STATUS_SURVEY_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">BA Survey</label>
+                    <select
+                      value={formData.baSurvey || 'Not Yet'}
+                      onChange={(e) => handleChange('baSurvey', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                    >
+                      {BA_SURVEY_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">SPH / BOQ</label>
+                    <select
+                      value={formData.sphBoq || 'Not Yet'}
+                      onChange={(e) => handleChange('sphBoq', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                    >
+                      {SPH_BOQ_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Project Timeline Dates */}
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${isFtthOrIkr ? 'md:grid-cols-2' : 'md:grid-cols-4'} gap-3.5`}>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal Start Project</label>
+                    <input
+                      type="date"
+                      value={formData.tanggalStartProject || ''}
+                      onChange={(e) => handleChange('tanggalStartProject', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal End Project</label>
+                    <input
+                      type="date"
+                      value={formData.tanggalEndProject || ''}
+                      onChange={(e) => handleChange('tanggalEndProject', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    />
+                  </div>
+
+                  {!isFtthOrIkr && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Estimasi Pemutusan</label>
+                        <input
+                          type="date"
+                          value={formData.estimasiPemutusan || ''}
+                          onChange={(e) => handleChange('estimasiPemutusan', e.target.value)}
+                          className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pemutusan</label>
+                        <input
+                          type="date"
+                          value={formData.tanggalPemutusan || ''}
+                          onChange={(e) => handleChange('tanggalPemutusan', e.target.value)}
+                          className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">KMZ Relokasi</label>
-                  <select
-                    value={formData.kmzRelokasi || 'Belum ada'}
-                    onChange={(e) => handleChange('kmzRelokasi', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-                  >
-                    {KMZ_RELOKASI_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Status Audit</label>
-                  <select
-                    value={formData.statusAudit || 'Not Yet'}
-                    onChange={(e) => handleChange('statusAudit', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-                  >
-                    {STATUS_AUDIT_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">APD Internal</label>
-                  <select
-                    value={formData.apdLinknet || 'Not Yet'}
-                    onChange={(e) => handleChange('apdLinknet', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-                  >
-                    {APD_LINKNET_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Status Survey</label>
-                  <select
-                    value={formData.statusSurvey || 'Not Yet'}
-                    onChange={(e) => handleChange('statusSurvey', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-                  >
-                    {STATUS_SURVEY_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">BA Survey</label>
-                  <select
-                    value={formData.baSurvey || 'Not Yet'}
-                    onChange={(e) => handleChange('baSurvey', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-                  >
-                    {BA_SURVEY_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">SPH / BOQ</label>
-                  <select
-                    value={formData.sphBoq || 'Not Yet'}
-                    onChange={(e) => handleChange('sphBoq', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-                  >
-                    {SPH_BOQ_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal Start Project</label>
-                  <input
-                    type="date"
-                    value={formData.tanggalStartProject || ''}
-                    onChange={(e) => handleChange('tanggalStartProject', e.target.value)}
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Remarks (Plan)</label>
+                  <textarea
+                    rows={2}
+                    value={formData.remarksPlan || ''}
+                    onChange={(e) => handleChange('remarksPlan', e.target.value)}
+                    placeholder="Catatan perencanaan, perizinan, vendor..."
                     className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal End Project</label>
-                  <input
-                    type="date"
-                    value={formData.tanggalEndProject || ''}
-                    onChange={(e) => handleChange('tanggalEndProject', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Estimasi Pemutusan</label>
-                  <input
-                    type="date"
-                    value={formData.estimasiPemutusan || ''}
-                    onChange={(e) => handleChange('estimasiPemutusan', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pemutusan</label>
-                  <input
-                    type="date"
-                    value={formData.tanggalPemutusan || ''}
-                    onChange={(e) => handleChange('tanggalPemutusan', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                  />
-                </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Remarks (Plan)</label>
-                <textarea
-                  rows={2}
-                  value={formData.remarksPlan || ''}
-                  onChange={(e) => handleChange('remarksPlan', e.target.value)}
-                  placeholder="Catatan perencanaan, perizinan, vendor..."
-                  className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                />
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* TAB 3: STATUS PROJECT */}
           {activeFormTab === 3 && (
@@ -1280,11 +1864,18 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           )}
 
           {/* TAB 4: STATUS CONSTRUCTION */}
-          {activeFormTab === 4 && (
-            <div className="space-y-4">
-              <div className="bg-sky-50/70 border border-sky-200/80 rounded-lg p-3 text-xs text-sky-800">
-                Progress Pelaksanaan Fisik & SAP (Sheet 4: Status Construction).
-              </div>
+          {activeFormTab === 4 && (() => {
+            const isFtthOrIkr = formData.projectCategory === 'FTTH' || formData.projectCategory === 'IKR';
+            return (
+              <div className="space-y-4">
+                <div className="bg-sky-50/70 border border-sky-200/80 rounded-lg p-3 text-xs text-sky-800 flex items-center justify-between">
+                  <span>Progress Pelaksanaan Fisik & SAP (Sheet 4: Status Construction).</span>
+                  {isFtthOrIkr && (
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Kategori {formData.projectCategory} (Spesifikasi FTTH/IKR Aktif)
+                    </span>
+                  )}
+                </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
                 <div>
@@ -1416,6 +2007,367 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   />
                 </div>
               </div>
+
+              {/* FTTH & IKR Dedicated Specification Configurator */}
+              {isFtthOrIkr && (
+                <div className="bg-emerald-50/60 border border-emerald-200 rounded-lg p-3.5 space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between pb-1 border-b border-emerald-200">
+                    <h4 className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                      <Cable className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Spesifikasi Teknis FTTH / IKR (Pulling FO, FAT, FDT, Spalcing & Slak Hanger)</span>
+                    </h4>
+                    <span className="text-[11px] font-mono text-emerald-800 font-semibold bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-300">
+                      {formData.ftthIkrSpecProgress || 'Belum dikonfigurasi'}
+                    </span>
+                  </div>
+
+                  {/* Pulling Cable FO (Multi-Item with Cable Options & Meters) */}
+                  <div className="p-3 bg-white rounded-lg border border-emerald-200 space-y-2.5">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-emerald-100">
+                      <div className="flex items-center gap-2">
+                        <label className="text-[11px] font-bold text-emerald-950 flex items-center gap-1.5">
+                          <Activity className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Pulling Cable FO (meter)</span>
+                        </label>
+                        <span className="text-[10px] font-mono text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          Total: {(formData.pullingFoItems || []).reduce((acc, curr) => acc + (Number(curr.length) || 0), 0).toLocaleString('id-ID')} m
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200">
+                          <span className="font-semibold text-[10px]">Status Utama:</span>
+                          <select
+                            value={formData.statusPullingCableFo || 'Not Started'}
+                            onChange={(e) => handleChange('statusPullingCableFo', e.target.value)}
+                            className="px-1 py-0.5 text-[10px] border border-emerald-300 rounded bg-white focus:outline-none cursor-pointer font-medium"
+                          >
+                            {STATUS_PULLING_CABLE_FO_OPTIONS.map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddPullingFoItem}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition-colors cursor-pointer border border-emerald-300"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Tambah Pilihan Kabel FO</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {(formData.pullingFoItems || []).map((it, idx) => (
+                        <div key={it.id || idx} className="p-2 bg-slate-50/90 rounded border border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                          <div className="sm:col-span-6">
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                              Tipe Kabel FO #{idx + 1}
+                            </label>
+                            <select
+                              value={it.type || 'Cable FO 24Core Loose Tube, Single Mode'}
+                              onChange={(e) => handleUpdatePullingFoItem(it.id, 'type', e.target.value)}
+                              className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white font-medium cursor-pointer"
+                            >
+                              {PULLING_FO_CABLE_TYPE_OPTIONS.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="sm:col-span-3">
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                              Panjang (Meter)
+                            </label>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min="0"
+                                value={it.length !== undefined ? it.length : ''}
+                                onChange={(e) => handleUpdatePullingFoItem(it.id, 'length', e.target.value ? Number(e.target.value) : '')}
+                                placeholder="Panjang (m)"
+                                className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white font-mono"
+                              />
+                              <span className="text-[10px] text-slate-500 font-medium">m</span>
+                            </div>
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                              Status
+                            </label>
+                            <select
+                              value={it.status || 'In Progress'}
+                              onChange={(e) => handleUpdatePullingFoItem(it.id, 'status', e.target.value)}
+                              className="w-full px-1.5 py-1 text-[11px] border border-slate-300 rounded bg-white font-medium cursor-pointer"
+                            >
+                              <option value="Not Started">Not Started</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Done">Done</option>
+                            </select>
+                          </div>
+
+                          <div className="sm:col-span-1 flex justify-end pt-3 sm:pt-0">
+                            {(formData.pullingFoItems || []).length > 1 ? (
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePullingFoItem(it.id)}
+                                className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer rounded hover:bg-rose-50"
+                                title="Hapus Kabel FO"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 font-mono">1</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 4 Cards Grid for FAT, FDT, Splicing & Slack Hanger */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* 1. Instal FAT (pcs) */}
+                    <div className="bg-white p-2.5 rounded-lg border border-emerald-200 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between pb-1 border-b border-emerald-100 mb-2">
+                          <label className="text-[11px] font-bold text-slate-800">1. Instal FAT (pcs)</label>
+                          <button
+                            type="button"
+                            onClick={handleAddFatItem}
+                            className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Tambah</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-0.5">
+                          {(formData.installFatItems || []).map((it, idx) => (
+                            <div key={it.id || idx} className="p-1.5 bg-slate-50/90 rounded border border-slate-200 space-y-1">
+                              <select
+                                value={it.type || 'FAT 8 Core'}
+                                onChange={(e) => handleUpdateFatItem(it.id, 'type', e.target.value)}
+                                className="w-full px-1.5 py-1 text-xs border border-slate-300 rounded bg-white font-medium cursor-pointer"
+                              >
+                                {FAT_TYPE_OPTIONS.map((f) => (
+                                  <option key={f} value={f}>{f}</option>
+                                ))}
+                              </select>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={it.qty || ''}
+                                  onChange={(e) => handleUpdateFatItem(it.id, 'qty', e.target.value ? Number(e.target.value) : '')}
+                                  placeholder="Jumlah"
+                                  className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white font-mono"
+                                />
+                                <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">Pcs</span>
+                                {(formData.installFatItems || []).length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveFatItem(it.id)}
+                                    className="text-slate-400 hover:text-rose-600 p-0.5 transition-colors cursor-pointer"
+                                    title="Hapus"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Install FDT (pcs) */}
+                    <div className="bg-white p-2.5 rounded-lg border border-emerald-200 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between pb-1 border-b border-emerald-100 mb-2">
+                          <label className="text-[11px] font-bold text-slate-800">2. Install FDT (pcs)</label>
+                          <button
+                            type="button"
+                            onClick={handleAddFdtItem}
+                            className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Tambah</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-0.5">
+                          {(formData.installFdtItems || []).map((it, idx) => (
+                            <div key={it.id || idx} className="p-1.5 bg-slate-50/90 rounded border border-slate-200 space-y-1">
+                              <select
+                                value={it.type || 'FDT 96 Core'}
+                                onChange={(e) => handleUpdateFdtItem(it.id, 'type', e.target.value)}
+                                className="w-full px-1.5 py-1 text-xs border border-slate-300 rounded bg-white font-medium cursor-pointer"
+                              >
+                                {FDT_TYPE_OPTIONS.map((f) => (
+                                  <option key={f} value={f}>{f}</option>
+                                ))}
+                              </select>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={it.qty || ''}
+                                  onChange={(e) => handleUpdateFdtItem(it.id, 'qty', e.target.value ? Number(e.target.value) : '')}
+                                  placeholder="Jumlah"
+                                  className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white font-mono"
+                                />
+                                <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">Pcs</span>
+                                {(formData.installFdtItems || []).length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveFdtItem(it.id)}
+                                    className="text-slate-400 hover:text-rose-600 p-0.5 transition-colors cursor-pointer"
+                                    title="Hapus"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Spalcing Cable (Splicing Cable) */}
+                    <div className="bg-white p-2.5 rounded-lg border border-emerald-200 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between pb-1 border-b border-emerald-100 mb-2">
+                          <label className="text-[11px] font-bold text-slate-800">3. Spalcing Cable</label>
+                          <button
+                            type="button"
+                            onClick={handleAddSplicingItem}
+                            className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Tambah</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-0.5">
+                          {(formData.splicingCableItems || []).map((it, idx) => (
+                            <div key={it.id || idx} className="p-1.5 bg-slate-50/90 rounded border border-slate-200 space-y-1">
+                              <select
+                                value={it.type || 'Joint Closure 24 Core'}
+                                onChange={(e) => handleUpdateSplicingItem(it.id, 'type', e.target.value)}
+                                className="w-full px-1.5 py-1 text-xs border border-slate-300 rounded bg-white font-medium cursor-pointer"
+                              >
+                                {SPLICING_TYPE_OPTIONS.map((s) => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
+                              </select>
+                              <div className="grid grid-cols-2 gap-1">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={it.qty || ''}
+                                  onChange={(e) => handleUpdateSplicingItem(it.id, 'qty', e.target.value ? Number(e.target.value) : '')}
+                                  placeholder="Core"
+                                  className="w-full px-1.5 py-1 text-xs border border-slate-300 rounded bg-white font-mono"
+                                />
+                                <select
+                                  value={it.status || 'In Progress'}
+                                  onChange={(e) => handleUpdateSplicingItem(it.id, 'status', e.target.value)}
+                                  className="w-full px-1 py-1 text-[11px] border border-slate-300 rounded bg-white font-medium cursor-pointer"
+                                >
+                                  {SPLICING_STATUS_OPTIONS.map((st) => (
+                                    <option key={st} value={st}>{st}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              {(formData.splicingCableItems || []).length > 1 && (
+                                <div className="text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSplicingItem(it.id)}
+                                    className="text-slate-400 hover:text-rose-600 p-0.5 transition-colors cursor-pointer text-[10px]"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. Instal Slak hanger (pcs) */}
+                    <div className="bg-white p-2.5 rounded-lg border border-emerald-200 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between pb-1 border-b border-emerald-100 mb-2">
+                          <label className="text-[11px] font-bold text-slate-800">4. Instal Slak hanger (pcs)</label>
+                          <button
+                            type="button"
+                            onClick={handleAddSlackHangerItem}
+                            className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Tambah</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-0.5">
+                          {(formData.installSlackHangerItems || []).map((it, idx) => (
+                            <div key={it.id || idx} className="p-1.5 bg-slate-50/90 rounded border border-slate-200 space-y-1">
+                              <select
+                                value={it.type || 'Standard'}
+                                onChange={(e) => handleUpdateSlackHangerItem(it.id, 'type', e.target.value)}
+                                className="w-full px-1.5 py-1 text-xs border border-slate-300 rounded bg-white font-medium cursor-pointer"
+                              >
+                                {SLACK_HANGER_OPTIONS.map((s) => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
+                              </select>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={it.qty || ''}
+                                  onChange={(e) => handleUpdateSlackHangerItem(it.id, 'qty', e.target.value ? Number(e.target.value) : '')}
+                                  placeholder="Jumlah"
+                                  className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white font-mono"
+                                />
+                                <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">Pcs</span>
+                                {(formData.installSlackHangerItems || []).length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSlackHangerItem(it.id)}
+                                    className="text-slate-400 hover:text-rose-600 p-0.5 transition-colors cursor-pointer"
+                                    title="Hapus"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-emerald-900 mb-0.5">
+                      Label Ringkasan Spesifikasi FTTH / IKR (Otomatis)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.ftthIkrSpecProgress || ''}
+                      onChange={(e) => handleChange('ftthIkrSpecProgress', e.target.value)}
+                      placeholder="e.g. Pulling FO: 1500m | FAT: 8 Core (4 Pcs) | FDT: 96 Core (1 Pcs) | Splicing: 24 Core (Done) | Slak Hanger: (8 Pcs)"
+                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded focus:outline-none font-mono text-emerald-950 font-medium"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Install HH & Pole Progress Configurator with Multi-Item Selection */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-3">
@@ -1804,7 +2756,8 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 />
               </div>
             </div>
-          )}
+          );
+        })()}
 
           {/* TAB 5: PROJECT TRACKING PIPELINE */}
           {activeFormTab === 5 && (

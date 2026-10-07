@@ -40,12 +40,17 @@ import {
 import { ProjectData, ColumnDefinition, TabKey } from '../types/project';
 import { TabVisualIcon } from './TabVisualIcon';
 import { PriorityBadge, getPriorityMeta } from './PriorityBadge';
+import { compareProjectsByPmoId, getPmoOption, PMO_OPTIONS } from '../utils/pmoIdHelpers';
 import {
   TAHUN_OPTIONS,
   PROJECT_STATUS_OPTIONS,
+  PROJECT_CATEGORY_OPTIONS,
+  getProjectStatusOptions,
   STATUS_PENGAJUAN_PO_OPTIONS,
   APD_RELOKASI_OPTIONS,
   KMZ_RELOKASI_OPTIONS,
+  getApdOptions,
+  getKmzOptions,
   APD_LINKNET_OPTIONS,
   STATUS_SURVEY_OPTIONS,
   BA_SURVEY_OPTIONS,
@@ -139,24 +144,36 @@ export const TableView: React.FC<TableViewProps> = ({
     }
   };
 
-  // Process data sorting: guaranteed numerical order for No.
+  // Process data sorting: automatic PMO-ID option sorting and numerical ordering
   const sortedData = React.useMemo(() => {
-    const key = sortKey || 'no';
+    const key = sortKey || 'pmoId';
     return [...data].sort((a, b) => {
+      // Automatic PMO-ID option sorting: PMO-GOV -> PMO-FTTH -> PMO-IKR
+      if (key === 'pmoId') {
+        const pmoComp = compareProjectsByPmoId(a, b);
+        return sortDirection === 'asc' ? pmoComp : -pmoComp;
+      }
+
       const valA = a[key] ?? '';
       const valB = b[key] ?? '';
 
       if (key === 'no' || (typeof valA === 'number' && typeof valB === 'number')) {
         const numA = Number(valA) || 0;
         const numB = Number(valB) || 0;
-        return sortDirection === 'asc' ? numA - numB : numB - numA;
+        if (numA !== numB) {
+          return sortDirection === 'asc' ? numA - numB : numB - numA;
+        }
+        // Fallback secondary sort by PMO ID option
+        return compareProjectsByPmoId(a, b);
       }
       
       const strA = String(valA).toLowerCase();
       const strB = String(valB).toLowerCase();
-      return sortDirection === 'asc'
-        ? strA.localeCompare(strB, 'id-ID', { numeric: true })
-        : strB.localeCompare(strA, 'id-ID', { numeric: true });
+      const strComp = strA.localeCompare(strB, 'id-ID', { numeric: true });
+      if (strComp !== 0) {
+        return sortDirection === 'asc' ? strComp : -strComp;
+      }
+      return compareProjectsByPmoId(a, b);
     });
   }, [data, sortKey, sortDirection]);
 
@@ -560,7 +577,7 @@ export const TableView: React.FC<TableViewProps> = ({
                               onBlur={() => commitCellEdit(row.id, col.key)}
                               className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
                             >
-                              {PROJECT_STATUS_OPTIONS.map((st) => (
+                              {getProjectStatusOptions(row.projectCategory).map((st) => (
                                 <option key={st} value={st}>{st}</option>
                               ))}
                             </select>
@@ -624,7 +641,7 @@ export const TableView: React.FC<TableViewProps> = ({
                               className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
                             >
                               <option value="">- Kosong -</option>
-                              {APD_RELOKASI_OPTIONS.map((opt) => (
+                              {getApdOptions(row.projectCategory).map((opt) => (
                                 <option key={opt} value={opt}>{opt}</option>
                               ))}
                             </select>
@@ -643,7 +660,7 @@ export const TableView: React.FC<TableViewProps> = ({
                               className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
                             >
                               <option value="">- Kosong -</option>
-                              {KMZ_RELOKASI_OPTIONS.map((opt) => (
+                              {getKmzOptions(row.projectCategory).map((opt) => (
                                 <option key={opt} value={opt}>{opt}</option>
                               ))}
                             </select>
@@ -997,7 +1014,7 @@ export const TableView: React.FC<TableViewProps> = ({
                               onBlur={() => commitCellEdit(row.id, col.key)}
                               className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
                             >
-                              {['GOV IPPJU', 'GOV APJATEL', 'GOV SJUT'].map((cat) => (
+                              {PROJECT_CATEGORY_OPTIONS.map((cat) => (
                                 <option key={cat} value={cat}>
                                   {cat}
                                 </option>
@@ -1138,11 +1155,30 @@ export const TableView: React.FC<TableViewProps> = ({
                               <span className="text-slate-300">-</span>
                             )}
                           </span>
-                        ) : col.key === 'priority' && valueStr ? (
+                        ) : (col.key as string) === 'priority' && valueStr ? (
                           <PriorityBadge priority={valueStr} showLevel={true} size="xs" />
+                        ) : (col.key as string) === 'pmoId' && valueStr ? (
+                          <div className="flex items-center gap-1.5 whitespace-nowrap font-mono">
+                            <span className={`inline-block px-1.5 py-0.2 text-[9px] font-bold rounded uppercase tracking-wider border ${
+                              valueStr.toUpperCase().includes('FTTH')
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                : valueStr.toUpperCase().includes('IKR')
+                                ? 'bg-purple-50 text-purple-700 border-purple-300'
+                                : 'bg-sky-50 text-sky-700 border-sky-300'
+                            }`}>
+                              {valueStr.toUpperCase().includes('FTTH') ? 'FTTH' : valueStr.toUpperCase().includes('IKR') ? 'IKR' : 'GOV'}
+                            </span>
+                            <span className="font-bold text-slate-900">
+                              {valueStr}
+                            </span>
+                          </div>
                         ) : col.badgeType === 'category' && valueStr ? (
                           <span className={`inline-block px-2 py-0.5 text-[11px] rounded font-semibold ${
-                            valueStr === 'GOV IPPJU'
+                            valueStr === 'FTTH' || valueStr.includes('FTTH')
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : valueStr === 'IKR' || valueStr.includes('IKR')
+                              ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                              : valueStr === 'Project Goverment' || valueStr === 'GOV IPPJU'
                               ? 'bg-sky-50 text-sky-700 border border-sky-200'
                               : valueStr === 'GOV APJATEL'
                               ? 'bg-amber-50 text-amber-700 border border-amber-200'

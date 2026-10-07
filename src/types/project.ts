@@ -21,6 +21,38 @@ export interface GalvanisItem {
   length: number | string; // Meter
 }
 
+export interface PullingFoItem {
+  id: string;
+  type: string; // Cable FO 2 core Flat Type (Underground), Cable FO 2 core Flat Type (Aerial), Cable Fiber Optic 6 Core, Cable FO 12Core Loose Tube, Single Mode, Cable FO 24Core Loose Tube, Single Mode, Cable FO 48Core Loose Tube, Single Mode
+  length: number | string; // Meter
+  status?: string; // Done, In Progress, Not Started
+}
+
+export interface FatItem {
+  id: string;
+  type: string; // FAT 8 Core, FAT 16 Core, FAT 24 Core, FAT 32 Core, FAT 48 Core
+  qty: number | string; // pcs
+}
+
+export interface FdtItem {
+  id: string;
+  type: string; // FDT 48 Core, FDT 96 Core, FDT 144 Core, FDT 288 Core
+  qty: number | string; // pcs
+}
+
+export interface SlackHangerItem {
+  id: string;
+  type: string; // Standard, Bulat, Silang, Double Hanger
+  qty: number | string; // pcs
+}
+
+export interface SplicingItem {
+  id: string;
+  type: string; // Joint Closure 12C, Joint Closure 24C, Joint Closure 48C, Joint Closure 96C, Splicing Core
+  qty: number | string; // Core / Joint count
+  status?: string; // Done, In Progress, Not Started
+}
+
 export interface ProjectData {
   id: string; // Internal unique identifier
   no: number;
@@ -113,6 +145,25 @@ export interface ProjectData {
   installGalvanisLength?: number | string; // Meter
   installGalvanisItems?: GalvanisItem[]; // Multiple Galvanis items
   installPoleProgress: string; // "Install Pole Progress"
+  
+  // FTTH & IKR Specifications (Sheet 4: Status Construction)
+  pullingFoMeter?: number | string; // Pulling Cable FO (meter)
+  pullingFoType?: string; // Pulling Cable FO Type
+  pullingFoItems?: PullingFoItem[]; // Multiple Pulling Cable FO items
+  installFatQty?: number | string; // Instal FAT (pcs)
+  installFatType?: string; // FAT Type (e.g. FAT 8 Core, FAT 16 Core)
+  installFatItems?: FatItem[]; // Multiple FAT items
+  installFdtQty?: number | string; // Install FDT (pcs)
+  installFdtType?: string; // FDT Type (e.g. FDT 48 Core, FDT 96 Core)
+  installFdtItems?: FdtItem[]; // Multiple FDT items
+  splicingCableQty?: number | string; // Splicing Cable (core / joints)
+  splicingCableStatus?: string; // Status Splicing Cable (Done, In Progress, Not Started)
+  splicingCableItems?: SplicingItem[]; // Multiple Splicing items
+  installSlackHangerQty?: number | string; // Instal Slak hanger (pcs)
+  installSlackHangerType?: string; // Slak Hanger type (e.g. Bulat, Silang, Standard)
+  installSlackHangerItems?: SlackHangerItem[]; // Multiple Slack Hanger items
+  ftthIkrSpecProgress?: string; // "Ringkasan Spesifikasi FTTH / IKR"
+  
   galianPanjangSelesai?: number | string; // Meter galian selesai
   galianPanjangTotal?: number | string; // Total meter target galian
   pullingPanjangSelesai?: number | string; // Meter pulling selesai

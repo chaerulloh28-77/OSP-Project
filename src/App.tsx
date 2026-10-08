@@ -26,7 +26,6 @@ import {
   calculateGalianPercentage,
   calculatePullingPercentage,
   calculatePullingFoPercentage,
-  calculatePullingCoaxPercentage,
 } from './data/dropdownOptions';
 import { 
   PROJECT_LIST_COLUMNS, 
@@ -61,7 +60,7 @@ export default function App() {
 
   // Master projects dataset (pure local storage)
   const [projects, setProjects] = useState<ProjectData[]>([]);
-  const [activeTab, setActiveTab] = useState<TabKey>('project-list');
+  const [activeTab, setActiveTab] = useState<TabKey>('pie-chart-analytics');
   const [pieChartInitialTabFocus, setPieChartInitialTabFocus] = useState<TabKey | undefined>(undefined);
   const [lastSavedTime, setLastSavedTime] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -172,13 +171,6 @@ export default function App() {
         if (activeKpiFilter.key === 'Has Length' && (!item.panjangRelokasi || Number(item.panjangRelokasi) <= 0)) {
           return false;
         }
-        if (activeKpiFilter.key === 'Relokasi COAX' || activeKpiFilter.key === 'Has Coax Length') {
-          const hasCoax = 
-            Number(item.panjangRelokasiCoax) > 0 || 
-            Number(item.pullingCoaxPanjangTotal) > 0 || 
-            (Boolean(item.statusPullingCableCoax) && item.statusPullingCableCoax !== 'No COAX' && item.statusPullingCableCoax !== 'N/A');
-          if (!hasCoax) return false;
-        }
         if (activeKpiFilter.key === 'Project Not Started' || activeKpiFilter.value === 'Project Not Started') {
           const isNotStarted = item.projectStatus === 'Project Not Started' || !item.projectStatus || item.projectStatus === 'Not Yet';
           if (!isNotStarted) return false;
@@ -212,8 +204,6 @@ export default function App() {
             item.statusConstruction === 'Pulling Cable' ||
             item.statusPullingCableFo === 'In Progress' ||
             item.statusPullingCableFo === 'Done' ||
-            item.statusPullingCableCoax === 'In Progress' ||
-            item.statusPullingCableCoax === 'Done' ||
             (Boolean(item.pullingCableProgress) && item.pullingCableProgress !== '0%' && item.pullingCableProgress !== 'N/A') ||
             (Boolean(item.pullingCableFoProgress) && item.pullingCableFoProgress !== '0%' && item.pullingCableFoProgress !== 'N/A') ||
             Number(item.pullingFoPanjangSelesai || 0) > 0 ||
@@ -312,10 +302,6 @@ export default function App() {
     const pullingCableConstructionCount = filteredProjects.filter((p) => p.statusConstruction === 'Pulling Cable').length;
     const inProgressConstructionCount = filteredProjects.filter((p) => p.statusConstruction === 'In Progress').length;
     const pullingFoDoneCount = filteredProjects.filter((p) => p.statusPullingCableFo === 'Done').length;
-    const coaxNoCoaxCount = filteredProjects.filter((p) => p.statusPullingCableCoax === 'No COAX').length;
-    const coaxDoneCount = filteredProjects.filter((p) => p.statusPullingCableCoax === 'Done').length;
-    const coaxInProgressCount = filteredProjects.filter((p) => p.statusPullingCableCoax === 'In Progress').length;
-    const coaxNotYetCount = filteredProjects.filter((p) => !p.statusPullingCableCoax || p.statusPullingCableCoax === 'Not Yet').length;
     const closingSapDoneCount = filteredProjects.filter((p) => p.closingSap === 'Done' || p.closingSap === 'Yes').length;
 
     return {
@@ -335,10 +321,6 @@ export default function App() {
       pullingCableConstructionCount,
       inProgressConstructionCount,
       pullingFoDoneCount,
-      coaxNoCoaxCount,
-      coaxDoneCount,
-      coaxInProgressCount,
-      coaxNotYetCount,
       closingSapDoneCount,
     };
   }, [filteredProjects]);
@@ -426,22 +408,17 @@ export default function App() {
           );
         }
 
-        // Auto-recalculate Pulling Cable Progress if FO/COAX or status construction is updated
+        // Auto-recalculate Pulling Cable Progress if FO or status construction is updated
         if (
           field === 'statusPullingCableFo' ||
           field === 'pullingFoPanjangSelesai' ||
           field === 'pullingFoPanjangTotal' ||
           field === 'pullingCableFoProgress' ||
-          field === 'statusPullingCableCoax' ||
-          field === 'pullingCoaxPanjangSelesai' ||
-          field === 'pullingCoaxPanjangTotal' ||
-          field === 'pullingCableCoaxProgress' ||
           field === 'statusConstruction' ||
           field === 'pullingPanjangSelesai' ||
           field === 'pullingPanjangTotal' ||
           field === 'pullingCableProgress' ||
           field === 'panjangRelokasi' ||
-          field === 'panjangRelokasiCoax' ||
           field === 'galianPanjangTotal' ||
           field === 'galianPanjangSelesai' ||
           field === 'galianSipilProgress'
@@ -458,24 +435,6 @@ export default function App() {
             item.panjangRelokasi = Number(value) || 0;
             if (!item.galianPanjangTotal || Number(item.galianPanjangTotal) === 0) {
               item.galianPanjangTotal = Number(value) || 0;
-            }
-          }
-
-          // 2. Sync COAX Relokasi with Target Meter COAX
-          if (field === 'panjangRelokasiCoax') {
-            const num = Number(value) || 0;
-            item.panjangRelokasiCoax = num;
-            item.pullingCoaxPanjangTotal = num;
-            if (num > 0 && (!item.statusPullingCableCoax || item.statusPullingCableCoax === 'N/A' || item.statusPullingCableCoax === 'No COAX')) {
-              item.statusPullingCableCoax = 'Not Yet';
-            }
-          }
-          if (field === 'pullingCoaxPanjangTotal') {
-            const num = Number(value) || 0;
-            item.pullingCoaxPanjangTotal = num;
-            item.panjangRelokasiCoax = num;
-            if (num > 0 && (!item.statusPullingCableCoax || item.statusPullingCableCoax === 'N/A' || item.statusPullingCableCoax === 'No COAX')) {
-              item.statusPullingCableCoax = 'Not Yet';
             }
           }
 
@@ -525,63 +484,9 @@ export default function App() {
             );
           }
 
-          // 5. COAX Pulling Recalculation
-          const coaxTotal = Number(item.pullingCoaxPanjangTotal || item.panjangRelokasiCoax || 0);
-          let coaxDone = Number(item.pullingCoaxPanjangSelesai || 0);
-
-          if (field === 'statusPullingCableCoax') {
-            if (value === 'Done') {
-              if (coaxDone === 0 && coaxTotal > 0) {
-                coaxDone = coaxTotal;
-                item.pullingCoaxPanjangSelesai = coaxTotal;
-              }
-              item.pullingCableCoaxProgress = '100%';
-            } else if (value === 'No COAX' || value === 'N/A') {
-              item.pullingCableCoaxProgress = String(value);
-            }
-          } else if (field === 'pullingCoaxPanjangSelesai') {
-            const doneVal = Number(value) || 0;
-            coaxDone = doneVal;
-            if (coaxTotal > 0) {
-              const pct = Math.min(100, Math.round((doneVal / coaxTotal) * 100));
-              item.pullingCableCoaxProgress = `${pct}%`;
-              if (pct === 100) {
-                item.statusPullingCableCoax = 'Done';
-              } else if (pct > 0 && item.statusPullingCableCoax !== 'Done') {
-                item.statusPullingCableCoax = 'In Progress';
-              }
-            }
-          }
-
-          if (field !== 'pullingCableCoaxProgress' && item.statusPullingCableCoax !== 'No COAX' && item.statusPullingCableCoax !== 'N/A') {
-            item.pullingCableCoaxProgress = calculatePullingCoaxPercentage(
-              item.statusPullingCableCoax || 'Not Yet',
-              coaxDone,
-              coaxTotal,
-              item.statusConstruction
-            );
-          }
-
-          // 6. Overall Pulling Recalculation
+          // 5. Overall Pulling Recalculation (FO based)
           if (field !== 'pullingCableProgress') {
-            const isCoaxNA = !item.statusPullingCableCoax || item.statusPullingCableCoax === 'N/A' || item.statusPullingCableCoax === 'No COAX';
-            if (isCoaxNA) {
-              item.pullingCableProgress = item.pullingCableFoProgress || '0%';
-            } else {
-              const combinedDone = (foDone > 0 || coaxDone > 0) ? (foDone + coaxDone) : Number(item.pullingPanjangSelesai || 0);
-              const combinedTotal = (foTotal > 0 || coaxTotal > 0) ? (foTotal + coaxTotal) : Number(item.pullingPanjangTotal || item.panjangRelokasi || 0);
-
-              if (combinedTotal > 0 && combinedDone > 0) {
-                const pct = Math.min(100, Math.round((combinedDone / combinedTotal) * 100));
-                item.pullingCableProgress = `${pct}%`;
-              } else {
-                item.pullingCableProgress = calculatePullingPercentage(
-                  item.statusPullingCableFo,
-                  item.statusPullingCableCoax,
-                  item.statusConstruction
-                );
-              }
-            }
+            item.pullingCableProgress = item.pullingCableFoProgress || '0%';
           }
 
           if (item.pullingCableProgress === '100%' && item.statusConstruction === 'Pulling Cable') {
@@ -953,7 +858,7 @@ export default function App() {
 
             {/* Dedicated Tab Information Bar for Status Construction (Sheet 4) */}
             {activeTab === 'status-construction' && (
-              <div className="pt-3 border-t border-slate-150 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs animate-in fade-in duration-150">
+              <div className="pt-3 border-t border-slate-150 grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs animate-in fade-in duration-150">
                 <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Status Konstruksi Fisik</span>
                   <span className="text-xs font-semibold text-emerald-700">
@@ -964,12 +869,6 @@ export default function App() {
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Pulling Cable FO</span>
                   <span className="text-xs font-semibold text-sky-700">
                     {tabStats.pullingFoDoneCount} Selesai (Done)
-                  </span>
-                </div>
-                <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
-                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Status Pulling COAX</span>
-                  <span className="text-xs font-semibold text-purple-700">
-                    {tabStats.coaxNoCoaxCount} No COAX • {tabStats.coaxDoneCount} Done
                   </span>
                 </div>
                 <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
@@ -1033,6 +932,10 @@ export default function App() {
                 onJumpToTab={handleJumpToTab}
                 initialTabFocus={pieChartInitialTabFocus}
                 showToast={showToast}
+                onNewProject={() => {
+                  setEditingProject(null);
+                  setIsFormModalOpen(true);
+                }}
               />
             ) : activeTab === 'upload-document' ? (
               <UploadDocumentView
@@ -1104,7 +1007,7 @@ export default function App() {
             {/* Footer Copyright */}
             <footer className="mt-8 mb-4 pt-4 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-700">OSP Project Controling</span>
+                <span className="font-extrabold text-slate-800 tracking-tight font-sans">Monitoring GOV FMI_DSB</span>
                 <span>•</span>
                 <span className="font-medium text-sky-700">© PAUL</span>
               </div>

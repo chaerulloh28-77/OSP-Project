@@ -1,5 +1,5 @@
 /**
- * Authentication service for OSP Project Controling
+ * Authentication service for Monitoring GOV FMI_DSB
  * Credentials:
  *   Email: Alamat email pengguna
  *   Password: gov123

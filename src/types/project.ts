@@ -58,15 +58,16 @@ export interface ProjectData {
   no: number;
   
   // Tab 1: Project List Core Info
-  pmoId: string; // "PMO - ID", e.g. PMO-GOV-001
-  projectCategory: string; // "Project Category", e.g. GOV IPPJU, GOV Apjatel
-  projectId: string; // "Project ID", e.g. GOV0000747
-  projectDescription: string; // "Project Description", e.g. [Z1-GOV] IPPJU Ampera Raya
-  zona: string; // "Zona", e.g. Jabo 1
-  areaKota: string; // "Area/Kota", e.g. Central, West, East, South, North
+  pmoId: string; // "DSB - ID", e.g. GOV-ID-001 or DSB-IKR-001
+  projectCategory: string; // "Project Category", e.g. GOV IPPJU, GOV APJATEL, GOV SJUT, DSB - IKR
+  projectId: string; // "Project ID", e.g. GOV - FMI - DSB0000001 or DSB - IKR0000001
+  projectDescription: string; // "Project Description"
+  zona?: string; // "Zona" (Opsional / Legacy)
+  areaKota: string; // "Area/Kota", e.g. Jakarta Pusat, Jakarta Selatan, dll
   projectStatus: string; // "Project Status", e.g. Masih Review Dinas, In Progress, Cancelled, Done
   quarter: string; // "Quarter", e.g. Q1-26, Q2-26, Q3-26, Q4-26, -
-  picSectionHead: string; // "PIC / Section Head", e.g. Mega
+  picSectionHead: string; // "PIC Govrel", e.g. Asmari, Dwi, Fredy, etc.
+  waspangDsb?: string; // "Waspang DSB", e.g. Abdul Ra'uf, Alfy, Amir, etc.
   priority?: string; // "Status Prioritas", e.g. Critical, High, Medium, Low, Normal
 
   // Tab 2: Construction & Plan (from Image 2)
@@ -75,7 +76,6 @@ export interface ProjectData {
   bulan: string; // "Bulan", e.g. November, Januari
   tahun: string; // "Tahun", e.g. 2023, 2024
   panjangRelokasi: number | string; // "Panjang Relokasi FO", e.g. 10000, 8500, 2600
-  panjangRelokasiCoax?: number | string; // "Panjang Relokasi COAX", e.g. 3500, 1200
   apdRelokasi: string; // "APD Relokasi", e.g. Belum, Sudah
   kmzRelokasi: string; // "KMZ Relokasi", e.g. Belum, Sudah
   statusAudit: string; // "Status Audit", e.g. Belum, Belum di Audit, Sudah Audit
@@ -121,12 +121,7 @@ export interface ProjectData {
   pullingFoPanjangSelesai?: number | string; // Meter selesai FO
   pullingFoPanjangTotal?: number | string; // Target meter FO
   pullingCableFoProgress?: string; // "Pulling Cable FO Progress (Otomatis)", e.g. 100%, 50%, 0%
-  statusPullingCableCoax: string; // "Status Pulling Cable Coax", e.g. Done, In Progress, N/A
-  pullingCoaxPanjangSelesai?: number | string; // Meter selesai COAX
-  pullingCoaxPanjangTotal?: number | string; // Target meter COAX
-  pullingCableCoaxProgress?: string; // "Pulling Cable COAX Progress (Otomatis)", e.g. 100%, 50%, 0%
   statusCo: string; // "Status CO", e.g. In Progress, Done, N/A
-  statusCoCoax: string; // "Status CO Coax"
   laporanOpname: string; // "Laporan Opname", e.g. Not Yet, Submitted, Approved
   closingSap: string; // "Closing SAP", e.g. Yes, No
   kebutuhanMaterialPoSap: string; // "Kebutuhan Material PO SAP"
@@ -168,13 +163,13 @@ export interface ProjectData {
   galianPanjangTotal?: number | string; // Total meter target galian
   pullingPanjangSelesai?: number | string; // Meter pulling selesai
   pullingPanjangTotal?: number | string; // Total meter target pulling
-  pullingCableProgress: string; // "Pulling Cable Progress"
-  projectSapId: string; // "Project SAP ID", e.g. GOV0000747
-  remarksConstruction: string; // "Remarks" in Tab 4
+  pullingCableProgress?: string; // "Pulling Cable Progress"
+  projectSapId?: string; // "Project SAP ID", e.g. GOV0000747
+  remarksConstruction?: string; // "Remarks" in Tab 4
   pipelineStage?: string; // Pipeline Tracking Stage
 
   // System metadata
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export type TabKey = 

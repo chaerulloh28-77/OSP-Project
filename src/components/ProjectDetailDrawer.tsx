@@ -158,16 +158,20 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                   <span className="font-medium text-slate-800">{project.projectCategory || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Zona / Area</span>
-                  <span className="font-medium text-slate-800">{project.zona || '-'} / {project.areaKota || '-'}</span>
+                  <span className="text-slate-400 block text-[11px]">Area / Kota</span>
+                  <span className="font-medium text-slate-800">{project.areaKota || '-'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">Quarter</span>
                   <span className="font-medium text-slate-800">{project.quarter || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">PIC / Section Head</span>
+                  <span className="text-slate-400 block text-[11px]">PIC Govrel</span>
                   <span className="font-medium text-slate-800">{project.picSectionHead || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Waspang DSB</span>
+                  <span className="font-medium text-slate-800">{project.waspangDsb || '-'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">Prioritas Project</span>
@@ -176,8 +180,12 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                   </div>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Project SAP ID</span>
-                  <span className="font-mono text-slate-800">{project.projectSapId || project.projectId || '-'}</span>
+                  <span className="text-slate-400 block text-[11px]">
+                    {(project.projectCategory?.startsWith('GOV') || project.pmoId?.startsWith('GOV')) ? 'GOV - ID' : (project.projectCategory === 'DSB - IKR' || project.projectCategory === 'IKR') ? 'DSB - IKR' : 'Project SAP ID'}
+                  </span>
+                  <span className="font-mono text-slate-800">
+                    {project.projectSapId || ((project.projectCategory?.startsWith('GOV') || project.pmoId?.startsWith('GOV')) ? 'GOV - ID' : (project.projectCategory === 'DSB - IKR' || project.projectCategory === 'IKR') ? 'DSB - IKR' : project.projectId) || '-'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -207,15 +215,9 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                   <span className="font-mono text-slate-800">{project.dateSuratPerintahRelokasi || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Panjang Relokasi FO</span>
+                  <span className="text-slate-400 block text-[11px]">Panjang Cable FO</span>
                   <span className="font-mono font-semibold text-slate-900">
                     {project.panjangRelokasi ? `${Number(project.panjangRelokasi).toLocaleString('id-ID')} m` : '-'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Panjang Relokasi COAX</span>
-                  <span className="font-mono font-semibold text-cyan-700">
-                    {project.panjangRelokasiCoax ? `${Number(project.panjangRelokasiCoax).toLocaleString('id-ID')} m` : '-'}
                   </span>
                 </div>
                 <div>
@@ -316,17 +318,8 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                   </div>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Pulling COAX (Otomatis)</span>
-                  <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                    <span>{project.statusPullingCableCoax || 'Not Yet'}</span>
-                    <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-50 px-1 rounded border border-purple-200">
-                      {project.pullingCableCoaxProgress || (project.statusPullingCableCoax === 'Done' ? '100%' : project.statusPullingCableCoax === 'In Progress' ? '50%' : '0%')}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Status CO / CO Coax</span>
-                  <span className="font-medium text-slate-800">{project.statusCo || '-'} / {project.statusCoCoax || '-'}</span>
+                  <span className="text-slate-400 block text-[11px]">Status CO</span>
+                  <span className="font-medium text-slate-800">{project.statusCo || '-'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[11px]">Galian Sipil Progress</span>

@@ -121,7 +121,7 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
           <div
             key={proj.id}
             onClick={() => onViewDetail(proj)}
-            className="group bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-sky-400 transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer relative"
+            className="group interactive-card bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xl hover:shadow-sky-500/10 hover:border-sky-400 hover:-translate-y-1 active:scale-[0.99] transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer relative"
           >
             {/* Card Header */}
             <div className="p-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/70 to-white">

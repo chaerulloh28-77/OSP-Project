@@ -30,11 +30,23 @@ import {
   SplicingItem
 } from '../types/project';
 import { getPriorityMeta } from './PriorityBadge';
-import { PMO_OPTIONS, getPmoOption, PmoOption } from '../utils/pmoIdHelpers';
+import { 
+  PMO_OPTIONS, 
+  getPmoOption, 
+  PmoOption, 
+  generateNextProjectId, 
+  generateNextPmoId, 
+  extractPmoNumber,
+  ensureProjectDescriptionPrefix
+} from '../utils/pmoIdHelpers';
 import {
   TAHUN_OPTIONS,
   PRIORITY_OPTIONS,
   PROJECT_CATEGORY_OPTIONS,
+  AREA_KOTA_OPTIONS,
+  PIC_GOVREL_OPTIONS,
+  WASPANG_DSB_OPTIONS,
+  VENDOR_OPTIONS,
   getProjectStatusOptions,
   FTTH_IKR_PROJECT_STATUS_OPTIONS,
   APD_RELOKASI_OPTIONS,
@@ -54,12 +66,13 @@ import {
   STATUS_AUDIT_OPTIONS,
   STATUS_MATERIAL_OPTIONS,
   STATUS_PULLING_CABLE_FO_OPTIONS,
-  STATUS_PULLING_CABLE_COAX_OPTIONS,
   STATUS_CO_OPTIONS,
   LAPORAN_OPNAME_OPTIONS,
   CLOSING_SAP_OPTIONS,
   HH_TYPE_OPTIONS,
   HH_SIZE_OPTIONS,
+  getHhTypeOptions,
+  getHhSizeOptions,
   POLE_OPTIONS,
   GALVANIS_OPTIONS,
   PULLING_FO_CABLE_TYPE_OPTIONS,
@@ -71,7 +84,6 @@ import {
   calculateGalianPercentage,
   calculatePullingPercentage,
   calculatePullingFoPercentage,
-  calculatePullingCoaxPercentage,
 } from '../data/dropdownOptions';
 
 export const formatHhSummary = (items: HhItem[] = []): string => {
@@ -169,13 +181,13 @@ interface ProjectFormModalProps {
  * Scans all PMO-IDs (e.g. PMO-GOV-001, PMO-GOV-862) to find the highest number,
  * then returns the next number in sequence (e.g. 863 -> PMO-GOV-863).
  */
-export function getNextPmoIdInfo(projects: ProjectData[] = []) {
+export function getNextPmoIdInfo(projects: ProjectData[] = [], category = 'GOV IPPJU') {
   let maxPmoNumber = 0;
   for (const p of projects) {
     if (p.pmoId) {
-      const match = p.pmoId.match(/PMO-GOV-(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
+      const match = p.pmoId.match(/\d+/g);
+      if (match && match.length > 0) {
+        const num = parseInt(match[match.length - 1], 10);
         if (!isNaN(num) && num > maxPmoNumber) {
           maxPmoNumber = num;
         }
@@ -183,13 +195,16 @@ export function getNextPmoIdInfo(projects: ProjectData[] = []) {
     }
   }
 
-  const nextNumber = maxPmoNumber > 0 ? maxPmoNumber + 1 : 1;
+  const nextNumber = maxPmoNumber > 0 ? maxPmoNumber + 1 : (projects.length + 1);
   const pmoNumberStr = String(nextNumber).padStart(3, '0');
-  const pmoId = `PMO-GOV-${pmoNumberStr}`;
+  const isIkr = category === 'DSB - IKR';
+  const pmoId = isIkr ? `DSB-IKR-${pmoNumberStr}` : `GOV-ID-${pmoNumberStr}`;
+  const projectId = generateNextProjectId(category, nextNumber);
   return {
     nextNumber,
     pmoNumberStr,
     pmoId,
+    projectId,
     rawPmoId: pmoId
   };
 }
@@ -286,7 +301,6 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
         setFormData({
           ...initialData,
-          panjangRelokasiCoax: initialData.panjangRelokasiCoax ?? 0,
           installHhItems: hhItems,
           installPoleItems: poleItems,
           installGalvanisItems: galvItems,
@@ -301,10 +315,10 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           ftthIkrSpecProgress: initialData.ftthIkrSpecProgress || formatFtthIkrSpecSummary(pullingFoItems, fatItems, fdtItems, splicingItems, slackItems),
         });
       } else {
-        // Generate new project default template with automatic PMO-ID sequence
+        // Generate new project default template with automatic DSB-ID sequence
         const nextNo = (existingProjects?.length || totalProjects) + 1;
         const initialCategory = 'GOV IPPJU';
-        const nextPmo = getNextPmoIdInfo(existingProjects || []);
+        const nextPmo = getNextPmoIdInfo(existingProjects || [], initialCategory);
 
         const defaultHh: HhItem[] = [{ id: '1', type: 'HH', size: '80x80', qty: '' }];
         const defaultPole: PoleItem[] = [{ id: '1', type: 'Tiang 8', qty: '' }];
@@ -320,20 +334,20 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           no: nextNo,
           pmoId: nextPmo.pmoId,
           projectCategory: initialCategory,
-          projectId: '',
-          projectDescription: '',
+          projectId: nextPmo.projectId,
+          projectDescription: ensureProjectDescriptionPrefix('', initialCategory),
           zona: '',
-          areaKota: '',
-          projectStatus: 'Review Dinas',
+          areaKota: 'Jakarta Pusat',
+          projectStatus: 'Masih Review Dinas',
           priority: 'Normal',
           quarter: 'Q1-26',
-          picSectionHead: '',
-          namaVendor: '',
+          picSectionHead: 'Asmari',
+          waspangDsb: 'Abdul Ra\'uf',
+          namaVendor: 'BELUM ADA VENDOR',
           dateSuratPerintahRelokasi: '',
           bulan: '',
           tahun: '',
           panjangRelokasi: 0,
-          panjangRelokasiCoax: 0,
           apdRelokasi: '',
           kmzRelokasi: '',
           statusAudit: '',
@@ -356,11 +370,8 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           statusConstruction: 'Project Not Started',
           statusMaterial: 'Not Yet',
           statusPullingCableFo: 'Not Yet',
-          statusPullingCableCoax: 'Not Yet',
           pullingCableFoProgress: '0%',
-          pullingCableCoaxProgress: '0%',
           statusCo: 'Not Yet',
-          statusCoCoax: 'Not Yet',
           laporanOpname: 'Not Yet',
           closingSap: 'Not Yet',
           projectSapId: '',
@@ -412,9 +423,10 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
   // HH Multi-Item Handlers
   const handleAddHhItem = () => {
+    const isDsbIkr = formData.projectCategory === 'DSB - IKR' || formData.projectCategory === 'IKR';
     const newItem: HhItem = {
       id: Date.now().toString(),
-      type: 'HH',
+      type: isDsbIkr ? 'HG' : 'HH',
       size: '80x80',
       qty: '',
     };
@@ -926,24 +938,6 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         }
       }
 
-      // 2. Sync COAX Relokasi with Target Meter COAX
-      if (field === 'panjangRelokasiCoax') {
-        const num = Number(value) || 0;
-        updated.panjangRelokasiCoax = num;
-        updated.pullingCoaxPanjangTotal = num;
-        if (num > 0 && (!updated.statusPullingCableCoax || updated.statusPullingCableCoax === 'N/A' || updated.statusPullingCableCoax === 'No COAX')) {
-          updated.statusPullingCableCoax = 'Not Yet';
-        }
-      }
-      if (field === 'pullingCoaxPanjangTotal') {
-        const num = Number(value) || 0;
-        updated.pullingCoaxPanjangTotal = num;
-        updated.panjangRelokasiCoax = num;
-        if (num > 0 && (!updated.statusPullingCableCoax || updated.statusPullingCableCoax === 'N/A' || updated.statusPullingCableCoax === 'No COAX')) {
-          updated.statusPullingCableCoax = 'Not Yet';
-        }
-      }
-
       // 3. Auto-compute Galian Sipil Progress if galian parameters or status changed
       if (
         field === 'statusConstruction' ||
@@ -977,19 +971,15 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         }
       }
 
-      // Auto-compute Pulling Cable Progress from FO & Coax statuses & length
+      // Auto-compute Pulling Cable Progress from FO status & length
       if (
         field === 'statusPullingCableFo' ||
         field === 'pullingFoPanjangSelesai' ||
         field === 'pullingFoPanjangTotal' ||
-        field === 'statusPullingCableCoax' ||
-        field === 'pullingCoaxPanjangSelesai' ||
-        field === 'pullingCoaxPanjangTotal' ||
         field === 'statusConstruction' ||
         field === 'pullingPanjangSelesai' ||
         field === 'pullingPanjangTotal' ||
-        field === 'panjangRelokasi' ||
-        field === 'panjangRelokasiCoax'
+        field === 'panjangRelokasi'
       ) {
         const foTotal = Number(updated.pullingFoPanjangTotal || updated.pullingPanjangTotal || updated.panjangRelokasi || 0);
         let foDone = Number(updated.pullingFoPanjangSelesai || 0);
@@ -1007,62 +997,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           updated.statusConstruction
         );
 
-        const coaxTotal = Number(updated.pullingCoaxPanjangTotal || updated.panjangRelokasiCoax || 0);
-        let coaxDone = Number(updated.pullingCoaxPanjangSelesai || 0);
-
-        if (field === 'statusPullingCableCoax') {
-          if (value === 'Done') {
-            if (coaxDone === 0 && coaxTotal > 0) {
-              coaxDone = coaxTotal;
-              updated.pullingCoaxPanjangSelesai = coaxTotal;
-            }
-            updated.pullingCableCoaxProgress = '100%';
-          } else if (value === 'No COAX' || value === 'N/A') {
-            updated.pullingCableCoaxProgress = String(value);
-          }
-        } else if (field === 'pullingCoaxPanjangSelesai') {
-          const doneVal = Number(value) || 0;
-          coaxDone = doneVal;
-          if (coaxTotal > 0) {
-            const pct = Math.min(100, Math.round((doneVal / coaxTotal) * 100));
-            updated.pullingCableCoaxProgress = `${pct}%`;
-            if (pct === 100) {
-              updated.statusPullingCableCoax = 'Done';
-            } else if (pct > 0 && updated.statusPullingCableCoax !== 'Done') {
-              updated.statusPullingCableCoax = 'In Progress';
-            }
-          }
-        }
-
-        // Auto compute COAX progress if not explicitly handled
-        if (field !== 'pullingCoaxPanjangSelesai' && updated.statusPullingCableCoax !== 'No COAX' && updated.statusPullingCableCoax !== 'N/A') {
-          updated.pullingCableCoaxProgress = calculatePullingCoaxPercentage(
-            updated.statusPullingCableCoax || 'Not Yet',
-            coaxDone,
-            coaxTotal,
-            updated.statusConstruction
-          );
-        }
-
-        // Overall Pulling Cable Progress
-        const isCoaxNA = !updated.statusPullingCableCoax || updated.statusPullingCableCoax === 'N/A' || updated.statusPullingCableCoax === 'No COAX';
-        if (isCoaxNA) {
-          updated.pullingCableProgress = updated.pullingCableFoProgress || '0%';
-        } else {
-          const combinedDone = (foDone > 0 || coaxDone > 0) ? (foDone + coaxDone) : Number(updated.pullingPanjangSelesai || 0);
-          const combinedTotal = (foTotal > 0 || coaxTotal > 0) ? (foTotal + coaxTotal) : Number(updated.pullingPanjangTotal || updated.panjangRelokasi || 0);
-
-          if (combinedTotal > 0 && combinedDone > 0) {
-            const pct = Math.min(100, Math.round((combinedDone / combinedTotal) * 100));
-            updated.pullingCableProgress = `${pct}%`;
-          } else {
-            updated.pullingCableProgress = calculatePullingPercentage(
-              updated.statusPullingCableFo || 'Not Yet',
-              updated.statusPullingCableCoax || 'Not Yet',
-              updated.statusConstruction
-            );
-          }
-        }
+        updated.pullingCableProgress = updated.pullingCableFoProgress || '0%';
 
         if (updated.pullingCableProgress === '100%' && updated.statusConstruction === 'Pulling Cable') {
           updated.statusPullingCableFo = 'Done';
@@ -1115,7 +1050,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.pmoId?.trim()) {
-      newErrors.pmoId = 'PMO - ID wajib diisi';
+      newErrors.pmoId = 'DSB - ID wajib diisi';
     }
     if (!formData.projectDescription?.trim()) {
       newErrors.projectDescription = 'Deskripsi Project wajib diisi';
@@ -1141,32 +1076,32 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center">
-              <Building2 className="w-4 h-4" />
+        <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/90">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-xs">
+              <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
                 {initialData ? `Edit Project: ${initialData.pmoId}` : 'Tambah Project Baru'}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 font-medium">
                 Sistem 5 Tab Sheet Terintegrasi · Simpan otomatis ke database
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-xl transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* 5 Connected Form Tabs Selector */}
-        <div className="flex border-b border-slate-200 bg-slate-100/80 px-4 pt-2 overflow-x-auto custom-scrollbar">
+        <div className="flex border-b border-slate-200 bg-slate-100/90 px-6 pt-2.5 overflow-x-auto scrollbar-none gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => setActiveFormTab(1)}
@@ -1249,14 +1184,14 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-semibold text-slate-700">
-                      PMO - ID <span className="text-rose-500">*</span>
+                      DSB - ID <span className="text-rose-500">*</span>
                     </label>
                     <span className="text-[10px] font-semibold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
                       Otomatis Terurut
                     </span>
                   </div>
 
-                  {/* Quick PMO - ID Option Selector (PMO-GOV, PMO-FTTH, PMO-IKR) */}
+                  {/* Quick DSB - ID Option Selector (GOV - ID, DSB - IKR) */}
                   <div className="flex items-center gap-1 mb-1.5">
                     {PMO_OPTIONS.map((opt) => {
                       const currentPmoOpt = getPmoOption(formData.pmoId, formData.projectCategory);
@@ -1268,26 +1203,27 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                           type="button"
                           onClick={() => {
                             const curId = formData.pmoId || '';
-                            const matchNum = curId.match(/\d+/g);
-                            const numStr = matchNum && matchNum.length > 0 ? matchNum[matchNum.length - 1] : '001';
-                            const padded = numStr.length < 3 ? numStr.padStart(3, '0') : numStr;
+                            const num = extractPmoNumber(curId) || formData.no || 1;
+                            const padded = String(num).padStart(3, '0');
                             const newPmoId = `${opt.id}-${padded}`;
                             
                             handleChange('pmoId', newPmoId);
-                            // Auto sync projectCategory
-                            if (opt.id === 'PMO-FTTH') {
-                              handleChange('projectCategory', 'FTTH');
-                            } else if (opt.id === 'PMO-IKR') {
-                              handleChange('projectCategory', 'IKR');
-                            } else if (opt.id === 'PMO-GOV' && (!formData.projectCategory || formData.projectCategory === 'FTTH' || formData.projectCategory === 'IKR')) {
-                              handleChange('projectCategory', 'GOV IPPJU');
+                            if (opt.id === 'DSB-IKR') {
+                              handleChange('projectCategory', 'DSB - IKR');
+                              handleChange('projectId', generateNextProjectId('DSB - IKR', num));
+                              handleChange('projectDescription', ensureProjectDescriptionPrefix(formData.projectDescription, 'DSB - IKR'));
+                              handleChange('projectSapId', 'DSB - IKR');
+                            } else {
+                              const targetCat = (formData.projectCategory === 'DSB - IKR' || !formData.projectCategory) ? 'GOV IPPJU' : formData.projectCategory;
+                              handleChange('projectCategory', targetCat);
+                              handleChange('projectId', generateNextProjectId(targetCat, num));
+                              handleChange('projectDescription', ensureProjectDescriptionPrefix(formData.projectDescription, targetCat));
+                              handleChange('projectSapId', 'GOV - ID');
                             }
                           }}
                           className={`flex-1 py-1 px-1.5 text-[10px] font-mono font-bold rounded border transition-all cursor-pointer text-center ${
                             isSelected
-                              ? opt.id === 'PMO-FTTH'
-                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs ring-1 ring-emerald-400'
-                                : opt.id === 'PMO-IKR'
+                              ? opt.id === 'DSB-IKR'
                                 ? 'bg-purple-600 text-white border-purple-600 shadow-2xs ring-1 ring-purple-400'
                                 : 'bg-sky-600 text-white border-sky-600 shadow-2xs ring-1 ring-sky-400'
                               : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
@@ -1305,13 +1241,11 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                     onChange={(e) => {
                       handleChange('pmoId', e.target.value);
                       const detected = getPmoOption(e.target.value);
-                      if (detected === 'PMO-FTTH' && formData.projectCategory !== 'FTTH') {
-                        handleChange('projectCategory', 'FTTH');
-                      } else if (detected === 'PMO-IKR' && formData.projectCategory !== 'IKR') {
-                        handleChange('projectCategory', 'IKR');
+                      if (detected === 'DSB-IKR' && formData.projectCategory !== 'DSB - IKR') {
+                        handleChange('projectCategory', 'DSB - IKR');
                       }
                     }}
-                    placeholder="e.g. PMO-GOV-863, PMO-FTTH-012, PMO-IKR-005"
+                    placeholder="e.g. GOV-ID-001, DSB-IKR-001"
                     className={`w-full px-3 py-1.5 text-xs rounded-md border font-mono font-medium ${
                       errors.pmoId ? 'border-rose-500 bg-rose-50' : 'border-slate-300'
                     } focus:outline-none focus:ring-1 focus:ring-sky-500`}
@@ -1327,24 +1261,24 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                       const newCat = e.target.value;
                       handleChange('projectCategory', newCat);
 
-                      // If switching to FTTH / IKR, validate project status
-                      if (newCat === 'FTTH' || newCat === 'IKR') {
+                      const curPmo = formData.pmoId || '';
+                      const num = extractPmoNumber(curPmo) || formData.no || 1;
+                      const padded = String(num).padStart(3, '0');
+
+                      if (newCat === 'DSB - IKR') {
                         if (formData.projectStatus === 'Review Dinas' || formData.projectStatus === 'Masih Review Dinas') {
-                          handleChange('projectStatus', 'In Progress');
+                          handleChange('projectStatus', 'Project Not Started');
                         }
-                        const curPmo = formData.pmoId || '';
-                        const matchNum = curPmo.match(/\d+/g);
-                        const numStr = matchNum && matchNum.length > 0 ? matchNum[matchNum.length - 1] : '001';
-                        const padded = numStr.length < 3 ? numStr.padStart(3, '0') : numStr;
-                        const prefix = newCat === 'FTTH' ? 'PMO-FTTH' : 'PMO-IKR';
-                        handleChange('pmoId', `${prefix}-${padded}`);
+                        handleChange('pmoId', `DSB-IKR-${padded}`);
+                        handleChange('projectId', generateNextProjectId('DSB - IKR', num));
+                        handleChange('projectDescription', ensureProjectDescriptionPrefix(formData.projectDescription, 'DSB - IKR'));
+                        handleChange('projectSapId', 'DSB - IKR');
                       } else {
-                        // GOV Category
-                        const curPmo = formData.pmoId || '';
-                        const matchNum = curPmo.match(/\d+/g);
-                        const numStr = matchNum && matchNum.length > 0 ? matchNum[matchNum.length - 1] : '001';
-                        const padded = numStr.length < 3 ? numStr.padStart(3, '0') : numStr;
-                        handleChange('pmoId', `PMO-GOV-${padded}`);
+                        // GOV Categories
+                        handleChange('pmoId', `GOV-ID-${padded}`);
+                        handleChange('projectId', generateNextProjectId(newCat, num));
+                        handleChange('projectDescription', ensureProjectDescriptionPrefix(formData.projectDescription, newCat));
+                        handleChange('projectSapId', 'GOV - ID');
                       }
                     }}
                     className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer font-medium"
@@ -1363,9 +1297,12 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                     type="text"
                     value={formData.projectId || ''}
                     onChange={(e) => handleChange('projectId', e.target.value)}
-                    placeholder="e.g. GOV0000747"
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                    placeholder="e.g. GOV - FMI - DSB0000001, DSB - IKR0000001"
+                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono font-medium"
                   />
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {formData.projectCategory === 'DSB - IKR' ? 'Format: DSB - IKRxxxxxxx' : 'Format: GOV - FMI - DSBxxxxxxx'}
+                  </p>
                 </div>
               </div>
 
@@ -1377,43 +1314,37 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   type="text"
                   value={formData.projectDescription || ''}
                   onChange={(e) => handleChange('projectDescription', e.target.value)}
-                  placeholder="e.g. [Z1-GOV] IPPJU Ampera Raya"
+                  placeholder={formData.projectCategory === 'DSB - IKR' ? 'e.g. [DSB-IKR] Cluster Ampera Raya' : 'e.g. [GOV-FMI_DSB] IPPJU Ampera Raya'}
                   className={`w-full px-3 py-1.5 text-xs rounded-md border ${
                     errors.projectDescription ? 'border-rose-500 bg-rose-50' : 'border-slate-300'
                   } focus:outline-none focus:ring-1 focus:ring-sky-500`}
                 />
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Otomatis diawali <span className="font-mono font-semibold text-sky-700">{formData.projectCategory === 'DSB - IKR' ? '[DSB-IKR]' : '[GOV-FMI_DSB]'}</span>
+                </p>
                 {errors.projectDescription && (
                   <p className="text-[11px] text-rose-500 mt-0.5">{errors.projectDescription}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Zona</label>
-                  <input
-                    type="text"
-                    value={formData.zona || ''}
-                    onChange={(e) => handleChange('zona', e.target.value)}
-                    placeholder="Contoh: Jabo 1 / Jabo 2 / Jabo 3"
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
-                  />
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Area / Kota</label>
-                  <input
-                    type="text"
-                    value={formData.areaKota || ''}
+                  <select
+                    value={formData.areaKota || 'Jakarta Pusat'}
                     onChange={(e) => handleChange('areaKota', e.target.value)}
-                    placeholder="Contoh: Central, Barat, Bogor, dll"
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                  />
+                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer font-medium"
+                  >
+                    {AREA_KOTA_OPTIONS.map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Project Status</label>
                   <select
-                    value={formData.projectStatus || (formData.projectCategory === 'FTTH' || formData.projectCategory === 'IKR' ? 'Project Not Started' : 'Masih Review Dinas')}
+                    value={formData.projectStatus || (formData.projectCategory === 'DSB - IKR' ? 'Project Not Started' : 'Masih Review Dinas')}
                     onChange={(e) => handleChange('projectStatus', e.target.value)}
                     className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium cursor-pointer"
                   >
@@ -1458,50 +1389,93 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Nama PIC <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.picSectionHead || ''}
-                  onChange={(e) => handleChange('picSectionHead', e.target.value)}
-                  placeholder="Masukkan nama PIC / Section Head"
-                  className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white font-medium"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    PIC Govrel <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={formData.picSectionHead || 'Asmari'}
+                    onChange={(e) => handleChange('picSectionHead', e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white font-medium cursor-pointer"
+                  >
+                    {PIC_GOVREL_OPTIONS.map((pic) => (
+                      <option key={pic} value={pic}>
+                        {pic}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Waspang DSB
+                  </label>
+                  <select
+                    value={formData.waspangDsb || 'Abdul Ra\'uf'}
+                    onChange={(e) => handleChange('waspangDsb', e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white font-medium cursor-pointer"
+                  >
+                    {WASPANG_DSB_OPTIONS.map((w) => (
+                      <option key={w} value={w}>
+                        {w}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           )}
 
           {/* TAB 2: CONSTRUCTION & PLAN */}
           {activeFormTab === 2 && (() => {
-            const isFtthOrIkr = formData.projectCategory === 'FTTH' || formData.projectCategory === 'IKR';
+            const isDsbIkr = formData.projectCategory === 'DSB - IKR' || formData.projectCategory === 'IKR';
+            const isFtthOrIkr = isDsbIkr || formData.projectCategory === 'FTTH';
             return (
               <div className="space-y-4">
                 <div className="bg-sky-50/70 border border-sky-200/80 rounded-lg p-3 text-xs text-sky-800 flex items-center justify-between">
                   <span className="font-semibold">Detail Perencanaan & Kontraktor (Sheet 2: Construction & Plan).</span>
                   {isFtthOrIkr && (
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                      Mode {formData.projectCategory} (Tanggal PO & Tanpa Pemutusan)
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-300">
+                      Mode {formData.projectCategory} ({isDsbIkr ? 'Surat Kesepakatan Kerja' : 'Tanggal PO'} & Tanpa Pemutusan)
                     </span>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Vendor</label>
-                    <input
-                      type="text"
-                      value={formData.namaVendor || ''}
-                      onChange={(e) => handleChange('namaVendor', e.target.value)}
-                      placeholder="Contoh: PT. MENTARI, dll"
-                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
-                    />
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {isDsbIkr ? 'Nama Pelaksana' : 'Nama Vendor'}
+                    </label>
+                    {isDsbIkr ? (
+                      <input
+                        type="text"
+                        value={formData.namaVendor || ''}
+                        onChange={(e) => handleChange('namaVendor', e.target.value)}
+                        placeholder="e.g. Bpk. Wahyu / PT. Pelaksana"
+                        className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
+                      />
+                    ) : (
+                      <select
+                        value={formData.namaVendor || 'BELUM ADA VENDOR'}
+                        onChange={(e) => handleChange('namaVendor', e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium cursor-pointer uppercase bg-white"
+                      >
+                        {formData.namaVendor && !VENDOR_OPTIONS.includes(formData.namaVendor as any) && (
+                          <option value={formData.namaVendor}>{formData.namaVendor.toUpperCase()}</option>
+                        )}
+                        {VENDOR_OPTIONS.map((v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      {isFtthOrIkr ? 'Tanggal PO' : 'Date Surat Perintah Relokasi'}
+                      {isDsbIkr ? 'Tanggal Surat Kesepakatan Kerja' : (isFtthOrIkr ? 'Tanggal PO' : 'Date Surat Perintah Relokasi')}
                     </label>
                     <input
                       type="date"
@@ -1538,21 +1512,21 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   </div>
                 </div>
 
-                {/* Panjang Relokasi FO, COAX & Galian Sipil */}
+                {/* Panjang Cable FO & Galian Sipil */}
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <HardHat className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Panjang Relokasi FO, COAX & Galian Sipil</span>
+                      <span>Panjang Cable FO & Galian Sipil</span>
                     </span>
                     <span className="text-[11px] font-mono font-medium text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
                       Otomatis Terhubung ke Tab Status Construction
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Panjang Relokasi FO (m)
+                        Panjang Cable FO (m)
                       </label>
                       <input
                         type="number"
@@ -1569,24 +1543,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Panjang Relokasi COAX (m)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.panjangRelokasiCoax !== undefined ? formData.panjangRelokasiCoax : ''}
-                        onChange={(e) => handleChange('panjangRelokasiCoax', e.target.value ? Number(e.target.value) : '')}
-                        placeholder="e.g. 2500"
-                        className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
-                      />
-                      <span className="text-[10px] text-slate-500 mt-0.5 block">
-                        Target Meter COAX (Pulling Cable COAX)
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Panjang Galian (m)
+                        Panjang Galian Sipil (m)
                       </label>
                       <input
                         type="number"
@@ -1606,10 +1563,10 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      {isFtthOrIkr ? 'APD' : 'APD Relokasi'}
+                      {isDsbIkr ? 'APD Segment' : (isFtthOrIkr ? 'APD' : 'APD Relokasi')}
                     </label>
                     <select
-                      value={formData.apdRelokasi || (isFtthOrIkr ? (formData.projectCategory === 'IKR' ? 'APD IKR' : 'APD FTTH') : 'Belum ada')}
+                      value={formData.apdRelokasi || 'Belum ada'}
                       onChange={(e) => handleChange('apdRelokasi', e.target.value)}
                       className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
                     >
@@ -1621,10 +1578,10 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      {isFtthOrIkr ? 'KMZ' : 'KMZ Relokasi'}
+                      {isDsbIkr ? 'KMZ Segment' : (isFtthOrIkr ? 'KMZ' : 'KMZ Relokasi')}
                     </label>
                     <select
-                      value={formData.kmzRelokasi || (isFtthOrIkr ? (formData.projectCategory === 'IKR' ? 'KMZ IKR' : 'KMZ FTTH') : 'Belum ada')}
+                      value={formData.kmzRelokasi || 'Belum ada'}
                       onChange={(e) => handleChange('kmzRelokasi', e.target.value)}
                       className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
                     >
@@ -1865,19 +1822,20 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
           {/* TAB 4: STATUS CONSTRUCTION */}
           {activeFormTab === 4 && (() => {
-            const isFtthOrIkr = formData.projectCategory === 'FTTH' || formData.projectCategory === 'IKR';
+            const isDsbIkr = formData.projectCategory === 'DSB - IKR' || formData.projectCategory === 'IKR';
+            const isFtthOrIkr = isDsbIkr || formData.projectCategory === 'FTTH';
             return (
               <div className="space-y-4">
                 <div className="bg-sky-50/70 border border-sky-200/80 rounded-lg p-3 text-xs text-sky-800 flex items-center justify-between">
                   <span>Progress Pelaksanaan Fisik & SAP (Sheet 4: Status Construction).</span>
                   {isFtthOrIkr && (
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                      Kategori {formData.projectCategory} (Spesifikasi FTTH/IKR Aktif)
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-300">
+                      Kategori {formData.projectCategory} (Spesifikasi {isDsbIkr ? 'IKR' : 'FTTH/IKR'} Aktif)
                     </span>
                   )}
                 </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Status Construction</label>
                   <select
@@ -1923,45 +1881,14 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                     ))}
                   </select>
                 </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-slate-700">Status Pulling Coax</label>
-                    <span className="text-[10px] font-bold font-mono px-1.5 py-0.2 text-purple-700 bg-purple-50 border border-purple-200 rounded">
-                      COAX: {formData.pullingCableCoaxProgress || '0%'}
-                    </span>
-                  </div>
-                  <select
-                    value={formData.statusPullingCableCoax || 'Not Yet'}
-                    onChange={(e) => handleChange('statusPullingCableCoax', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer font-medium"
-                  >
-                    {STATUS_PULLING_CABLE_COAX_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Status CO (FO)</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Status CO</label>
                   <select
                     value={formData.statusCo || 'Not Yet'}
                     onChange={(e) => handleChange('statusCo', e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-                  >
-                    {STATUS_CO_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Status CO Coax</label>
-                  <select
-                    value={formData.statusCoCoax || 'Not Yet'}
-                    onChange={(e) => handleChange('statusCoCoax', e.target.value)}
                     className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
                   >
                     {STATUS_CO_OPTIONS.map((opt) => (
@@ -1997,13 +1924,15 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Project SAP ID</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    {isDsbIkr ? 'DSB - IKR' : (formData.projectCategory?.startsWith('GOV') || formData.pmoId?.startsWith('GOV')) ? 'GOV - ID' : 'Project SAP ID / GOV - ID'}
+                  </label>
                   <input
                     type="text"
-                    value={formData.projectSapId || ''}
+                    value={formData.projectSapId || ((formData.projectCategory?.startsWith('GOV') || formData.pmoId?.startsWith('GOV')) ? 'GOV - ID' : isDsbIkr ? 'DSB - IKR' : '')}
                     onChange={(e) => handleChange('projectSapId', e.target.value)}
-                    placeholder="e.g. GOV0000747"
-                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                    placeholder={isDsbIkr ? 'DSB-IKR-001' : 'GOV-ID-001'}
+                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono font-medium"
                   />
                 </div>
               </div>
@@ -2356,7 +2285,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-semibold text-emerald-900 mb-0.5">
-                      Label Ringkasan Spesifikasi FTTH / IKR (Otomatis)
+                      Label Ringkasan Spesifikasi {isDsbIkr ? 'IKR' : 'FTTH / IKR'} (Otomatis)
                     </label>
                     <input
                       type="text"
@@ -2386,7 +2315,9 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-2 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between pb-1 border-b border-slate-100 mb-2">
-                        <label className="text-[11px] font-bold text-slate-700">1. HH, HB, MH (Unit)</label>
+                        <label className="text-[11px] font-bold text-slate-700">
+                          {isDsbIkr ? '1. HG, HM, HS & Tutup (Unit)' : '1. HH, HB, MH (Unit)'}
+                        </label>
                         <button
                           type="button"
                           onClick={handleAddHhItem}
@@ -2402,11 +2333,11 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                           <div key={it.id || idx} className="p-1.5 bg-slate-50/80 rounded border border-slate-200/80 space-y-1.5">
                             <div className="grid grid-cols-2 gap-1.5">
                               <select
-                                value={it.type || 'HH'}
+                                value={it.type || (isDsbIkr ? 'HG' : 'HH')}
                                 onChange={(e) => handleUpdateHhItem(it.id, 'type', e.target.value)}
                                 className="px-2 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium cursor-pointer"
                               >
-                                {HH_TYPE_OPTIONS.map((t) => (
+                                {getHhTypeOptions(formData.projectCategory).map((t) => (
                                   <option key={t} value={t}>{t}</option>
                                 ))}
                               </select>
@@ -2415,7 +2346,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                                 onChange={(e) => handleUpdateHhItem(it.id, 'size', e.target.value)}
                                 className="px-2 py-1 text-xs border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono cursor-pointer"
                               >
-                                {HH_SIZE_OPTIONS.map((s) => (
+                                {getHhSizeOptions(formData.projectCategory).map((s) => (
                                   <option key={s} value={s}>{s}</option>
                                 ))}
                               </select>
@@ -2556,180 +2487,147 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Label Ringkasan Install HH (Otomatis)</label>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Label Ringkasan Install HH (Otomatis)</label>
                     <input
                       type="text"
                       value={formData.installHhProgress || ''}
                       onChange={(e) => handleChange('installHhProgress', e.target.value)}
                       placeholder="e.g. HH 80x80 (12 Unit)"
-                      className="w-full px-2.5 py-1 text-xs bg-white border border-slate-300 rounded focus:outline-none font-mono"
+                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono font-medium"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Label Ringkasan Install Pole & Galvanis (Otomatis)</label>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Label Ringkasan Install Pole & Galvanis (Otomatis)</label>
                     <input
                       type="text"
                       value={formData.installPoleProgress || ''}
                       onChange={(e) => handleChange('installPoleProgress', e.target.value)}
                       placeholder="e.g. Tiang 7 (5 Ea), Tiang 8 (10 Ea) | Galv 2 (50m)"
-                      className="w-full px-2.5 py-1 text-xs bg-white border border-slate-300 rounded focus:outline-none font-mono"
+                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono font-medium"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Automatic Progress Calculators (Galian, Pulling Cable Overall, FO, COAX) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              {/* Automatic Progress Calculators (Galian & Pulling Cable FO) - Symmetrical 2-Column Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* Auto Calculated Galian Sipil Progress */}
-                <div className="p-3 bg-indigo-50/70 border border-indigo-200/90 rounded-lg space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
-                      <span>Galian Sipil (Otomatis)</span>
-                    </label>
-                    <span className="px-2.5 py-0.5 text-xs font-bold font-mono bg-indigo-600 text-white rounded-full">
-                      {formData.galianSipilProgress || '0%'}
-                    </span>
+                <div className="p-3.5 bg-indigo-50/70 border border-indigo-200/90 rounded-xl flex flex-col justify-between space-y-3">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between pb-1 border-b border-indigo-200/60">
+                      <label className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                        <span>Galian Sipil (Otomatis)</span>
+                      </label>
+                      <span className="px-2.5 py-0.5 text-xs font-bold font-mono bg-indigo-600 text-white rounded-full shadow-2xs">
+                        {formData.galianSipilProgress || '0%'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[11px] font-medium text-slate-600 block mb-1">Meter Selesai</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.galianPanjangSelesai || ''}
+                          onChange={(e) => handleChange('galianPanjangSelesai', e.target.value)}
+                          placeholder="e.g. 800"
+                          className="w-full px-2.5 py-1.5 text-xs border border-indigo-300/80 rounded-lg bg-white font-mono focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-medium text-slate-600 block mb-1">Target Meter</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.galianPanjangTotal || formData.panjangRelokasi || ''}
+                          onChange={(e) => handleChange('galianPanjangTotal', e.target.value)}
+                          placeholder="e.g. 1000"
+                          className="w-full px-2.5 py-1.5 text-xs border border-indigo-300/80 rounded-lg bg-white font-mono focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-[11px] text-slate-500 block">Meter Selesai</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.galianPanjangSelesai || ''}
-                        onChange={(e) => handleChange('galianPanjangSelesai', e.target.value)}
-                        placeholder="e.g. 800"
-                        className="w-full px-2 py-1 text-xs border border-indigo-300 rounded bg-white font-mono"
+
+                  <div className="space-y-2 pt-1 border-t border-indigo-200/50">
+                    <div className="flex items-center justify-between text-[11px] text-slate-600">
+                      <span>Progres Galian: <strong className="text-indigo-950 font-bold">{formData.galianSipilProgress || '0%'}</strong></span>
+                      <span className="font-mono text-[10px] text-indigo-800 font-bold">{formData.galianSipilProgress || '0%'}</span>
+                    </div>
+                    <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: formData.galianSipilProgress || '0%' }}
                       />
                     </div>
-                    <div>
-                      <span className="text-[11px] text-slate-500 block">Target Meter</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.galianPanjangTotal || formData.panjangRelokasi || ''}
-                        onChange={(e) => handleChange('galianPanjangTotal', e.target.value)}
-                        placeholder="e.g. 1000"
-                        className="w-full px-2 py-1 text-xs border border-indigo-300 rounded bg-white font-mono"
-                      />
-                    </div>
+                    <p className="text-[10px] text-indigo-700/90 leading-tight">
+                      Otomatis dari perbandingan meter selesai / target meter galian (atau status konstruksi).
+                    </p>
                   </div>
-                  <p className="text-[10px] text-indigo-700">
-                    Otomatis dari perbandingan meter / status tahapan konstruksi.
-                  </p>
                 </div>
 
                 {/* Auto Calculated Pulling Cable FO */}
-                <div className="p-3 bg-sky-50/70 border border-sky-200/90 rounded-lg space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-sky-900 flex items-center gap-1.5">
-                      <span>Pulling Cable FO (Otomatis)</span>
-                    </label>
-                    <span className="px-2.5 py-0.5 text-xs font-bold font-mono bg-sky-600 text-white rounded-full">
-                      {formData.pullingCableFoProgress || '0%'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-[11px] text-slate-600 block font-medium">Meter Selesai FO</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.pullingFoPanjangSelesai ?? ''}
-                        onChange={(e) => handleChange('pullingFoPanjangSelesai', e.target.value)}
-                        placeholder="e.g. 500"
-                        className="w-full px-2 py-1 text-xs border border-sky-300 rounded bg-white font-mono focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                      />
+                <div className="p-3.5 bg-sky-50/70 border border-sky-200/90 rounded-xl flex flex-col justify-between space-y-3">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between pb-1 border-b border-sky-200/60">
+                      <label className="text-xs font-bold text-sky-950 flex items-center gap-1.5">
+                        <span>Pulling Cable FO (Otomatis)</span>
+                      </label>
+                      <span className="px-2.5 py-0.5 text-xs font-bold font-mono bg-sky-600 text-white rounded-full shadow-2xs">
+                        {formData.pullingCableFoProgress || '0%'}
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-[11px] text-slate-600 block font-medium">Target Meter FO</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.pullingFoPanjangTotal ?? formData.panjangRelokasi ?? ''}
-                        onChange={(e) => handleChange('pullingFoPanjangTotal', e.target.value)}
-                        placeholder="e.g. 1000"
-                        className="w-full px-2 py-1 text-xs border border-sky-300 rounded bg-white font-mono focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                      />
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[11px] font-medium text-slate-600 block mb-1">Meter Selesai FO</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.pullingFoPanjangSelesai ?? ''}
+                          onChange={(e) => handleChange('pullingFoPanjangSelesai', e.target.value)}
+                          placeholder="e.g. 500"
+                          className="w-full px-2.5 py-1.5 text-xs border border-sky-300/80 rounded-lg bg-white font-mono focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-medium text-slate-600 block mb-1">Target Meter FO</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={formData.pullingFoPanjangTotal ?? formData.panjangRelokasi ?? ''}
+                          onChange={(e) => handleChange('pullingFoPanjangTotal', e.target.value)}
+                          placeholder="e.g. 1000"
+                          className="w-full px-2.5 py-1.5 text-xs border border-sky-300/80 rounded-lg bg-white font-mono focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="text-xs space-y-1">
+
+                  <div className="space-y-2 pt-1 border-t border-sky-200/50">
                     <div className="flex items-center justify-between text-[11px] text-slate-600">
-                      <span>Status FO: <strong className="text-slate-800">{formData.statusPullingCableFo || 'Not Yet'}</strong></span>
-                      <span className="font-mono text-[10px] text-sky-800 font-semibold">{formData.pullingCableFoProgress || '0%'}</span>
+                      <span>Status FO: <strong className="text-sky-950 font-bold">{formData.statusPullingCableFo || 'Not Yet'}</strong></span>
+                      <span className="font-mono text-[10px] text-sky-800 font-bold">{formData.pullingCableFoProgress || '0%'}</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden mt-0.5">
+                    <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
                       <div
                         className="bg-sky-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: formData.pullingCableFoProgress || '0%' }}
                       />
                     </div>
+                    <p className="text-[10px] text-sky-700/90 leading-tight">
+                      Otomatis dari perbandingan meter selesai / target meter FO (atau status FO).
+                    </p>
                   </div>
-                  <p className="text-[10px] text-sky-700">
-                    Otomatis dari perbandingan meter selesai / target meter FO (atau status FO).
-                  </p>
-                </div>
-
-                {/* Auto Calculated Pulling Cable COAX */}
-                <div className="p-3 bg-purple-50/70 border border-purple-200/90 rounded-lg space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
-                      <span>Pulling Cable COAX (Otomatis)</span>
-                    </label>
-                    <span className="px-2.5 py-0.5 text-xs font-bold font-mono bg-purple-600 text-white rounded-full">
-                      {formData.pullingCableCoaxProgress || '0%'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-[11px] text-slate-600 block font-medium">Meter Selesai COAX</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.pullingCoaxPanjangSelesai ?? ''}
-                        onChange={(e) => handleChange('pullingCoaxPanjangSelesai', e.target.value)}
-                        placeholder="e.g. 400"
-                        className="w-full px-2 py-1 text-xs border border-purple-300 rounded bg-white font-mono focus:ring-1 focus:ring-purple-500 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[11px] text-slate-600 block font-medium">Target Meter COAX</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.pullingCoaxPanjangTotal ?? formData.panjangRelokasiCoax ?? ''}
-                        onChange={(e) => handleChange('pullingCoaxPanjangTotal', e.target.value)}
-                        placeholder="e.g. 1000"
-                        className="w-full px-2 py-1 text-xs border border-purple-300 rounded bg-white font-mono focus:ring-1 focus:ring-purple-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="text-xs space-y-1">
-                    <div className="flex items-center justify-between text-[11px] text-slate-600">
-                      <span>Status COAX: <strong className="text-slate-800">{formData.statusPullingCableCoax || 'Not Yet'}</strong></span>
-                      <span className="font-mono text-[10px] text-purple-800 font-semibold">{formData.pullingCableCoaxProgress || '0%'}</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden mt-0.5">
-                      <div
-                        className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: formData.pullingCableCoaxProgress || '0%' }}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-purple-700">
-                    Otomatis dari perbandingan meter selesai / target meter COAX (atau status COAX).
-                  </p>
                 </div>
               </div>
 
               {/* Total Pulling Cable Progress Combined */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="space-y-0.5 text-xs">
-                  <span className="font-bold text-slate-800">Total Pulling Cable Progress (Keseluruhan)</span>
+                  <span className="font-bold text-slate-800">Total Pulling Cable Progress (FO)</span>
                   <p className="text-[11px] text-slate-500">
-                    Kombinasi otomatis progres FO ({formData.pullingCableFoProgress || '0%'}) & COAX ({formData.pullingCableCoaxProgress || '0%'}).
+                    Kombinasi otomatis progres FO ({formData.pullingCableFoProgress || '0%'}).
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

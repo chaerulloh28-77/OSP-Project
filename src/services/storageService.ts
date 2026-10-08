@@ -1,6 +1,6 @@
 import { ProjectData } from '../types/project';
 import { INITIAL_PROJECTS } from '../data/initialData';
-import { calculatePullingFoPercentage, calculatePullingCoaxPercentage, calculatePullingPercentage } from '../data/dropdownOptions';
+import { calculatePullingFoPercentage, calculatePullingPercentage } from '../data/dropdownOptions';
 import { compareProjectsByPmoId } from '../utils/pmoIdHelpers';
 import * as XLSX from 'xlsx';
 import { 
@@ -11,7 +11,7 @@ import {
   PROJECT_TRACKING_PIPELINE_COLUMNS 
 } from '../data/tabColumns';
 
-const STORAGE_KEY = 'OSP_PROJECTS_DATA_V2';
+const STORAGE_KEY = 'OSP_PROJECTS_DATA_V4';
 
 type ProjectChangeListener = (projects: ProjectData[]) => void;
 const listeners: Set<ProjectChangeListener> = new Set();
@@ -35,34 +35,6 @@ export function normalizeProject(p: ProjectData, idx: number): ProjectData {
     p.statusConstruction
   );
 
-  const coaxLength = Number(p.panjangRelokasiCoax !== undefined ? p.panjangRelokasiCoax : (p.pullingCoaxPanjangTotal || 0));
-  const coaxTotal = Number(p.pullingCoaxPanjangTotal !== undefined ? p.pullingCoaxPanjangTotal : coaxLength);
-  const coaxDone = Number(p.pullingCoaxPanjangSelesai || 0);
-
-  const isCoaxNotUsed = !p.statusPullingCableCoax || p.statusPullingCableCoax === 'No COAX' || p.statusPullingCableCoax === 'N/A';
-  let coaxProgress = p.pullingCableCoaxProgress;
-
-  if (isCoaxNotUsed && (!coaxProgress || coaxProgress === '0%')) {
-    coaxProgress = p.statusPullingCableCoax === 'No COAX' ? 'No COAX' : 'N/A';
-  } else if (!coaxProgress || coaxProgress === 'N/A' || coaxProgress === 'No COAX') {
-    coaxProgress = calculatePullingCoaxPercentage(
-      p.statusPullingCableCoax || 'N/A',
-      coaxDone,
-      coaxTotal,
-      p.statusConstruction
-    );
-  }
-
-  const overallPulling = p.pullingCableProgress || (
-    isCoaxNotUsed
-      ? (foProgress || '0%')
-      : calculatePullingPercentage(
-          p.statusPullingCableFo || 'Not Yet',
-          p.statusPullingCableCoax || 'N/A',
-          p.statusConstruction
-        )
-  );
-
   return {
     ...p,
     no: Number(p.no) || idx + 1,
@@ -72,11 +44,8 @@ export function normalizeProject(p: ProjectData, idx: number): ProjectData {
     picSectionHead: (p.picSectionHead || '').trim(),
     zona: (p.zona || '').trim(),
     areaKota: (p.areaKota || '').trim(),
-    panjangRelokasiCoax: coaxLength,
-    pullingCoaxPanjangTotal: coaxTotal,
     pullingCableFoProgress: foProgress,
-    pullingCableCoaxProgress: coaxProgress,
-    pullingCableProgress: overallPulling,
+    pullingCableProgress: foProgress || '0%',
   };
 }
 
@@ -90,7 +59,12 @@ function readFromStorage(): ProjectData[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      memoryCache = [...INITIAL_PROJECTS];
+      memoryCache = INITIAL_PROJECTS.map(normalizeProject);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCache));
+      } catch (e) {
+        /* ignore */
+      }
       return memoryCache;
     }
     const parsed = JSON.parse(raw);
@@ -101,7 +75,8 @@ function readFromStorage(): ProjectData[] {
   } catch (err) {
     console.warn('Gagal membaca data dari localStorage, menggunakan memori:', err);
   }
-  return memoryCache || [...INITIAL_PROJECTS];
+  memoryCache = INITIAL_PROJECTS.map(normalizeProject);
+  return memoryCache;
 }
 
 function writeToStorage(data: ProjectData[]): void {
@@ -264,10 +239,9 @@ export const storageService = {
       'Tanggal Surat Perintah Relokasi',
       'Bulan',
       'Tahun',
-      'Panjang Relokasi FO (m)',
-      'Panjang Relokasi COAX (m)',
-      'Status APD Relokasi',
-      'Status KMZ Relokasi',
+      'Panjang Cable FO (m)',
+      'Status APD Relokasi / Segment',
+      'Status KMZ Relokasi / Segment',
       'Status Audit',
       'Status APD Internal',
       'Status Survey',
@@ -293,10 +267,7 @@ export const storageService = {
       'Status Material',
       'Status Pulling Cable FO',
       'Progress FO (%)',
-      'Status Pulling Cable COAX',
-      'Progress COAX (%)',
-      'Status C/O FO',
-      'Status C/O COAX',
+      'Status C/O',
       'Laporan Opname',
       'Closing SAP',
       'Pipeline Stage'
@@ -325,7 +296,6 @@ export const storageService = {
       p.bulan || '',
       p.tahun || '',
       p.panjangRelokasi || 0,
-      p.panjangRelokasiCoax || 0,
       p.apdRelokasi || '',
       p.kmzRelokasi || '',
       p.statusAudit || '',
@@ -353,17 +323,14 @@ export const storageService = {
       p.statusMaterial || '',
       p.statusPullingCableFo || '',
       p.pullingCableFoProgress || '',
-      p.statusPullingCableCoax || '',
-      p.pullingCableCoaxProgress || '',
       p.statusCo || '',
-      p.statusCoCoax || '',
       p.laporanOpname || '',
       p.closingSap || '',
       p.pipelineStage || ''
     ].map(escapeCsv).join(','));
 
     const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
-    const filename = `OSP_Project_Controling_${new Date().toISOString().slice(0, 10)}.csv`;
+    const filename = `Monitoring_GOV_FMI_DSB_${new Date().toISOString().slice(0, 10)}.csv`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -423,10 +390,10 @@ export const storageService = {
     const wsTracking = buildSheet(PROJECT_TRACKING_PIPELINE_COLUMNS);
     XLSX.utils.book_append_sheet(wb, wsTracking, '5. Project Tracking');
 
-    const filename = `OSP_Project_Controling_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const filename = `Monitoring_GOV_FMI_DSB_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
     wb.Props = {
-      Title: 'OSP Project Controling Report',
+      Title: 'Monitoring GOV FMI_DSB Report',
       Subject: `Master Project Report (${projects.length} Proyek)`,
       Author: 'PAUL',
       Company: 'PMO System © PAUL',
@@ -458,7 +425,7 @@ export const storageService = {
    */
   exportToJson(projects: ProjectData[]): void {
     const payload = {
-      system: 'OSP Project Controling',
+      system: 'Monitoring GOV FMI_DSB',
       author: 'PAUL',
       export_date: new Date().toISOString(),
       total_records: projects.length,

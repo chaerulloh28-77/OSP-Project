@@ -1,7 +1,7 @@
 import { ProjectData } from "../types/project";
 
 /**
- * Initial master projects - bersih kosong (0 projects).
- * Proyek diinput secara manual oleh pengguna melalui tombol Tambah Project.
+ * Master project data list for Monitoring GOV FMI_DSB system.
+ * Initially empty as requested.
  */
 export const INITIAL_PROJECTS: ProjectData[] = [];

@@ -101,7 +101,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Category list
-  const categoryList = ['all', 'GOV IPPJU', 'GOV APJATEL', 'GOV SJUT', 'FTTH', 'IKR'] as const;
+  const categoryList = ['all', 'GOV IPPJU', 'GOV APJATEL', 'GOV SJUT', 'DSB - IKR'] as const;
 
   // Dynamic filter options extracted from projects
   const uniqueZonas = useMemo(() => {
@@ -247,18 +247,11 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
 
   // Active Slots based on category filter
   const activeSlots = useMemo(() => {
-    if (categoryFilter === 'FTTH') {
-      return getDocumentSlots('FTTH');
-    }
-    if (categoryFilter === 'IKR') {
+    if (categoryFilter === 'DSB - IKR' || categoryFilter === 'IKR' || categoryFilter === 'FTTH') {
       return getDocumentSlots('IKR');
     }
-    const isAllFtth = filteredData.length > 0 && filteredData.every(p => p.projectCategory === 'FTTH');
-    const isAllIkr = filteredData.length > 0 && filteredData.every(p => p.projectCategory === 'IKR');
-    const isAllFtthOrIkr = filteredData.length > 0 && filteredData.every(p => p.projectCategory === 'FTTH' || p.projectCategory === 'IKR');
-    if (isAllFtth) return getDocumentSlots('FTTH');
+    const isAllIkr = filteredData.length > 0 && filteredData.every(p => p.projectCategory === 'DSB - IKR' || p.projectCategory === 'IKR' || p.projectCategory === 'FTTH');
     if (isAllIkr) return getDocumentSlots('IKR');
-    if (isAllFtthOrIkr) return FTTH_IKR_DOCUMENT_SLOTS;
     return GOV_DOCUMENT_SLOTS;
   }, [categoryFilter, filteredData]);
 
@@ -569,7 +562,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                 ? projects.length 
                 : projects.filter(p => p.projectCategory === cat).length;
               const isActive = categoryFilter === cat;
-              const isFtthOrIkr = cat === 'FTTH' || cat === 'IKR';
+              const isDsbIkr = cat === 'DSB - IKR';
 
               return (
                 <button
@@ -581,7 +574,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                   }}
                   className={`px-2.5 py-1 text-xs rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                     isActive
-                      ? isFtthOrIkr
+                      ? isDsbIkr
                         ? 'bg-emerald-600 text-white shadow-xs'
                         : 'bg-indigo-600 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -593,7 +586,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                   }`}>
                     {count}
                   </span>
-                  {isFtthOrIkr && (
+                  {isDsbIkr && (
                     <span className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold ${
                       isActive ? 'bg-emerald-800 text-emerald-100' : 'bg-emerald-100 text-emerald-800'
                     }`}>
@@ -612,9 +605,9 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
             })}
           </div>
 
-          {(categoryFilter === 'FTTH' || categoryFilter === 'IKR') && (
+          {categoryFilter === 'DSB - IKR' && (
             <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
-              Format Dokumen {categoryFilter}: SPK, APD, KMZ, BA Survey, BOQ, Timeline (6 Dokumen)
+              Format Dokumen DSB - IKR: SPK, APD IKRD, KMZ IKR, BA Survey, BOQ, Timeline (6 Dokumen)
             </div>
           )}
         </div>

@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="bg-slate-900 border-b border-slate-800/80 sticky top-0 z-30 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-3">
           {/* Left: Hamburger & Brand Name */}
           <div className="flex items-center gap-3 min-w-0">
@@ -58,8 +58,8 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-bold tracking-tight text-white truncate">
-                    OSP Project Controling
+                  <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-white truncate font-sans">
+                    Monitoring GOV FMI_DSB
                   </h1>
                   <span className="hidden md:inline-flex items-center px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase bg-sky-500/15 text-sky-300 rounded-md border border-sky-400/25">
                     © PAUL

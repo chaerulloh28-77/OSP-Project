@@ -230,7 +230,8 @@ export const FTTH_IKR_DOCUMENT_SLOTS: DocumentSlotDefinition[] = [
  * Otherwise (GOV): returns 11 slots.
  */
 export function getDocumentSlots(category?: string): DocumentSlotDefinition[] {
-  if (category === 'FTTH') {
+  const cat = (category || '').toUpperCase().trim();
+  if (cat === 'DSB - IKR' || cat === 'IKR' || cat.includes('IKR') || cat.includes('FTTH')) {
     return [
       {
         key: 'spk',
@@ -245,74 +246,9 @@ export function getDocumentSlots(category?: string): DocumentSlotDefinition[] {
       {
         key: 'apdRelokasi',
         num: 2,
-        label: 'APD FTTH',
+        label: 'APD IKRD',
         accept: 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.xlsx,.xls',
-        fileHint: 'PDF / Gambar / Excel APD FTTH',
-        category: 'teknis',
-        formatBadge: 'PDF / Gambar',
-        iconType: 'pdf',
-      },
-      {
-        key: 'kmzRelokasi',
-        num: 3,
-        label: 'KMZ FTTH',
-        accept: '.kmz,.kml,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml,application/pdf,.pdf',
-        fileHint: 'KMZ / KML / GIS FTTH',
-        category: 'teknis',
-        formatBadge: 'KMZ / KML',
-        iconType: 'kmz',
-      },
-      {
-        key: 'baSurveyInternal',
-        num: 4,
-        label: 'BA Survey',
-        accept: 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp',
-        fileHint: 'PDF / Foto Berita Acara',
-        category: 'survey',
-        formatBadge: 'PDF / Foto',
-        iconType: 'pdf',
-      },
-      {
-        key: 'formBoq',
-        num: 5,
-        label: 'FORM BOQ MATERIAL DAN LABOUR',
-        accept: '.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,.pdf',
-        fileHint: 'File Excel (.xlsx/.xls) atau PDF',
-        category: 'komersial',
-        formatBadge: 'Excel / PDF',
-        iconType: 'excel',
-      },
-      {
-        key: 'timelineRelokasi',
-        num: 6,
-        label: 'TIMELINE',
-        accept: '.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,.pdf',
-        fileHint: 'File Excel (.xlsx/.xls) atau PDF',
-        category: 'teknis',
-        formatBadge: 'Excel / PDF',
-        iconType: 'excel',
-      },
-    ];
-  }
-
-  if (category === 'IKR') {
-    return [
-      {
-        key: 'spk',
-        num: 1,
-        label: 'Surat Kesepakatan Kerja ( SPK )',
-        accept: 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.xlsx,.xls',
-        fileHint: 'PDF / Scan / Foto SPK',
-        category: 'perizinan',
-        formatBadge: 'PDF / Scan',
-        iconType: 'pdf',
-      },
-      {
-        key: 'apdRelokasi',
-        num: 2,
-        label: 'APD IKR',
-        accept: 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.xlsx,.xls',
-        fileHint: 'PDF / Gambar / Excel APD IKR',
+        fileHint: 'PDF / Gambar / Excel APD IKRD',
         category: 'teknis',
         formatBadge: 'PDF / Gambar',
         iconType: 'pdf',

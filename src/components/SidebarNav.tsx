@@ -55,11 +55,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               <Building2 className="w-4 h-4" />
             </div>
             <div className="truncate">
-              <span className="font-bold text-xs tracking-tight text-white block truncate" title="OSP Project Controling">
-                OSP Project
+              <span className="font-extrabold text-xs tracking-tight text-white block truncate" title="Monitoring GOV FMI_DSB">
+                Monitoring GOV
               </span>
-              <span className="text-[10px] text-slate-400 block truncate" title="Controling">
-                Controling
+              <span className="text-[10px] font-semibold text-sky-400 block truncate" title="FMI_DSB">
+                FMI_DSB
               </span>
             </div>
           </div>
@@ -149,7 +149,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                     {tab.id === 'status-project' && 'Pengadaan MR/PO & closing'}
                     {tab.id === 'status-construction' && 'Progress galian & kabel FO'}
                     {tab.id === 'project-tracking-pipeline' && 'Kanban alur & milestone'}
-                    {tab.id === 'upload-document' && 'Berkas, email & Google Drive'}
+                    {tab.id === 'upload-document' && 'Berkas GOV-FMI & DSB - IKR'}
                     {tab.id === 'pie-chart-analytics' && 'Grafik pie & rincian per klik'}
                   </p>
                 </div>

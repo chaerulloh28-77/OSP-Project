@@ -39,7 +39,6 @@ export type KpiItemKey =
   | 'total' 
   | 'construction' 
   | 'relokasi-fo' 
-  | 'relokasi-coax' 
   | 'not-started' 
   | 'in-progress' 
   | 'cancelled' 
@@ -92,14 +91,6 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
       case 'relokasi-fo':
         return projects.filter((p) => Number(p.panjangRelokasi || 0) > 0);
 
-      case 'relokasi-coax':
-        return projects.filter(
-          (p) =>
-            Number(p.panjangRelokasiCoax || 0) > 0 ||
-            Number(p.pullingCoaxPanjangTotal || 0) > 0 ||
-            (Boolean(p.statusPullingCableCoax) && p.statusPullingCableCoax !== 'No COAX' && p.statusPullingCableCoax !== 'N/A')
-        );
-
       case 'not-started':
         return projects.filter(
           (p) => p.projectStatus === 'Project Not Started' || !p.projectStatus || p.projectStatus === 'Not Yet'
@@ -143,8 +134,6 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
             p.statusConstruction === 'Pulling Cable' ||
             p.statusPullingCableFo === 'In Progress' ||
             p.statusPullingCableFo === 'Done' ||
-            p.statusPullingCableCoax === 'In Progress' ||
-            p.statusPullingCableCoax === 'Done' ||
             (Boolean(p.pullingCableProgress) && p.pullingCableProgress !== '0%' && p.pullingCableProgress !== 'N/A') ||
             (Boolean(p.pullingCableFoProgress) && p.pullingCableFoProgress !== '0%' && p.pullingCableFoProgress !== 'N/A') ||
             Number(p.pullingFoPanjangSelesai || 0) > 0 ||
@@ -212,7 +201,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
           gradientBg: 'from-slate-900 via-sky-950 to-slate-900',
           accentColor: 'from-sky-500 to-blue-600',
           icon: Boxes,
-          description: 'Metrik Total Project mencakup seluruh paket pekerjaan relokasi fiber optic, coaxial, dan galian yang terdaftar dalam sistem PMO OSP, baik yang sedang dalam antrean perencanaan, perizinan dinas, eksekusi fisik, maupun closing selesai.',
+          description: 'Metrik Total Project mencakup seluruh paket pekerjaan relokasi fiber optic dan galian yang terdaftar dalam sistem PMO OSP, baik yang sedang dalam antrean perencanaan, perizinan dinas, eksekusi fisik, maupun closing selesai.',
           insights: [
             { label: 'Total Paket Terdata', value: `${projects.length} paket`, desc: '100% database proyek aktif' },
             { label: 'Total Panjang Relokasi FO', value: `${totalMetersFo.toLocaleString('id-ID')} m`, desc: 'Kebutuhan bentangan FO' },
@@ -237,7 +226,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
           gradientBg: 'from-slate-900 via-amber-950 to-slate-900',
           accentColor: 'from-amber-500 to-orange-600',
           icon: HardHat,
-          description: 'Tahapan Konstruksi menandakan pekerjaan fisik telah berjalan di lokasi proyek. Meliputi tim kontraktor vendor yang melakukan penggalian, instalasi FO/COAX, serta pengawasan lapangan oleh pengawas & PIC Section Head.',
+          description: 'Tahapan Konstruksi menandakan pekerjaan fisik telah berjalan di lokasi proyek. Meliputi tim kontraktor vendor yang melakukan penggalian, instalasi FO, serta pengawasan lapangan oleh pengawas & PIC Section Head.',
           insights: [
             { label: 'Paket dalam Konstruksi', value: `${kpiFilteredProjects.length} paket`, desc: 'Pekerjaan fisik berjalan' },
             { label: 'Sedang Penarikan Kabel', value: `${withPulling} lokasi`, desc: 'Pulling Cable aktif di lapangan' },
@@ -272,30 +261,6 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
           ],
           filterKey: 'panjangRelokasi',
           filterVal: 'Has Length',
-        };
-      }
-
-      case 'relokasi-coax': {
-        const totalCoaxMeters = kpiFilteredProjects.reduce((acc, c) => acc + Number(c.panjangRelokasiCoax || c.pullingCoaxPanjangTotal || 0), 0);
-        const withCoaxCount = kpiFilteredProjects.length;
-
-        return {
-          title: 'Relokasi COAX (Total Panjang Relokasi Coaxial Cable)',
-          subtitle: 'Volume relokasi kabel Koaksial (HFC/TV Kabel) pada jalur-jalur yang memiliki infrastruktur hybrid.',
-          badge: `${totalCoaxMeters.toLocaleString('id-ID')} Meter COAX`,
-          badgeClass: 'bg-cyan-500/20 text-cyan-200 border-cyan-400/30',
-          gradientBg: 'from-slate-900 via-cyan-950 to-slate-900',
-          accentColor: 'from-cyan-500 to-teal-600',
-          icon: Cable,
-          description: 'Metrik Relokasi COAX merepresentasikan paket relokasi yang memiliki jaringan kabel coaxial existing yang harus direlokasi berdampingan dengan kabel fiber optic.',
-          insights: [
-            { label: 'Total Panjang COAX', value: `${totalCoaxMeters.toLocaleString('id-ID')} m`, desc: 'Bentangan coaxial total' },
-            { label: 'Paket Memiliki COAX', value: `${withCoaxCount} paket`, desc: 'Jalur dengan kabel koaksial' },
-            { label: 'Status No COAX', value: `${projects.length - withCoaxCount} paket`, desc: 'Jalur murni fiber optic' },
-            { label: 'Kategori Relokasi', value: 'Hybrid HFC & Fiber', desc: 'Infrastruktur terintegrasi' },
-          ],
-          filterKey: 'panjangRelokasiCoax',
-          filterVal: 'Relokasi COAX',
         };
       }
 
@@ -429,7 +394,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
         const totalSelesaiMeters = kpiFilteredProjects.reduce((acc, c) => acc + Number(c.pullingFoPanjangSelesai || c.pullingPanjangSelesai || 0), 0);
 
         return {
-          title: 'Pulling Cable (Penarikan Kabel FO & COAX Aktif)',
+          title: 'Pulling Cable (Penarikan Kabel FO Aktif)',
           subtitle: 'Aktivitas penggelaran kabel di lapangan oleh tim penarikan kontraktor vendor.',
           badge: `${count} Lokasi Pulling`,
           badgeClass: 'bg-purple-500/20 text-purple-200 border-purple-400/30',
@@ -673,11 +638,6 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
                         {Number(proj.panjangRelokasi || 0) > 0 && (
                           <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono font-medium">
                             FO: {Number(proj.panjangRelokasi).toLocaleString('id-ID')} m
-                          </span>
-                        )}
-                        {Number(proj.panjangRelokasiCoax || 0) > 0 && (
-                          <span className="px-2 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 font-mono font-medium">
-                            COAX: {Number(proj.panjangRelokasiCoax).toLocaleString('id-ID')} m
                           </span>
                         )}
                         {proj.projectStatus && (

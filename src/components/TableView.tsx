@@ -62,7 +62,6 @@ import {
   STATUS_AUDIT_OPTIONS,
   STATUS_MATERIAL_OPTIONS,
   STATUS_PULLING_CABLE_FO_OPTIONS,
-  STATUS_PULLING_CABLE_COAX_OPTIONS,
   STATUS_CO_OPTIONS,
   LAPORAN_OPNAME_OPTIONS,
   CLOSING_SAP_OPTIONS,
@@ -248,7 +247,6 @@ export const TableView: React.FC<TableViewProps> = ({
       case 'No Need PO':
         return 'text-rose-700 bg-rose-50 border border-rose-200/60 font-medium';
       case 'Project Not Started':
-      case 'No COAX':
         return 'text-slate-600 bg-slate-100 border border-slate-200 font-medium';
       default:
         return 'text-slate-700 bg-slate-50 border border-slate-200/60';
@@ -273,10 +271,6 @@ export const TableView: React.FC<TableViewProps> = ({
       case 'pullingFoPanjangSelesai':
       case 'pullingFoPanjangTotal':
         return <Network className="w-3 h-3 text-sky-200/90 shrink-0" />;
-      case 'panjangRelokasiCoax':
-      case 'pullingCoaxPanjangSelesai':
-      case 'pullingCoaxPanjangTotal':
-        return <Cable className="w-3 h-3 text-sky-200/90 shrink-0" />;
       case 'statusConstruction':
       case 'statusLabor':
       case 'statusMaterial':
@@ -399,9 +393,9 @@ export const TableView: React.FC<TableViewProps> = ({
                   key={row.id}
                   onMouseEnter={() => setHoveredRowId(row.id)}
                   onMouseLeave={() => setHoveredRowId(null)}
-                  className={`transition-colors ${
+                  className={`transition-all duration-150 ${
                     isHovered
-                      ? 'bg-sky-50/70'
+                      ? 'bg-sky-50/80 shadow-xs'
                       : isEven
                       ? 'bg-white'
                       : 'bg-slate-50/50'
@@ -409,14 +403,14 @@ export const TableView: React.FC<TableViewProps> = ({
                 >
                   {/* Fixed Sticky Action Column */}
                   <td className={`${isCompact ? 'py-1 px-1.5' : 'py-2 px-2.5'} text-center sticky left-0 z-10 border-r border-slate-200 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)] ${
-                    isHovered ? 'bg-sky-50/90' : isEven ? 'bg-white' : 'bg-slate-50'
+                    isHovered ? 'bg-sky-50/95 border-l-4 border-l-sky-500' : isEven ? 'bg-white' : 'bg-slate-50'
                   }`}>
                     <div className="flex items-center justify-center gap-1">
                       {/* View Drawer Button */}
                       <button
                         onClick={() => onViewDetail(row)}
                         title="Lihat Detail Semua Tab"
-                        className="p-1 rounded text-slate-500 hover:text-sky-600 hover:bg-sky-100/60 transition-colors cursor-pointer"
+                        className="p-1 rounded text-slate-500 hover:text-sky-600 hover:bg-sky-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
@@ -425,7 +419,7 @@ export const TableView: React.FC<TableViewProps> = ({
                       <button
                         onClick={() => onEdit(row)}
                         title="Edit Project Lengkap"
-                        className="p-1 rounded text-slate-500 hover:text-amber-600 hover:bg-amber-100/60 transition-colors cursor-pointer"
+                        className="p-1 rounded text-slate-500 hover:text-amber-600 hover:bg-amber-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
@@ -434,7 +428,7 @@ export const TableView: React.FC<TableViewProps> = ({
                       <button
                         onClick={() => onDelete(row)}
                         title="Hapus Project"
-                        className="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-100/60 transition-colors cursor-pointer"
+                        className="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -447,7 +441,7 @@ export const TableView: React.FC<TableViewProps> = ({
                             setActiveActionMenuId(activeActionMenuId === row.id ? null : row.id);
                           }}
                           title="Navigasi ke Tab Terkait"
-                          className="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-indigo-100/60 transition-colors cursor-pointer"
+                          className="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-indigo-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
@@ -885,24 +879,6 @@ export const TableView: React.FC<TableViewProps> = ({
                                 <option key={opt} value={opt}>{opt}</option>
                               ))}
                             </select>
-                          ) : col.key === 'statusPullingCableCoax' ? (
-                            <select
-                              autoFocus
-                              value={cellTempText}
-                              onChange={(e) => {
-                                setCellTempText(e.target.value);
-                                if (onQuickUpdateCell) {
-                                  onQuickUpdateCell(row.id, col.key, e.target.value);
-                                }
-                                setEditingCell(null);
-                              }}
-                              onBlur={() => commitCellEdit(row.id, col.key)}
-                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
-                            >
-                              {STATUS_PULLING_CABLE_COAX_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>{opt}</option>
-                              ))}
-                            </select>
                           ) : col.key === 'statusCo' ? (
                             <select
                               autoFocus
@@ -1117,8 +1093,8 @@ export const TableView: React.FC<TableViewProps> = ({
                               <span>Pilih tanggal</span>
                             </span>
                           )
-                        ) : (col.key === 'pullingCableFoProgress' || col.key === 'pullingCableCoaxProgress' || col.key === 'pullingCableProgress' || col.key === 'galianSipilProgress') && valueStr ? (
-                          valueStr === 'N/A' || valueStr === 'No COAX' ? (
+                        ) : (col.key === 'pullingCableFoProgress' || col.key === 'pullingCableProgress' || col.key === 'galianSipilProgress') && valueStr ? (
+                          valueStr === 'N/A' ? (
                             <span className="inline-block px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 bg-slate-50 border border-slate-200">
                               {valueStr}
                             </span>
@@ -1133,8 +1109,6 @@ export const TableView: React.FC<TableViewProps> = ({
                                       ? 'bg-amber-500'
                                       : col.key === 'pullingCableFoProgress'
                                       ? 'bg-sky-600'
-                                      : col.key === 'pullingCableCoaxProgress'
-                                      ? 'bg-purple-600'
                                       : 'bg-indigo-600'
                                   }`}
                                   style={{ width: `${Math.min(100, Math.max(0, parseInt(valueStr, 10) || (valueStr.toLowerCase() === 'done' ? 100 : 0)))}%` }}
@@ -1147,7 +1121,7 @@ export const TableView: React.FC<TableViewProps> = ({
                               </span>
                             </div>
                           )
-                        ) : (col.key === 'panjangRelokasi' || col.key === 'panjangRelokasiCoax' || col.key === 'pullingFoPanjangSelesai' || col.key === 'pullingFoPanjangTotal' || col.key === 'pullingCoaxPanjangSelesai' || col.key === 'pullingCoaxPanjangTotal' || col.key === 'galianPanjangSelesai' || col.key === 'galianPanjangTotal' || col.key === 'pullingPanjangSelesai' || col.key === 'pullingPanjangTotal') ? (
+                        ) : (col.key === 'panjangRelokasi' || col.key === 'pullingFoPanjangSelesai' || col.key === 'pullingFoPanjangTotal' || col.key === 'galianPanjangSelesai' || col.key === 'galianPanjangTotal' || col.key === 'pullingPanjangSelesai' || col.key === 'pullingPanjangTotal') ? (
                           <span className="font-mono">
                             {valueStr !== undefined && valueStr !== '' && valueStr !== null && Number(valueStr) > 0 ? (
                               `${Number(valueStr).toLocaleString('id-ID')} m`

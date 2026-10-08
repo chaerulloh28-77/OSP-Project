@@ -25,10 +25,9 @@ export const APD_RELOKASI_OPTIONS = [
   'Belum ada',
 ] as const;
 
-// APD for FTTH & IKR: APD FTTH, APD IKR, Belum ada, Ada
+// APD for FTTH & IKR: Ada, Belum ada
 export const APD_FTTH_IKR_OPTIONS = [
-  'APD FTTH',
-  'APD IKR',
+  'Ada',
   'Belum ada',
 ] as const;
 
@@ -38,16 +37,15 @@ export const KMZ_RELOKASI_OPTIONS = [
   'Belum ada',
 ] as const;
 
-// KMZ for FTTH & IKR: KMZ FTTH, KMZ IKR, Belum ada, Ada
+// KMZ for FTTH & IKR: Ada, Belum ada
 export const KMZ_FTTH_IKR_OPTIONS = [
-  'KMZ FTTH',
-  'KMZ IKR',
+  'Ada',
   'Belum ada',
 ] as const;
 
 export function getApdOptions(category?: string): readonly string[] {
   const cat = (category || '').toUpperCase().trim();
-  if (cat === 'FTTH' || cat === 'IKR') {
+  if (cat === 'DSB - IKR' || cat === 'IKR' || cat.includes('IKR') || cat === 'FTTH') {
     return APD_FTTH_IKR_OPTIONS;
   }
   return APD_RELOKASI_OPTIONS;
@@ -55,7 +53,7 @@ export function getApdOptions(category?: string): readonly string[] {
 
 export function getKmzOptions(category?: string): readonly string[] {
   const cat = (category || '').toUpperCase().trim();
-  if (cat === 'FTTH' || cat === 'IKR') {
+  if (cat === 'DSB - IKR' || cat === 'IKR' || cat.includes('IKR') || cat === 'FTTH') {
     return KMZ_FTTH_IKR_OPTIONS;
   }
   return KMZ_RELOKASI_OPTIONS;
@@ -123,7 +121,7 @@ export const FTTH_IKR_PROJECT_STATUS_OPTIONS = [
 // Helper to get conditional project status options based on category
 export function getProjectStatusOptions(category?: string): readonly string[] {
   const cat = (category || '').toUpperCase().trim();
-  if (cat === 'FTTH' || cat === 'IKR') {
+  if (cat.includes('IKR') || cat.includes('FTTH')) {
     return FTTH_IKR_PROJECT_STATUS_OPTIONS;
   }
   return PROJECT_STATUS_OPTIONS;
@@ -196,15 +194,6 @@ export const STATUS_PULLING_CABLE_FO_OPTIONS = [
   'Done',
 ] as const;
 
-// Status Pulling Cable COAX: No COAX, N/A, Not Yet, In Progress, Done
-export const STATUS_PULLING_CABLE_COAX_OPTIONS = [
-  'No COAX',
-  'N/A',
-  'Not Yet',
-  'In Progress',
-  'Done',
-] as const;
-
 // Status CO: Not Yet, In Progress, Done
 export const STATUS_CO_OPTIONS = [
   'Not Yet',
@@ -226,9 +215,20 @@ export const CLOSING_SAP_OPTIONS = [
 ] as const;
 
 // Install HH & Pole Progress specifications
-// HH, HB, MH (Unit): 80x80, 90x90, 100x100, 110x110, 120x120
-export const HH_TYPE_OPTIONS = ['HH', 'HB', 'MH'] as const;
-export const HH_SIZE_OPTIONS = ['80x80', '90x90', '100x100', '110x110', '120x120'] as const;
+// HG, HM, HS, Tutup HG, Tutup HM, Tutup HS (Unit): 80x80, 60x60, 40x60
+export const HH_TYPE_OPTIONS = ['HG', 'HM', 'HS', 'Tutup HG', 'Tutup HM', 'Tutup HS'] as const;
+export const HH_SIZE_OPTIONS = ['80x80', '60x60', '40x60'] as const;
+
+export const HH_TYPE_DSB_IKR_OPTIONS = ['HG', 'HM', 'HS', 'Tutup HG', 'Tutup HM', 'Tutup HS'] as const;
+export const HH_SIZE_DSB_IKR_OPTIONS = ['80x80', '60x60', '40x60'] as const;
+
+export function getHhTypeOptions(_category?: string): readonly string[] {
+  return HH_TYPE_DSB_IKR_OPTIONS;
+}
+
+export function getHhSizeOptions(_category?: string): readonly string[] {
+  return HH_SIZE_DSB_IKR_OPTIONS;
+}
 
 // Pole (Ea): Tiang 7, Tiang 8, Tiang 9
 export const POLE_OPTIONS = ['Tiang 7', 'Tiang 8', 'Tiang 9'] as const;
@@ -346,93 +346,122 @@ export function calculatePullingFoPercentage(
 }
 
 /**
- * Helper to calculate Pulling Cable COAX Progress percentage automatically:
- * Based on statusPullingCableCoax, meters, or statusConstruction
- */
-export function calculatePullingCoaxPercentage(
-  statusCoax: string,
-  doneMeters?: number | string,
-  totalMeters?: number | string,
-  statusConstruction?: string
-): string {
-  // Option 'No COAX' or 'N/A' is explicitly set to 0% (not applicable)
-  const sCoax = (statusCoax || '').trim().toLowerCase();
-  if (sCoax === 'no coax' || sCoax === 'n/a' || !sCoax) return '0%';
-
-  if (statusConstruction === 'Completed') return '100%';
-  if (statusConstruction === 'Project Cancel' || statusConstruction === 'Cancelled') return '0%';
-
-  if (sCoax === 'done') return '100%';
-  if (sCoax === 'not started' || sCoax === 'not yet') return '0%';
-
-  const total = Number(totalMeters || 0);
-  const done = Number(doneMeters || 0);
-  if (total > 0 && done > 0) {
-    const pct = Math.min(100, Math.max(0, Math.round((done / total) * 100)));
-    return `${pct}%`;
-  }
-
-  if (sCoax === 'in progress') return '50%';
-  return '0%';
-}
-
-/**
- * Helper to calculate Pulling Cable Progress percentage automatically:
- * Computed from statusPullingCableFo, statusPullingCableCoax, and statusConstruction
+ * Helper to calculate Pulling Cable Progress percentage automatically based on FO:
  */
 export function calculatePullingPercentage(
   statusFo: string,
-  statusCoax: string,
   statusConstruction?: string
 ): string {
   if (statusConstruction === 'Completed') return '100%';
   if (statusConstruction === 'Project Cancel' || statusConstruction === 'Cancelled') return '0%';
 
   const sFo = (statusFo || '').trim();
-  const sCoax = (statusCoax || '').trim().toLowerCase();
-  const isCoaxNotApplicable = sCoax === 'no coax' || sCoax === 'n/a' || !sCoax;
-
-  // When Coax is N/A or No COAX, FO determines 100% of pulling progress
-  if (isCoaxNotApplicable) {
-    if (sFo === 'Done') return '100%';
-    if (sFo === 'In Progress') return '50%';
-    if (statusConstruction === 'Pulling Cable') return '30%';
-    return '0%';
-  }
-
-  // When both FO and COAX are active
-  if (sFo === 'Done' && sCoax === 'done') {
-    return '100%';
-  }
-
-  let foWeight = 0;
-  if (sFo === 'Done') foWeight = 60;
-  else if (sFo === 'In Progress') foWeight = 30;
-
-  let coaxWeight = 0;
-  if (sCoax === 'done') coaxWeight = 40;
-  else if (sCoax === 'in progress') coaxWeight = 20;
-
-  if (sFo === 'Done' && sCoax !== 'done') {
-    return `${Math.min(100, 60 + coaxWeight)}%`;
-  }
-
-  if ((sFo === 'Not Yet' || sFo === 'Not Started') && (sCoax === 'not yet' || sCoax === 'not started')) {
-    if (statusConstruction === 'Pulling Cable') return '25%';
-    return '0%';
-  }
-
-  const total = Math.min(100, foWeight + coaxWeight);
-  return `${total}%`;
+  if (sFo === 'Done') return '100%';
+  if (sFo === 'In Progress') return '50%';
+  if (statusConstruction === 'Pulling Cable') return '30%';
+  return '0%';
 }
 
-// Project Categories: GOV IPPJU, GOV APJATEL, GOV SJUT, FTTH, IKR
+// Project Categories: GOV IPPJU, GOV APJATEL, GOV SJUT, DSB - IKR
 export const PROJECT_CATEGORY_OPTIONS = [
   'GOV IPPJU',
   'GOV APJATEL',
   'GOV SJUT',
-  'FTTH',
-  'IKR',
+  'DSB - IKR',
 ] as const;
 export type ProjectCategory = typeof PROJECT_CATEGORY_OPTIONS[number];
+
+// Area / Kota Options
+export const AREA_KOTA_OPTIONS = [
+  'Jakarta Pusat',
+  'Jakarta Utara',
+  'Jakarta Selatan',
+  'Jakarta Timur',
+  'Jakarta Barat',
+  'Kota Bekasi',
+  'Kab. Bekasi',
+  'Kota Tangerang',
+  'Kab. Tangerang',
+  'Kab. Bogor',
+  'Kota Bogor',
+  'Cilegon',
+  'Banten',
+  'Serang',
+] as const;
+
+// PIC Govrel Options (Sorted Alphabetically)
+export const PIC_GOVREL_OPTIONS = [
+  'Asmari',
+  'Dwi',
+  'Fredy',
+  'Irvan',
+  'Lintang',
+  'Reza',
+  'Rizky',
+  'Silmi',
+  'Suhandi',
+  'Topan',
+  'Wendy',
+  'Wili',
+] as const;
+
+// Waspang DSB Options (Sorted Alphabetically)
+export const WASPANG_DSB_OPTIONS = [
+  'Abdul Ra\'uf',
+  'Alfy',
+  'Amir',
+  'Dodi',
+  'Hasan',
+  'Krisna',
+  'Lorenz',
+  'Mardinah',
+  'Suroso',
+  'Wahyu',
+] as const;
+
+// Nama Vendor Options (Sorted Alphabetically, Uppercase, Unique)
+export const VENDOR_OPTIONS = [
+  'BELUM ADA VENDOR',
+  'PT.ANT',
+  'PT.ARKON',
+  'PT.BLAO',
+  'PT.CAESAR',
+  'PT.CAI',
+  'PT.CAKRA',
+  'PT.CAPER',
+  'PT.CMT',
+  'PT.CORE',
+  'PT.CPS',
+  'PT.DAVON',
+  'PT.FBI',
+  'PT.FIROPTIK',
+  'PT.FISS',
+  'PT.FITEL',
+  'PT.GEMATI',
+  'PT.INFRA LINTAS NUSANTARA',
+  'PT.INTAN',
+  'PT.JAN',
+  'PT.JWS',
+  'PT.LISMA',
+  'PT.MANDAU',
+  'PT.MAS',
+  'PT.MENTARI',
+  'PT.MITRA PATRIOT (PERSERODA)',
+  'PT.MOTOTABIAN',
+  'PT.MVT',
+  'PT.NETCO',
+  'PT.OLT',
+  'PT.OPTICOM',
+  'PT.PHPE',
+  'PT.PRAGATA',
+  'PT.RDM',
+  'PT.REKATAMA',
+  'PT.RIMH',
+  'PT.RPA',
+  'PT.SABA',
+  'PT.SBKP',
+  'PT.SCKP',
+  'PT.SENTRATEL',
+  'PT.TRP',
+] as const;
 

@@ -105,8 +105,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
       badgeBg: 'bg-purple-100 text-purple-800',
       filterFn: (p) => 
         p.statusConstruction === 'Pulling Cable' || 
-        p.statusPullingCableFo === 'In Progress' ||
-        p.statusPullingCableCoax === 'In Progress',
+        p.statusPullingCableFo === 'In Progress',
     },
     {
       id: 'stage-closing',
@@ -241,7 +240,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
                     return (
                       <div
                         key={p.id}
-                        className="bg-white border border-slate-200 rounded-lg p-3 shadow-2xs hover:shadow-md hover:border-sky-400 transition-all cursor-pointer group space-y-2.5"
+                        className="interactive-card bg-white border border-slate-200 rounded-lg p-3 shadow-2xs hover:shadow-md hover:border-sky-400 hover:-translate-y-1 active:scale-[0.98] transition-all duration-200 cursor-pointer group space-y-2.5"
                         onClick={() => onViewDetail(p)}
                       >
                         {/* Header: PMO ID & Category */}

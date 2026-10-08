@@ -56,11 +56,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-cyan-500 text-white shadow-lg shadow-sky-600/30 mb-4 ring-1 ring-white/20">
               <Building2 className="w-7 h-7" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              OSP Project Controling
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white font-sans">
+              Monitoring GOV FMI_DSB
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Portal Akses Masuk PMO System © PAUL
+            <p className="text-xs sm:text-sm text-slate-400 mt-1 font-medium tracking-wide">
+              AKSES DATA DSB system © PAUL
             </p>
           </div>
 
@@ -143,7 +143,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
 
         <p className="text-center text-[11px] text-slate-500 mt-4">
-          OSP Project Controling &copy; 2026 PMO System
+          Monitoring GOV FMI_DSB &copy; 2026 PMO System
         </p>
       </div>
     </div>

@@ -26,7 +26,7 @@ export const CONSTRUCTION_PLAN_COLUMNS: ColumnDefinition[] = [
   { key: 'priority', label: 'Prioritas', width: '110px', align: 'center', badgeType: 'status' },
   { key: 'picSectionHead', label: 'PIC Govrel', width: '140px', align: 'left' },
   { key: 'waspangDsb', label: 'Waspang DSB', width: '140px', align: 'left' },
-  { key: 'namaVendor', label: 'Nama Vendor / Pelaksana', width: '150px', align: 'left', badgeType: 'vendor' },
+  { key: 'namaVendor', label: 'Nama Vendor', width: '150px', align: 'left', badgeType: 'vendor' },
   { key: 'dateSuratPerintahRelokasi', label: 'Date SP Relokasi / Tanggal PO', width: '180px', align: 'center' },
   { key: 'bulan', label: 'Bulan', width: '110px', align: 'left' },
   { key: 'tahun', label: 'Tahun', width: '90px', align: 'center', isNumeric: true },
@@ -122,7 +122,7 @@ export const PROJECT_TRACKING_PIPELINE_COLUMNS: ColumnDefinition[] = [
   { key: 'waspangDsb', label: 'Waspang DSB', width: '140px', align: 'left' },
   { key: 'projectStatus', label: 'Project Status', width: '160px', align: 'left', badgeType: 'status' },
   { key: 'statusConstruction', label: 'Status Construction', width: '160px', align: 'left', badgeType: 'status' },
-  { key: 'namaVendor', label: 'Nama Vendor / Pelaksana', width: '140px', align: 'left', badgeType: 'vendor' },
+  { key: 'namaVendor', label: 'Nama Vendor', width: '140px', align: 'left', badgeType: 'vendor' },
   { key: 'panjangRelokasi', label: 'Panjang FO (m)', width: '130px', align: 'right', isNumeric: true },
   { key: 'statusPengajuanPo', label: 'Status PO/MR', width: '130px', align: 'left' },
   { key: 'pullingCableProgress', label: 'Pulling Progress', width: '140px', align: 'center' },
@@ -135,7 +135,7 @@ export const PROJECT_TRACKING_PIPELINE_COLUMNS: ColumnDefinition[] = [
 
 export const TAB_CONFIG = [
   { id: 'project-list' as TabKey, label: '1. Project List', description: 'Master identitas proyek, PIC Govrel, Waspang DSB, area & status' },
-  { id: 'construction-plan' as TabKey, label: '2. Construction & Plan', description: 'Perencanaan teknis lapangan, vendor pelaksana, survey & perizinan' },
+  { id: 'construction-plan' as TabKey, label: '2. Construction & Plan', description: 'Perencanaan teknis lapangan, nama vendor pelaksana, survey & perizinan' },
   { id: 'status-project' as TabKey, label: '3. Status Project', description: 'Pengajuan project, Project Create Date, MR Number, logistik material & closing dokumen' },
   { id: 'status-construction' as TabKey, label: '4. Status Construction', description: 'Progress fisik, galian, pulling FO (Not Yet, In Progress, Done) & SAP closing' },
   { id: 'project-tracking-pipeline' as TabKey, label: '5. Project Tracking Pipeline', description: 'Pelacakan menyeluruh pipeline, tahapan & progres lintas sheet' },

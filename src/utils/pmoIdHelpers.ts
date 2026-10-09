@@ -163,9 +163,9 @@ export function ensureProjectDescriptionPrefix(desc: string = '', category?: str
 
   let current = desc.trim();
 
-  // If empty, return target prefix with a trailing space
+  // If empty, return empty string so it stays clean
   if (!current) {
-    return `${targetPrefix} `;
+    return '';
   }
 
   // If already starts with the correct target prefix

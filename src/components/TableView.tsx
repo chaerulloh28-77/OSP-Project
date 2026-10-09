@@ -66,6 +66,10 @@ import {
   LAPORAN_OPNAME_OPTIONS,
   CLOSING_SAP_OPTIONS,
   PRIORITY_OPTIONS,
+  VENDOR_OPTIONS,
+  PIC_GOVREL_OPTIONS,
+  WASPANG_DSB_OPTIONS,
+  AREA_KOTA_OPTIONS,
 } from '../data/dropdownOptions';
 
 interface TableViewProps {
@@ -532,31 +536,68 @@ export const TableView: React.FC<TableViewProps> = ({
                       >
                         {isCellEditing ? (
                           col.key === 'picSectionHead' ? (
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="text"
-                                autoFocus
-                                value={cellTempText}
-                                placeholder="Nama PIC..."
-                                onChange={(e) => {
-                                  setCellTempText(e.target.value);
-                                  if (onQuickUpdateCell) {
-                                    onQuickUpdateCell(row.id, col.key, e.target.value);
-                                  }
-                                }}
-                                onBlur={() => commitCellEdit(row.id, col.key)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') commitCellEdit(row.id, col.key);
-                                }}
-                                className="w-full px-1.5 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium"
-                              />
-                              <button
-                                onClick={() => commitCellEdit(row.id, col.key)}
-                                className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Pilih PIC -</option>
+                              {PIC_GOVREL_OPTIONS.map((pic) => (
+                                <option key={pic} value={pic}>
+                                  {pic}
+                                </option>
+                              ))}
+                            </select>
+                          ) : col.key === 'waspangDsb' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Pilih Waspang DSB -</option>
+                              {WASPANG_DSB_OPTIONS.map((w) => (
+                                <option key={w} value={w}>
+                                  {w}
+                                </option>
+                              ))}
+                            </select>
+                          ) : col.key === 'areaKota' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Pilih Area/Kota -</option>
+                              {AREA_KOTA_OPTIONS.map((a) => (
+                                <option key={a} value={a}>
+                                  {a}
+                                </option>
+                              ))}
+                            </select>
                           ) : col.key === 'projectStatus' ? (
                             <select
                               autoFocus
@@ -997,31 +1038,26 @@ export const TableView: React.FC<TableViewProps> = ({
                               ))}
                             </select>
                           ) : col.key === 'namaVendor' ? (
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="text"
-                                autoFocus
-                                value={cellTempText}
-                                placeholder="Nama Vendor..."
-                                onChange={(e) => {
-                                  setCellTempText(e.target.value);
-                                  if (onQuickUpdateCell) {
-                                    onQuickUpdateCell(row.id, col.key, e.target.value);
-                                  }
-                                }}
-                                onBlur={() => commitCellEdit(row.id, col.key)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') commitCellEdit(row.id, col.key);
-                                }}
-                                className="w-full px-1.5 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium"
-                              />
-                              <button
-                                onClick={() => commitCellEdit(row.id, col.key)}
-                                className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-medium cursor-pointer"
+                            >
+                              <option value="">- Pilih Nama Vendor -</option>
+                              {VENDOR_OPTIONS.map((v) => (
+                                <option key={v} value={v}>
+                                  {v}
+                                </option>
+                              ))}
+                            </select>
                           ) : col.key === 'projectCreateDate' ? (
                             <div className="flex items-center gap-1">
                               <input
@@ -1074,13 +1110,23 @@ export const TableView: React.FC<TableViewProps> = ({
                             {valueStr}
                           </button>
                         ) : col.key === 'projectDescription' ? (
-                          <span
-                            onClick={() => onViewDetail(row)}
-                            title={valueStr}
-                            className="font-medium text-slate-900 hover:text-sky-700 cursor-pointer block truncate max-w-[280px]"
-                          >
-                            {valueStr}
-                          </span>
+                          valueStr ? (
+                            <span
+                              onClick={() => onViewDetail(row)}
+                              title={valueStr}
+                              className="font-medium text-slate-900 hover:text-sky-700 cursor-pointer block truncate max-w-[280px]"
+                            >
+                              {valueStr}
+                            </span>
+                          ) : (
+                            <span
+                              onClick={() => onViewDetail(row)}
+                              className="text-slate-400 italic text-[11px] block cursor-pointer hover:text-sky-600"
+                              title="Klik untuk detail / double-klik untuk mengisi deskripsi"
+                            >
+                              - Kosong -
+                            </span>
+                          )
                         ) : col.key === 'projectCreateDate' ? (
                           valueStr ? (
                             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-medium text-sky-800 bg-sky-50/80 border border-sky-200">

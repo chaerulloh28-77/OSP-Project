@@ -6,7 +6,10 @@ import {
   Menu,
   Trash2,
   FileSpreadsheet,
-  LogOut
+  LogOut,
+  Eraser,
+  Zap,
+  Sun
 } from 'lucide-react';
 import { TabKey, ProjectData } from '../types/project';
 
@@ -22,8 +25,11 @@ interface HeaderProps {
   onToggleSidebar?: () => void;
   isSidebarCollapsed?: boolean;
   onClearAll?: () => void;
+  onClearDescriptions?: () => void;
   currentUser?: { email: string; name: string } | null;
   onLogout?: () => void;
+  isNeonMode?: boolean;
+  onToggleNeonMode?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,7 +39,10 @@ export const Header: React.FC<HeaderProps> = ({
   totalProjects,
   onToggleSidebar,
   onClearAll,
+  onClearDescriptions,
   onLogout,
+  isNeonMode = true,
+  onToggleNeonMode,
 }) => {
   return (
     <header className="bg-slate-900 border-b border-slate-800/80 sticky top-0 z-30 shadow-md">
@@ -76,6 +85,19 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right: Actions & Tools */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Bersihkan Project Description button */}
+            {totalProjects > 0 && onClearDescriptions && (
+              <button
+                type="button"
+                onClick={onClearDescriptions}
+                title="Hapus dan bersihkan data di dalam kolom Project Description"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-amber-300 bg-amber-950/40 border border-amber-800/60 rounded-lg hover:bg-amber-900/60 hover:text-white transition-all cursor-pointer shadow-2xs"
+              >
+                <Eraser className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden xl:inline">Bersihkan Project Description</span>
+              </button>
+            )}
+
             {/* Clear all projects button when projects exist */}
             {totalProjects > 0 && onClearAll && (
               <button
@@ -114,6 +136,32 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Download className="w-4 h-4 text-sky-400 shrink-0" />
                 <span className="hidden sm:inline">Export CSV</span>
+              </button>
+            )}
+
+            {/* Neon Mode Toggle Button */}
+            {onToggleNeonMode && (
+              <button
+                type="button"
+                onClick={onToggleNeonMode}
+                title={isNeonMode ? "Switch to Classic Mode" : "Switch to Neon Light Mode"}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer border ${
+                  isNeonMode 
+                    ? 'bg-slate-950 text-cyan-400 border-cyan-500/60 shadow-[0_0_12px_rgba(34,211,238,0.4)] hover:shadow-[0_0_18px_rgba(34,211,238,0.6)]'
+                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                {isNeonMode ? (
+                  <>
+                    <Zap className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/30 animate-pulse" />
+                    <span className="text-cyan-300 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)]">Neon ON</span>
+                  </>
+                ) : (
+                  <>
+                    <Sun className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Neon OFF</span>
+                  </>
+                )}
               </button>
             )}
 

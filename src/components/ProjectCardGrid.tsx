@@ -149,7 +149,7 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
 
               {/* Title & Category */}
               <h3 className="text-sm font-bold text-slate-900 group-hover:text-sky-700 transition-colors line-clamp-2 leading-snug">
-                {proj.projectDescription}
+                {proj.projectDescription || <span className="text-slate-400 italic font-normal text-xs">(Tanpa deskripsi)</span>}
               </h3>
               
               <div className="flex items-center gap-2 mt-2">
@@ -172,14 +172,14 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
 
             {/* Card Body - Key Attributes */}
             <div className="p-4 space-y-2.5 text-xs text-slate-600 flex-1">
-              {/* Location & Zone */}
+              {/* Location & Area */}
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-slate-500">
                   <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>Area / Zona:</span>
+                  <span>Area / Kota:</span>
                 </span>
                 <span className="font-medium text-slate-800">
-                  {proj.areaKota || '-'} ({proj.zona || '-'})
+                  {proj.areaKota || '-'}
                 </span>
               </div>
 

@@ -14,6 +14,7 @@ import {
   X, 
   Download, 
   ArrowRight, 
+  ArrowUpRight,
   Eye, 
   Edit3, 
   Maximize2, 
@@ -204,7 +205,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       tabKey: 'project-list',
       tabNumber: 1,
       title: '1. Project List',
-      subtitle: 'Distribusi Kategori, Area/Kota, Zona & PIC Section Head',
+      subtitle: 'Distribusi Kategori, Area/Kota, PIC & Waspang DSB',
       icon: FolderKanban,
       badgeColor: 'bg-sky-100 text-sky-800 border-sky-300',
       metricOptions: [
@@ -249,26 +250,6 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
           },
         },
         {
-          key: 'zona',
-          label: 'Zona Lokasi',
-          getData: (data, palette) => {
-            const counts: Record<string, number> = {};
-            data.forEach((p) => {
-              const z = (p.zona || 'Tanpa Zona').trim();
-              counts[z] = (counts[z] || 0) + 1;
-            });
-            return Object.entries(counts)
-              .sort((a, b) => b[1] - a[1])
-              .map(([label, value], idx) => ({
-                id: `zona-${label}`,
-                label,
-                value,
-                color: palette[idx % palette.length],
-                filterFn: (p) => (p.zona || 'Tanpa Zona').trim() === label,
-              }));
-          },
-        },
-        {
           key: 'pic',
           label: 'PIC Section Head',
           getData: (data, palette) => {
@@ -288,6 +269,26 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
               }));
           },
         },
+        {
+          key: 'waspang',
+          label: 'Waspang DSB',
+          getData: (data, palette) => {
+            const counts: Record<string, number> = {};
+            data.forEach((p) => {
+              const w = (p.waspangDsb || 'Belum Ditentukan').trim();
+              counts[w] = (counts[w] || 0) + 1;
+            });
+            return Object.entries(counts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([label, value], idx) => ({
+                id: `waspang-${label}`,
+                label,
+                value,
+                color: palette[idx % palette.length],
+                filterFn: (p) => (p.waspangDsb || 'Belum Ditentukan').trim() === label,
+              }));
+          },
+        },
       ],
     },
 
@@ -297,13 +298,13 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       tabKey: 'construction-plan',
       tabNumber: 2,
       title: '2. Construction Plan',
-      subtitle: 'Mitra Vendor, Quarter Target, & SP Relokasi',
+      subtitle: 'Mitra Nama Vendor, Quarter Target, & SP Relokasi',
       icon: HardHat,
       badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
       metricOptions: [
         {
           key: 'vendor',
-          label: 'Mitra Vendor Pelaksana',
+          label: 'Nama Vendor',
           getData: (data, palette) => {
             const counts: Record<string, number> = {};
             data.forEach((p) => {
@@ -758,8 +759,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       (p.projectId || '').toLowerCase().includes(q) ||
       (p.namaVendor || '').toLowerCase().includes(q) ||
       (p.picSectionHead || '').toLowerCase().includes(q) ||
-      (p.areaKota || '').toLowerCase().includes(q) ||
-      (p.zona || '').toLowerCase().includes(q)
+      (p.areaKota || '').toLowerCase().includes(q)
     );
   }, [matchingProjects, tableSearchTerm]);
 
@@ -796,12 +796,12 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       'Prioritas',
       'Deskripsi Proyek',
       'Project ID',
-      'Vendor',
-      'Zona',
+      'Nama Vendor',
       'Area',
       'Status Proyek',
       'Status Konstruksi',
       'PIC',
+      'Waspang DSB',
       'Panjang FO (m)',
       'Quarter',
     ];
@@ -813,11 +813,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       `"${(p.projectDescription || '').replace(/"/g, '""')}"`,
       `"${p.projectId || ''}"`,
       `"${p.namaVendor || ''}"`,
-      `"${p.zona || ''}"`,
       `"${p.areaKota || ''}"`,
       `"${p.projectStatus || ''}"`,
       `"${p.statusConstruction || ''}"`,
       `"${p.picSectionHead || ''}"`,
+      `"${p.waspangDsb || ''}"`,
       Number(p.panjangRelokasi) || 0,
       `"${p.quarter || ''}"`,
     ]);
@@ -1365,11 +1365,15 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       )}
 
       {/* ================= DEDICATED SEGMENT DETAILS INSPECTOR ================= */}
-      {selectedSegment && (
-        <div 
-          ref={detailPanelRef}
-          className="bg-white rounded-2xl border-2 border-sky-500 shadow-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300 ring-4 ring-sky-500/10"
-        >
+      {(() => {
+        if (!selectedSegment) return null;
+        const currentChart = chartConfigs.find((c) => c.id === selectedSegment.chartId);
+        if (!currentChart) return null;
+        return (
+          <div 
+            ref={detailPanelRef}
+            className="bg-white rounded-2xl border-2 border-sky-500 shadow-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300 ring-4 ring-sky-500/10"
+          >
           {/* Header */}
           <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -1475,7 +1479,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                   setTableSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder="Cari PMO ID, vendor, deskripsi proyek..."
+                placeholder="Cari PMO ID, nama vendor, deskripsi proyek..."
                 className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
               {tableSearchTerm && (
@@ -1503,7 +1507,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                   <th className="py-3 px-3">PMO ID</th>
                   <th className="py-3 px-3">Prioritas</th>
                   <th className="py-3 px-3">Deskripsi Proyek</th>
-                  <th className="py-3 px-3">Vendor</th>
+                  <th className="py-3 px-3">Nama Vendor</th>
                   <th className="py-3 px-3">Status Proyek</th>
                   <th className="py-3 px-3">Status Konstruksi</th>
                   <th className="py-3 px-3 text-right">Panjang FO</th>
@@ -1546,6 +1550,16 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                         </td>
                         <td className="py-2.5 px-3 text-center">
                           <div className="flex items-center justify-center gap-1">
+                            {onJumpToTab && (
+                              <button
+                                type="button"
+                                onClick={() => onJumpToTab(currentChart.tabKey, p)}
+                                className="p-1 rounded bg-sky-100 hover:bg-sky-200 text-sky-700 cursor-pointer"
+                                title={`Buka di Tab: ${currentChart.title.split('.')[1].trim()}`}
+                              >
+                                <ArrowUpRight className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                             {onViewDetail && (
                               <button
                                 type="button"
@@ -1603,7 +1617,8 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

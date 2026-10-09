@@ -12,12 +12,15 @@ import {
   Flag,
   Layers,
   SlidersHorizontal,
-  CheckCircle2
+  CheckCircle2,
+  HardHat
 } from 'lucide-react';
-import { ProjectData, PRIORITY_OPTIONS } from '../types/project';
+import { ProjectData, PRIORITY_OPTIONS, TabKey } from '../types/project';
+import { VENDOR_OPTIONS, PIC_GOVREL_OPTIONS, WASPANG_DSB_OPTIONS, AREA_KOTA_OPTIONS } from '../data/dropdownOptions';
 import { getPriorityMeta } from './PriorityBadge';
 
 interface FilterBarProps {
+  activeTab?: TabKey | string;
   searchTerm: string;
   onSearchChange: (value: string) => void;
   selectedZona: string;
@@ -36,12 +39,15 @@ interface FilterBarProps {
   onQuarterChange: (value: string) => void;
   selectedPic?: string;
   onPicChange?: (value: string) => void;
+  selectedWaspang?: string;
+  onWaspangChange?: (value: string) => void;
   onResetFilters: () => void;
   totalResults: number;
   allProjects: ProjectData[];
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
+  activeTab,
   searchTerm,
   onSearchChange,
   selectedZona,
@@ -60,6 +66,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   onQuarterChange,
   selectedPic = '',
   onPicChange,
+  selectedWaspang = '',
+  onWaspangChange,
   onResetFilters,
   totalResults,
   allProjects,
@@ -71,7 +79,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   const quarterOptions = ['Q1-26', 'Q2-26', 'Q3-26', 'Q4-26'];
 
   const hasActiveFilters = Boolean(
-    searchTerm || selectedZona || selectedArea || selectedVendor || selectedCategory || selectedStatus || selectedPriority || selectedQuarter || selectedPic
+    searchTerm || selectedZona || selectedArea || selectedVendor || selectedCategory || selectedStatus || selectedPriority || selectedQuarter || selectedPic || selectedWaspang
   );
 
   return (
@@ -85,7 +93,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           </div>
           <input
             type="text"
-            placeholder="Cari PMO ID, Project ID, Deskripsi, PIC, Vendor, Lokasi..."
+            placeholder="Cari PMO ID, Project ID, Deskripsi, PIC, Nama Vendor, Lokasi..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-9 pr-8 py-2 text-xs text-slate-800 bg-slate-50/90 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400 shadow-2xs font-medium"
@@ -101,45 +109,31 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           )}
         </div>
 
-        {/* Manual Input Filters for Zona, Area, Vendor, and PIC */}
+        {/* Manual Input Filters for Area, Vendor, and PIC */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Zona Manual Input */}
-          <div className="relative">
-            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-              <MapPin className="w-3.5 h-3.5 text-sky-500" />
-            </div>
-            <input
-              type="text"
-              placeholder="Zona..."
-              value={selectedZona}
-              onChange={(e) => onZonaChange(e.target.value)}
-              className="h-8.5 w-26 sm:w-28 pl-7.5 pr-6 py-1 text-xs text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
-            />
-            {selectedZona && (
-              <button
-                onClick={() => onZonaChange('')}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
 
-          {/* Area Manual Input */}
+          {/* Area / Kota Dropdown Filter with Option to Select All */}
           <div className="relative">
             <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
               <Compass className="w-3.5 h-3.5 text-indigo-500" />
             </div>
-            <input
-              type="text"
-              placeholder="Area..."
+            <select
               value={selectedArea}
               onChange={(e) => onAreaChange(e.target.value)}
-              className="h-8.5 w-26 sm:w-28 pl-7.5 pr-6 py-1 text-xs text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
-            />
+              title="Filter Area/Kota"
+              className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60 max-w-[170px]"
+            >
+              <option value="">Semua Area/Kota</option>
+              {AREA_KOTA_OPTIONS.map((area) => (
+                <option key={area} value={area}>
+                  {area}
+                </option>
+              ))}
+            </select>
             {selectedArea && (
               <button
                 onClick={() => onAreaChange('')}
+                title="Reset pilihan Area/Kota"
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-3 h-3" />
@@ -147,21 +141,28 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             )}
           </div>
 
-          {/* Vendor Manual Input */}
+          {/* Nama Vendor Dropdown Filter with Option to Select All */}
           <div className="relative">
             <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
               <Building2 className="w-3.5 h-3.5 text-amber-500" />
             </div>
-            <input
-              type="text"
-              placeholder="Vendor..."
+            <select
               value={selectedVendor}
               onChange={(e) => onVendorChange(e.target.value)}
-              className="h-8.5 w-28 sm:w-32 pl-7.5 pr-6 py-1 text-xs text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
-            />
+              title="Filter Nama Vendor"
+              className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60 max-w-[190px]"
+            >
+              <option value="">Semua Nama Vendor</option>
+              {VENDOR_OPTIONS.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
             {selectedVendor && (
               <button
                 onClick={() => onVendorChange('')}
+                title="Reset pilihan Nama Vendor"
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-3 h-3" />
@@ -169,22 +170,60 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             )}
           </div>
 
-          {/* PIC Manual Input */}
+          {/* PIC Dropdown Filter with Option to Select All */}
           {onPicChange && (
             <div className="relative">
               <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                 <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
               </div>
-              <input
-                type="text"
-                placeholder="PIC..."
+              <select
                 value={selectedPic}
                 onChange={(e) => onPicChange(e.target.value)}
-                className="h-8.5 w-26 sm:w-28 pl-7.5 pr-6 py-1 text-xs text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
-              />
+                title="Filter PIC"
+                className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60 max-w-[170px]"
+              >
+                <option value="">Semua PIC</option>
+                {PIC_GOVREL_OPTIONS.map((pic) => (
+                  <option key={pic} value={pic}>
+                    {pic}
+                  </option>
+                ))}
+              </select>
               {selectedPic && (
                 <button
                   onClick={() => onPicChange('')}
+                  title="Reset pilihan PIC"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Waspang DSB Dropdown Filter with Option to Select All */}
+          {onWaspangChange && (
+            <div className="relative">
+              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                <HardHat className="w-3.5 h-3.5 text-blue-500" />
+              </div>
+              <select
+                value={selectedWaspang}
+                onChange={(e) => onWaspangChange(e.target.value)}
+                title="Filter Waspang DSB"
+                className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60 max-w-[180px]"
+              >
+                <option value="">Semua Waspang DSB</option>
+                {WASPANG_DSB_OPTIONS.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+              {selectedWaspang && (
+                <button
+                  onClick={() => onWaspangChange('')}
+                  title="Reset pilihan Waspang DSB"
                   className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   <X className="w-3 h-3" />

@@ -56,7 +56,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusTab, setActiveStatusTab] = useState<'all' | 'complete' | 'incomplete' | 'zero'>(statusType);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<'all' | 'perizinan' | 'teknis' | 'survey' | 'komersial'>('all');
-  const [selectedZonaFilter, setSelectedZonaFilter] = useState<string>('all');
+  const [selectedAreaFilter, setSelectedAreaFilter] = useState<string>('all');
 
   // Keep activeStatusTab in sync if prop changes
   React.useEffect(() => {
@@ -83,19 +83,19 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
     });
   }, [projects, activeStatusTab]);
 
-  // Unique zonas in this category
-  const availableZonas = useMemo(() => {
+  // Unique areas in this category
+  const availableAreas = useMemo(() => {
     const set = new Set<string>();
     filteredCategoryProjects.forEach((p) => {
-      if (p.zona) set.add(p.zona);
+      if (p.areaKota) set.add(p.areaKota);
     });
     return Array.from(set).sort();
   }, [filteredCategoryProjects]);
 
-  // Apply search and zona filter
+  // Apply search and area filter
   const displayProjects = useMemo(() => {
     return filteredCategoryProjects.filter((p) => {
-      if (selectedZonaFilter !== 'all' && p.zona !== selectedZonaFilter) return false;
+      if (selectedAreaFilter !== 'all' && p.areaKota !== selectedAreaFilter) return false;
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
@@ -104,13 +104,12 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
         (p.projectDescription || '').toLowerCase().includes(q) ||
         (p.projectId || '').toLowerCase().includes(q) ||
         (p.namaVendor || '').toLowerCase().includes(q) ||
-        (p.zona || '').toLowerCase().includes(q) ||
         (p.areaKota || '').toLowerCase().includes(q) ||
         (p.picSectionHead || '').toLowerCase().includes(q) ||
         (p.priority || '').toLowerCase().includes(q)
       );
     });
-  }, [filteredCategoryProjects, searchQuery, selectedZonaFilter]);
+  }, [filteredCategoryProjects, searchQuery, selectedAreaFilter]);
 
   // Statistics for each slot within this category
   const slotStats = useMemo(() => {
@@ -204,7 +203,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
       default:
         return {
           title: `Ringkasan Seluruh Berkas Dokumen Proyek (${totalSlotsCount} Berkas Wajib)`,
-          subtitle: `Distribusi dan status kelengkapan seluruh berkas dokumen pendukung proyek OSP di seluruh Zona dan Vendor.`,
+          subtitle: `Distribusi dan status kelengkapan seluruh berkas dokumen pendukung proyek OSP di seluruh Area dan Vendor.`,
           icon: Layers,
           accentColor: 'from-sky-600 to-blue-700',
           badgeClass: 'bg-sky-500/20 text-sky-200 border-sky-400/30',
@@ -503,16 +502,16 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
 
               {/* Filters Toolbar inside modal */}
               <div className="flex flex-wrap items-center gap-2">
-                {/* Zona Dropdown Filter */}
-                {availableZonas.length > 0 && (
+                {/* Area Dropdown Filter */}
+                {availableAreas.length > 0 && (
                   <select
-                    value={selectedZonaFilter}
-                    onChange={(e) => setSelectedZonaFilter(e.target.value)}
+                    value={selectedAreaFilter}
+                    onChange={(e) => setSelectedAreaFilter(e.target.value)}
                     className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
                   >
-                    <option value="all">Semua Zona ({availableZonas.length})</option>
-                    {availableZonas.map((z) => (
-                      <option key={z} value={z}>{z}</option>
+                    <option value="all">Semua Area ({availableAreas.length})</option>
+                    {availableAreas.map((a) => (
+                      <option key={a} value={a}>{a}</option>
                     ))}
                   </select>
                 )}
@@ -522,7 +521,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Cari PMO ID, Project, Vendor, PIC..."
+                    placeholder="Cari PMO ID, Project, Nama Vendor, PIC..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -568,9 +567,15 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
                           <span className="font-mono text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                             {proj.pmoId}
                           </span>
-                          <span className="font-bold text-slate-900 truncate">
-                            {proj.projectDescription}
-                          </span>
+                          {proj.projectDescription ? (
+                            <span className="font-bold text-slate-900 truncate">
+                              {proj.projectDescription}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-xs font-normal">
+                              (Tanpa deskripsi)
+                            </span>
+                          )}
                           
                           {/* Priority Badge */}
                           <PriorityBadge priority={proj.priority || 'Normal'} size="xs" showLevel />
@@ -580,18 +585,12 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
                               {proj.projectCategory}
                             </span>
                           )}
-
-                          {proj.zona && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">
-                              {proj.zona}
-                            </span>
-                          )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
                           <span className="flex items-center gap-1">
                             <Building2 className="w-3 h-3 text-slate-400" />
-                            <span>Vendor: <strong className="text-slate-700">{proj.namaVendor || '-'}</strong></span>
+                            <span>Nama Vendor: <strong className="text-slate-700">{proj.namaVendor || '-'}</strong></span>
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">

@@ -48,6 +48,7 @@ import { ProjectFormModal } from './components/ProjectFormModal';
 import { ProjectDetailDrawer } from './components/ProjectDetailDrawer';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { ClearAllConfirmModal } from './components/ClearAllConfirmModal';
+import { ClearDescriptionConfirmModal } from './components/ClearDescriptionConfirmModal';
 import { UploadDocumentView } from './components/UploadDocumentView';
 import { PieChartAnalyticsView } from './components/PieChartAnalyticsView';
 import { LoginPage } from './components/LoginPage';
@@ -75,6 +76,7 @@ export default function App() {
   const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedPic, setSelectedPic] = useState('');
+  const [selectedWaspang, setSelectedWaspang] = useState('');
   const [activeKpiFilter, setActiveKpiFilter] = useState<{ key: string; value: string } | null>(null);
 
   // View Mode: 'normal' (tabel standar) | 'compact' (tabel ringkas/padat) | 'card' (card grid)
@@ -85,6 +87,9 @@ export default function App() {
 
   // Sidebar collapse state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Neon Light Mode state (defaults to true for incredible cool neon glow styling)
+  const [isNeonMode, setIsNeonMode] = useState<boolean>(true);
 
   // Modals & Drawers state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -97,6 +102,7 @@ export default function App() {
   const [projectToDelete, setProjectToDelete] = useState<ProjectData | null>(null);
 
   const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
+  const [isClearDescriptionModalOpen, setIsClearDescriptionModalOpen] = useState(false);
 
   // Show temporary toast notification
   const showToast = useCallback((msg: string) => {
@@ -224,12 +230,10 @@ export default function App() {
           (item.mrNumber || '').toLowerCase().includes(query) ||
           (item.poNumber || '').toLowerCase().includes(query) ||
           (item.areaKota || '').toLowerCase().includes(query) ||
-          (item.zona || '').toLowerCase().includes(query) ||
           (item.projectCategory || '').toLowerCase().includes(query);
         if (!matchesQuery) return false;
       }
 
-      if (selectedZona && item.zona !== selectedZona) return false;
       if (selectedArea && item.areaKota !== selectedArea) return false;
       if (selectedVendor && item.namaVendor !== selectedVendor) return false;
       if (selectedCategory && item.projectCategory !== selectedCategory) return false;
@@ -256,10 +260,11 @@ export default function App() {
       if (selectedPriority && (item.priority || 'Normal') !== selectedPriority) return false;
       if (selectedQuarter && item.quarter !== selectedQuarter) return false;
       if (selectedPic && item.picSectionHead !== selectedPic) return false;
+      if (selectedWaspang && item.waspangDsb !== selectedWaspang) return false;
 
       return true;
     });
-  }, [projects, activeKpiFilter, searchTerm, selectedZona, selectedArea, selectedVendor, selectedCategory, selectedStatus, selectedPriority, selectedQuarter, selectedPic]);
+  }, [projects, activeKpiFilter, searchTerm, selectedZona, selectedArea, selectedVendor, selectedCategory, selectedStatus, selectedPriority, selectedQuarter, selectedPic, selectedWaspang]);
 
   // Current tab columns mapping
   const currentColumns = useMemo(() => {
@@ -386,6 +391,25 @@ export default function App() {
     } catch (err) {
       console.error('Error clearing projects:', err);
       showToast('Gagal mengosongkan data project.');
+    }
+  };
+
+  // Handler: Hapus dan Bersihkan seluruh data di dalam Project Description
+  const handleClearAllProjectDescriptions = async () => {
+    const updated = projects.map((p) => ({
+      ...p,
+      projectDescription: '',
+      updatedAt: new Date().toISOString(),
+    }));
+    persistChanges(updated);
+    setIsClearDescriptionModalOpen(false);
+    showToast('Data di dalam Project Description berhasil dihapus dan dibersihkan.');
+
+    try {
+      await storageService.clearAllProjectDescriptions();
+    } catch (err) {
+      console.error('Error clearing project descriptions:', err);
+      showToast('Gagal membersihkan data Project Description.');
     }
   };
 
@@ -545,6 +569,7 @@ export default function App() {
     setSelectedPriority('');
     setSelectedQuarter('');
     setSelectedPic('');
+    setSelectedWaspang('');
     setActiveKpiFilter(null);
   };
 
@@ -571,7 +596,11 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen bg-slate-100 flex flex-col antialiased text-slate-800 overflow-hidden">
+    <div className={`h-screen flex flex-col antialiased overflow-hidden transition-colors duration-300 ${
+      isNeonMode 
+        ? 'bg-[#060814] text-slate-100' 
+        : 'bg-slate-100 text-slate-800'
+    }`}>
       {/* 1. Top Navigation Bar */}
       <Header
         activeTab={activeTab}
@@ -602,11 +631,17 @@ export default function App() {
         onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
         isSidebarCollapsed={isSidebarCollapsed}
         onClearAll={() => setIsClearAllModalOpen(true)}
+        onClearDescriptions={() => setIsClearDescriptionModalOpen(true)}
         currentUser={currentUser}
         onLogout={() => {
           authService.logout();
           setCurrentUser(null);
           showToast('Anda telah berhasil keluar dari aplikasi.');
+        }}
+        isNeonMode={isNeonMode}
+        onToggleNeonMode={() => {
+          setIsNeonMode((prev) => !prev);
+          showToast(`Mode Neon Light: ${!isNeonMode ? 'AKTIF 💡' : 'NONAKTIF'}`);
         }}
       />
 
@@ -634,21 +669,75 @@ export default function App() {
                 setIsDetailDrawerOpen(true);
               }}
               showToast={showToast}
+              isNeonMode={isNeonMode}
             />
 
+            {/* Google Sheets-style Horizontal Workbook Tab Bar */}
+            <div className={`mb-4 p-1.5 rounded-xl border flex items-center overflow-x-auto gap-1.5 scrollbar-none transition-all duration-300 ${
+              isNeonMode 
+                ? 'bg-slate-950/80 border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]' 
+                : 'bg-slate-200/90 border-slate-300/80 shadow-xs'
+            }`}>
+              <div className="flex items-center gap-1.5">
+                <span className={`hidden md:flex items-center gap-1 text-[11px] font-bold uppercase px-2 font-mono border-r ${
+                  isNeonMode ? 'text-slate-400 border-slate-800' : 'text-slate-500 border-slate-300'
+                }`}>
+                  <FileSpreadsheet className={`w-3.5 h-3.5 ${isNeonMode ? 'text-cyan-400' : 'text-slate-400'}`} />
+                  WORKBOOK SHEETS
+                </span>
+                {TAB_CONFIG.map((tab, idx) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        showToast(`Buka Sheet: ${tab.label}`);
+                      }}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        isActive
+                          ? isNeonMode
+                            ? 'bg-[#0e162e] text-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.4)] border border-cyan-400/50 scale-102 font-extrabold'
+                            : 'bg-slate-900 text-sky-400 shadow-sm border border-slate-800 scale-102 font-extrabold ring-2 ring-sky-400/20'
+                          : isNeonMode
+                          ? 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/80 hover:text-white border border-slate-800/60 shadow-3xs'
+                          : 'bg-white/60 text-slate-600 hover:bg-white hover:text-slate-900 border border-slate-200 shadow-3xs'
+                      }`}
+                    >
+                      <span className={`font-mono text-[9px] px-1.5 py-0.2 rounded font-extrabold ${
+                        isActive 
+                          ? isNeonMode ? 'bg-cyan-950 text-cyan-400' : 'bg-slate-800 text-sky-300' 
+                          : isNeonMode ? 'bg-slate-900 text-slate-500' : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <TabVisualIcon tabKey={tab.id} isActive={isActive} size="sm" variant="minimal" />
+                      <span>{tab.label.split('.').slice(1).join('.').trim() || tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Tab Header Banner with Sheet Information & Modern Controls */}
-            <div className="mb-3.5 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
+            <div className={`mb-3.5 p-3.5 sm:p-4 rounded-xl border transition-all duration-300 space-y-3 ${
+              isNeonMode 
+                ? 'bg-[#0a0f1d]/90 border-cyan-500/20 text-slate-100 shadow-[0_0_15px_rgba(6,182,212,0.1)]' 
+                : 'bg-white border-slate-200/90 shadow-2xs'
+            }`}>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <TabVisualIcon tabKey={activeTab} isActive={true} size="lg" variant="solid" />
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-base font-bold text-slate-900 tracking-tight">{currentTabMeta.label}</h2>
-                      <span className="text-[11px] font-mono bg-sky-50 text-sky-700 font-semibold px-2 py-0.5 rounded-md border border-sky-200">
+                      <h2 className={`text-base font-bold tracking-tight ${isNeonMode ? 'text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.3)]' : 'text-slate-900'}`}>{currentTabMeta.label}</h2>
+                      <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border ${
+                        isNeonMode ? 'bg-cyan-950/40 text-cyan-400 border-cyan-500/30' : 'bg-sky-50 text-sky-700 border-sky-200'
+                      }`}>
                         {filteredProjects.length} data proyek
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className={`text-xs mt-0.5 ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>
                       {currentTabMeta.description}
                     </p>
                   </div>
@@ -818,9 +907,9 @@ export default function App() {
                   </span>
                 </div>
                 <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
-                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Vendor Konstruksi</span>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Nama Vendor Konstruksi</span>
                   <span className="text-xs font-semibold text-slate-800">
-                    {tabStats.uniqueVendorsCount} Vendor Terdata
+                    {tabStats.uniqueVendorsCount} Nama Vendor Terdata
                   </span>
                 </div>
               </div>
@@ -893,6 +982,7 @@ export default function App() {
             {/* Filter and Search Bar (Tabs 1-5) */}
             {activeTab !== 'upload-document' && activeTab !== 'pie-chart-analytics' && (
               <FilterBar
+                activeTab={activeTab}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
                 selectedZona={selectedZona}
@@ -911,6 +1001,8 @@ export default function App() {
                 onQuarterChange={setSelectedQuarter}
                 selectedPic={selectedPic}
                 onPicChange={setSelectedPic}
+                selectedWaspang={selectedWaspang}
+                onWaspangChange={setSelectedWaspang}
                 onResetFilters={handleResetFilters}
                 totalResults={filteredProjects.length}
                 allProjects={projects}
@@ -1067,6 +1159,14 @@ export default function App() {
         totalProjects={projects.length}
         onClose={() => setIsClearAllModalOpen(false)}
         onConfirm={handleClearAllProjects}
+      />
+
+      {/* Clear Project Description Confirmation Modal */}
+      <ClearDescriptionConfirmModal
+        isOpen={isClearDescriptionModalOpen}
+        totalProjects={projects.length}
+        onClose={() => setIsClearDescriptionModalOpen(false)}
+        onConfirm={handleClearAllProjectDescriptions}
       />
 
       {/* Live Toast Feedback Notification */}

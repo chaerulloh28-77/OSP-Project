@@ -43,7 +43,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
   return (
     <aside
-      className={`bg-slate-900 border-r border-slate-800 text-slate-200 transition-all duration-200 flex flex-col shrink-0 select-none z-20 ${
+      className={`bg-[#060815] border-r border-cyan-500/20 shadow-[5px_0_20px_rgba(6,182,212,0.03)] text-slate-200 transition-all duration-200 flex flex-col shrink-0 select-none z-20 ${
         isCollapsed ? 'w-16' : 'w-64'
       }`}
     >
@@ -101,14 +101,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               title={tab.label}
-              className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer relative ${
+              className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer relative ${
                 isActive
                   ? isPieChart
-                    ? 'bg-indigo-600/25 text-white border border-indigo-400/50 shadow-xs'
+                    ? 'bg-[#181a40] text-indigo-300 border border-indigo-500/50 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
                     : isPipeline
-                    ? 'bg-purple-600/20 text-white border border-purple-500/40 shadow-xs'
-                    : 'bg-sky-600/20 text-white border border-sky-500/40 shadow-xs'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/70 border border-transparent'
+                    ? 'bg-[#25133d] text-purple-300 border border-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.3)]'
+                    : 'bg-[#0d223f] text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-900/60 border border-transparent'
               } ${isCollapsed ? 'justify-center px-0' : ''}`}
             >
               {/* Active Indicator Bar on Left */}
@@ -145,7 +145,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   </div>
                   <p className="text-[10px] text-slate-400 truncate mt-0.5">
                     {tab.id === 'project-list' && 'Daftar & identitas project'}
-                    {tab.id === 'construction-plan' && 'Perencanaan teknis & vendor'}
+                    {tab.id === 'construction-plan' && 'Perencanaan teknis & nama vendor'}
                     {tab.id === 'status-project' && 'Pengadaan MR/PO & closing'}
                     {tab.id === 'status-construction' && 'Progress galian & kabel FO'}
                     {tab.id === 'project-tracking-pipeline' && 'Kanban alur & milestone'}

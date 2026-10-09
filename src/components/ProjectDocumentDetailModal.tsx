@@ -246,11 +246,11 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
                 </span>
                 <span className="text-xs text-slate-500">•</span>
                 <span className="text-xs text-slate-300">
-                  {project.zona} • {project.areaKota}
+                  {project.areaKota}
                 </span>
               </div>
-              <h3 className="text-sm sm:text-base font-bold text-white truncate mt-0.5" title={project.projectDescription}>
-                {project.projectDescription}
+              <h3 className="text-sm sm:text-base font-bold text-white truncate mt-0.5" title={project.projectDescription || ''}>
+                {project.projectDescription || <span className="text-slate-400 italic font-normal text-xs">(Tanpa deskripsi)</span>}
               </h3>
             </div>
           </div>
@@ -300,7 +300,7 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
         <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-4 text-xs flex-wrap">
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-bold">Vendor</span>
+              <span className="text-slate-400 block text-[10px] uppercase font-bold">Nama Vendor</span>
               <span className="font-semibold text-slate-700">{project.namaVendor || '-'}</span>
             </div>
             <div className="h-6 w-px bg-slate-200" />

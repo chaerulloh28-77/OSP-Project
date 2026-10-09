@@ -263,27 +263,24 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 
                         {/* Title / Description */}
                         <p className="text-xs font-semibold text-slate-800 line-clamp-2 leading-snug">
-                          {p.projectDescription}
+                          {p.projectDescription || <span className="text-slate-400 italic font-normal text-[11px]">(Tanpa deskripsi)</span>}
                         </p>
 
-                        {/* Badges: Priority, Zona & Quarter */}
+                        {/* Badges: Priority, Area/Kota & Quarter */}
                         <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                           {p.priority && (
                             <PriorityBadge priority={p.priority} showLevel={true} size="xs" />
                           )}
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200/60 font-semibold font-mono">
-                            <MapPin className="w-2.5 h-2.5" />
-                            {p.zona || 'Jabo 1'}
-                          </span>
+                          {p.areaKota && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200/60 font-semibold font-mono">
+                              <MapPin className="w-2.5 h-2.5" />
+                              {p.areaKota}
+                            </span>
+                          )}
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/60 font-semibold font-mono">
                             <Calendar className="w-2.5 h-2.5" />
                             {p.quarter || 'Q1-26'}
                           </span>
-                          {p.areaKota && (
-                            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                              {p.areaKota}
-                            </span>
-                          )}
                         </div>
 
                         {/* Vendor & Length */}

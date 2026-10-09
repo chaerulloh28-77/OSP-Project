@@ -56,7 +56,7 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                   )}
                 </div>
                 <h3 className="text-sm font-semibold text-white truncate max-w-md">
-                  {project.projectDescription}
+                  {project.projectDescription || <span className="text-slate-400 italic font-normal text-xs">(Tanpa deskripsi)</span>}
                 </h3>
               </div>
             </div>
@@ -195,7 +195,7 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
               <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2 text-blue-800 font-semibold text-xs">
                   <HardHat className="w-4 h-4 text-blue-600" />
-                  <span>Sheet 2: Construction & Plan (Perencanaan & Vendor)</span>
+                  <span>Sheet 2: Construction & Plan (Perencanaan & Nama Vendor)</span>
                 </div>
                 <span className="text-[11px] font-mono text-slate-500">
                   {project.bulan || project.tahun ? `${project.bulan} ${project.tahun}`.trim() : '-'}

@@ -159,10 +159,10 @@ export function getScopeInfo(scope: JaboExportScope) {
     case 'ALL':
     default:
       return {
-        label: 'Semua Report (Semua Zona)',
+        label: 'Semua Report (Semua Area)',
         description: 'Jabo 1, Jabo 2, Jabo 3 • Seluruh Proyek',
-        tag: 'Semua Zona',
-        filenameKey: 'Semua_Zona',
+        tag: 'Semua Area',
+        filenameKey: 'Semua_Area',
       };
   }
 }

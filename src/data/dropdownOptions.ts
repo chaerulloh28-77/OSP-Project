@@ -389,14 +389,19 @@ export const AREA_KOTA_OPTIONS = [
   'Serang',
 ] as const;
 
-// PIC Govrel Options (Sorted Alphabetically)
+// PIC Govrel Options (Sorted Alphabetically based on master list)
 export const PIC_GOVREL_OPTIONS = [
+  'Agus Salim',
   'Asmari',
+  'Budi',
   'Dwi',
   'Fredy',
   'Irvan',
   'Lintang',
   'Reza',
+  'Reza Mahendra',
+  'Riski',
+  'Rizki',
   'Rizky',
   'Silmi',
   'Suhandi',
@@ -419,7 +424,7 @@ export const WASPANG_DSB_OPTIONS = [
   'Wahyu',
 ] as const;
 
-// Nama Vendor Options (Sorted Alphabetically, Uppercase, Unique)
+// Nama Vendor Options (42 Opsi Terurut Abjad & Kapital)
 export const VENDOR_OPTIONS = [
   'BELUM ADA VENDOR',
   'PT.ANT',
@@ -464,4 +469,5 @@ export const VENDOR_OPTIONS = [
   'PT.SENTRATEL',
   'PT.TRP',
 ] as const;
+export const NAMA_VENDOR_OPTIONS = VENDOR_OPTIONS;
 

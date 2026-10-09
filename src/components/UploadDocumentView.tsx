@@ -50,6 +50,7 @@ import { documentStorageService } from '../services/documentStorageService';
 import { ProjectDocumentDetailModal } from './ProjectDocumentDetailModal';
 import { DocumentCompletenessInfoModal } from './DocumentCompletenessInfoModal';
 import { PriorityBadge } from './PriorityBadge';
+import { VENDOR_OPTIONS, PIC_GOVREL_OPTIONS, WASPANG_DSB_OPTIONS, AREA_KOTA_OPTIONS } from '../data/dropdownOptions';
 
 interface UploadDocumentViewProps {
   projects: ProjectData[];
@@ -66,10 +67,10 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'complete' | 'incomplete' | 'zero'>('all');
-  const [zonaFilter, setZonaFilter] = useState<string>('all');
   const [areaFilter, setAreaFilter] = useState<string>('all');
   const [vendorFilter, setVendorFilter] = useState<string>('all');
   const [picFilter, setPicFilter] = useState<string>('all');
+  const [waspangFilter, setWaspangFilter] = useState<string>('all');
   const [slotFilter, setSlotFilter] = useState<string>('all');
 
   // Pagination
@@ -103,25 +104,16 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
   // Category list
   const categoryList = ['all', 'GOV IPPJU', 'GOV APJATEL', 'GOV SJUT', 'DSB - IKR'] as const;
 
-  // Dynamic filter options extracted from projects
-  const uniqueZonas = useMemo(() => {
-    const set = new Set<string>();
-    projects.forEach((p) => {
-      if (p.zona && p.zona.trim()) set.add(p.zona.trim());
-    });
-    return Array.from(set).sort();
-  }, [projects]);
-
   const uniqueAreas = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(AREA_KOTA_OPTIONS);
     projects.forEach((p) => {
       if (p.areaKota && p.areaKota.trim()) set.add(p.areaKota.trim());
     });
-    return Array.from(set).sort();
+    return Array.from(set);
   }, [projects]);
 
   const uniqueVendors = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(VENDOR_OPTIONS);
     projects.forEach((p) => {
       if (p.namaVendor && p.namaVendor.trim()) {
         set.add(p.namaVendor.trim());
@@ -131,11 +123,19 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
   }, [projects]);
 
   const uniquePics = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(PIC_GOVREL_OPTIONS);
     projects.forEach((p) => {
       if (p.picSectionHead && p.picSectionHead.trim()) set.add(p.picSectionHead.trim());
     });
-    return Array.from(set).sort();
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [projects]);
+
+  const uniqueWaspangs = useMemo(() => {
+    const set = new Set<string>(WASPANG_DSB_OPTIONS);
+    projects.forEach((p) => {
+      if (p.waspangDsb && p.waspangDsb.trim()) set.add(p.waspangDsb.trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [projects]);
 
   // Document statistics across projects
@@ -149,23 +149,23 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
     if (searchTerm.trim()) count++;
     if (categoryFilter !== 'all') count++;
     if (statusFilter !== 'all') count++;
-    if (zonaFilter !== 'all') count++;
     if (areaFilter !== 'all') count++;
     if (vendorFilter !== 'all') count++;
     if (picFilter !== 'all') count++;
+    if (waspangFilter !== 'all') count++;
     if (slotFilter !== 'all') count++;
     return count;
-  }, [searchTerm, categoryFilter, statusFilter, zonaFilter, areaFilter, vendorFilter, picFilter, slotFilter]);
+  }, [searchTerm, categoryFilter, statusFilter, areaFilter, vendorFilter, picFilter, waspangFilter, slotFilter]);
 
   // Reset all filters to default
   const handleResetFilters = () => {
     setSearchTerm('');
     setCategoryFilter('all');
     setStatusFilter('all');
-    setZonaFilter('all');
     setAreaFilter('all');
     setVendorFilter('all');
     setPicFilter('all');
+    setWaspangFilter('all');
     setSlotFilter('all');
     setCurrentPage(1);
     if (showToast) {
@@ -194,11 +194,6 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
         if (!matches) return false;
       }
 
-      // 2. Zona Filter
-      if (zonaFilter !== 'all' && p.zona !== zonaFilter) {
-        return false;
-      }
-
       // 3. Area / Kota Filter
       if (areaFilter !== 'all' && p.areaKota !== areaFilter) {
         return false;
@@ -211,6 +206,11 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
 
       // 5. PIC Filter
       if (picFilter !== 'all' && p.picSectionHead !== picFilter) {
+        return false;
+      }
+
+      // 6. Waspang DSB Filter
+      if (waspangFilter !== 'all' && p.waspangDsb !== waspangFilter) {
         return false;
       }
 
@@ -237,7 +237,6 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
     searchTerm, 
     categoryFilter,
     statusFilter, 
-    zonaFilter, 
     areaFilter, 
     vendorFilter, 
     picFilter, 
@@ -548,7 +547,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
         </div>
       </div>
 
-      {/* Comprehensive Filter Toolbar: Category, Zona, Area, Vendor, PIC, Status, Search */}
+      {/* Comprehensive Filter Toolbar: Category, Area, Vendor, PIC, Status, Search */}
       <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
         {/* Row 0: Category Filter Tabs */}
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 gap-2 flex-wrap">
@@ -791,7 +790,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                 >
                   {(filteredData.length > 0 ? filteredData : projects).slice(0, 80).map((p) => (
                     <option key={p.id} value={p.pmoId}>
-                      {p.pmoId} - {p.projectDescription} ({p.projectCategory || 'GOV'})
+                      {p.pmoId}{p.projectDescription ? ` - ${p.projectDescription}` : ''} ({p.projectCategory || 'GOV'})
                     </option>
                   ))}
                 </select>
@@ -837,29 +836,14 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
           </div>
         )}
 
-        {/* Lower Row: Specific Dropdown Filters (Semua Zona, Semua Area, Semua Vendor, Semua PIC, Jenis Dokumen) */}
+        {/* Lower Row: Specific Dropdown Filters (Semua Area, Semua Vendor, Semua PIC, Jenis Dokumen) */}
         <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs">
           <span className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1 mr-1">
             <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
             Filter Data:
           </span>
 
-          {/* 1. Filter Zona */}
-          <select
-            value={zonaFilter}
-            onChange={(e) => {
-              setZonaFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white font-medium text-slate-700 cursor-pointer"
-          >
-            <option value="all">Semua Zona</option>
-            {uniqueZonas.map((z) => (
-              <option key={z} value={z}>{z}</option>
-            ))}
-          </select>
-
-          {/* 2. Filter Area / Kota */}
+          {/* 1. Filter Area / Kota */}
           <select
             value={areaFilter}
             onChange={(e) => {
@@ -868,7 +852,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
             }}
             className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white font-medium text-slate-700 cursor-pointer max-w-[160px]"
           >
-            <option value="all">Semua Area</option>
+            <option value="all">Semua Area/Kota</option>
             {uniqueAreas.map((a) => (
               <option key={a} value={a}>{a}</option>
             ))}
@@ -883,7 +867,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
             }}
             className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white font-medium text-slate-700 cursor-pointer max-w-[180px]"
           >
-            <option value="all">Semua Vendor</option>
+            <option value="all">Semua Nama Vendor</option>
             {uniqueVendors.map((v) => (
               <option key={v} value={v}>{v}</option>
             ))}
@@ -901,6 +885,21 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
             <option value="all">Semua PIC</option>
             {uniquePics.map((pic) => (
               <option key={pic} value={pic}>{pic}</option>
+            ))}
+          </select>
+
+          {/* 5. Filter Waspang DSB */}
+          <select
+            value={waspangFilter}
+            onChange={(e) => {
+              setWaspangFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white font-medium text-slate-700 cursor-pointer max-w-[170px]"
+          >
+            <option value="all">Semua Waspang DSB</option>
+            {uniqueWaspangs.map((w) => (
+              <option key={w} value={w}>{w}</option>
             ))}
           </select>
 
@@ -963,7 +962,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                   Project Description
                 </th>
                 <th className="px-3 py-2.5 font-bold uppercase tracking-wider text-[11px] min-w-[130px]">
-                  Area & Vendor
+                  Area & Nama Vendor
                 </th>
                 <th className="px-3.5 py-2.5 font-bold uppercase tracking-wider text-[11px] min-w-[160px] text-center">
                   Status Kelengkapan
@@ -1049,8 +1048,8 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                         <div className="flex items-center gap-1.5 mb-1">
                           <PriorityBadge priority={project.priority || 'Normal'} size="xs" showLevel />
                         </div>
-                        <span className="line-clamp-2" title={project.projectDescription}>
-                          {project.projectDescription}
+                        <span className="line-clamp-2" title={project.projectDescription || ''}>
+                          {project.projectDescription || <span className="text-slate-400 italic text-[11px] font-normal">- Kosong -</span>}
                         </span>
                         <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-400 font-mono">
                           <span>{project.projectId || '-'}</span>
@@ -1062,7 +1061,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                       {/* Col 4: Area & Vendor */}
                       <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">
                         <div className="font-semibold text-slate-800 text-[11px]">
-                          {project.zona} • {project.areaKota}
+                          {project.areaKota || '-'}
                         </div>
                         <div className="text-[11px] text-slate-500 truncate max-w-[150px]" title={project.namaVendor}>
                           {project.namaVendor || '-'}

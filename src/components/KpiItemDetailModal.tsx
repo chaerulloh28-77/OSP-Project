@@ -66,7 +66,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
   showToast,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedZonaFilter, setSelectedZonaFilter] = useState<string>('all');
+  const [selectedAreaFilter, setSelectedAreaFilter] = useState<string>('all');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
 
   // Filter projects corresponding to the selected KPI item
@@ -146,10 +146,10 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
   }, [projects, itemKey]);
 
   // Unique filters for current KPI list
-  const availableZonas = useMemo(() => {
+  const availableAreas = useMemo(() => {
     const set = new Set<string>();
     kpiFilteredProjects.forEach((p) => {
-      if (p.zona) set.add(p.zona.trim());
+      if (p.areaKota) set.add(p.areaKota.trim());
     });
     return Array.from(set).sort();
   }, [kpiFilteredProjects]);
@@ -165,7 +165,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
   // Final filtered list for display in table
   const displayProjects = useMemo(() => {
     return kpiFilteredProjects.filter((p) => {
-      if (selectedZonaFilter !== 'all' && p.zona !== selectedZonaFilter) return false;
+      if (selectedAreaFilter !== 'all' && p.areaKota !== selectedAreaFilter) return false;
       if (selectedCategoryFilter !== 'all' && p.projectCategory !== selectedCategoryFilter) return false;
 
       if (!searchQuery.trim()) return true;
@@ -180,7 +180,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
         (p.priority || '').toLowerCase().includes(q)
       );
     });
-  }, [kpiFilteredProjects, selectedZonaFilter, selectedCategoryFilter, searchQuery]);
+  }, [kpiFilteredProjects, selectedAreaFilter, selectedCategoryFilter, searchQuery]);
 
   if (!isOpen || !itemKey) return null;
 
@@ -195,7 +195,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
 
         return {
           title: 'Total Project (Semua Proyek OSP Terdata)',
-          subtitle: 'Ringkasan keseluruhan database paket proyek relokasi jaringan utilitas di seluruh zona.',
+          subtitle: 'Ringkasan keseluruhan database paket proyek relokasi jaringan utilitas di seluruh area.',
           badge: `${projects.length} Total Paket`,
           badgeClass: 'bg-sky-500/20 text-sky-200 border-sky-400/30',
           gradientBg: 'from-slate-900 via-sky-950 to-slate-900',
@@ -527,22 +527,22 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
                   <span>Daftar Proyek: {details.title.split('(')[0].trim()} ({displayProjects.length} Proyek)</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Gunakan pencarian atau filter zona/kategori untuk meninjau data spesifik.
+                  Gunakan pencarian atau filter area/kategori untuk meninjau data spesifik.
                 </p>
               </div>
 
               {/* Filters Toolbar */}
               <div className="flex flex-wrap items-center gap-2">
-                {/* Zona Filter */}
-                {availableZonas.length > 0 && (
+                {/* Area Filter */}
+                {availableAreas.length > 0 && (
                   <select
-                    value={selectedZonaFilter}
-                    onChange={(e) => setSelectedZonaFilter(e.target.value)}
+                    value={selectedAreaFilter}
+                    onChange={(e) => setSelectedAreaFilter(e.target.value)}
                     className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
                   >
-                    <option value="all">Semua Zona ({availableZonas.length})</option>
-                    {availableZonas.map((z) => (
-                      <option key={z} value={z}>{z}</option>
+                    <option value="all">Semua Area ({availableAreas.length})</option>
+                    {availableAreas.map((a) => (
+                      <option key={a} value={a}>{a}</option>
                     ))}
                   </select>
                 )}
@@ -588,7 +588,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
               <div className="p-8 text-center text-slate-400 text-xs bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                 <Info className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                 <p className="font-semibold text-slate-600">Tidak ada proyek yang sesuai dengan filter.</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Coba reset kata kunci pencarian atau ubah filter zona/kategori.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Coba reset kata kunci pencarian atau ubah filter area/kategori.</p>
               </div>
             ) : (
               <div className="space-y-2.5 max-h-[380px] overflow-y-auto custom-scrollbar pr-1">
@@ -603,9 +603,15 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
                         <span className="font-mono text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                           {proj.pmoId}
                         </span>
-                        <span className="font-bold text-slate-900 truncate">
-                          {proj.projectDescription}
-                        </span>
+                        {proj.projectDescription ? (
+                          <span className="font-bold text-slate-900 truncate">
+                            {proj.projectDescription}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs font-normal">
+                            (Tanpa deskripsi)
+                          </span>
+                        )}
                         
                         <PriorityBadge priority={proj.priority || 'Normal'} size="xs" showLevel />
 
@@ -629,7 +635,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
                         <span>•</span>
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-slate-400" />
-                          <span>Zona: <strong className="text-slate-700">{proj.zona || '-'} • {proj.areaKota || '-'}</strong></span>
+                          <span>Area: <strong className="text-slate-700">{proj.areaKota || '-'}</strong></span>
                         </span>
                       </div>
 

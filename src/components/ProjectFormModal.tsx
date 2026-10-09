@@ -1052,9 +1052,6 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
     if (!formData.pmoId?.trim()) {
       newErrors.pmoId = 'DSB - ID wajib diisi';
     }
-    if (!formData.projectDescription?.trim()) {
-      newErrors.projectDescription = 'Deskripsi Project wajib diisi';
-    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -1307,24 +1304,30 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Project Description <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Project Description
+                  </label>
+                  {formData.projectDescription && (
+                    <button
+                      type="button"
+                      onClick={() => handleChange('projectDescription', '')}
+                      className="text-[11px] text-rose-600 hover:text-rose-700 font-medium hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Bersihkan</span>
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={formData.projectDescription || ''}
                   onChange={(e) => handleChange('projectDescription', e.target.value)}
-                  placeholder={formData.projectCategory === 'DSB - IKR' ? 'e.g. [DSB-IKR] Cluster Ampera Raya' : 'e.g. [GOV-FMI_DSB] IPPJU Ampera Raya'}
-                  className={`w-full px-3 py-1.5 text-xs rounded-md border ${
-                    errors.projectDescription ? 'border-rose-500 bg-rose-50' : 'border-slate-300'
-                  } focus:outline-none focus:ring-1 focus:ring-sky-500`}
+                  placeholder="Deskripsi proyek (bisa dikosongkan)..."
+                  className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
                 />
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Otomatis diawali <span className="font-mono font-semibold text-sky-700">{formData.projectCategory === 'DSB - IKR' ? '[DSB-IKR]' : '[GOV-FMI_DSB]'}</span>
+                  Opsional. Format default: <span className="font-mono font-semibold text-sky-700">{formData.projectCategory === 'DSB - IKR' ? '[DSB-IKR]' : '[GOV-FMI_DSB]'}</span>
                 </p>
-                {errors.projectDescription && (
-                  <p className="text-[11px] text-rose-500 mt-0.5">{errors.projectDescription}</p>
-                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
@@ -1445,32 +1448,22 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      {isDsbIkr ? 'Nama Pelaksana' : 'Nama Vendor'}
+                      Nama Vendor
                     </label>
-                    {isDsbIkr ? (
-                      <input
-                        type="text"
-                        value={formData.namaVendor || ''}
-                        onChange={(e) => handleChange('namaVendor', e.target.value)}
-                        placeholder="e.g. Bpk. Wahyu / PT. Pelaksana"
-                        className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
-                      />
-                    ) : (
-                      <select
-                        value={formData.namaVendor || 'BELUM ADA VENDOR'}
-                        onChange={(e) => handleChange('namaVendor', e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium cursor-pointer uppercase bg-white"
-                      >
-                        {formData.namaVendor && !VENDOR_OPTIONS.includes(formData.namaVendor as any) && (
-                          <option value={formData.namaVendor}>{formData.namaVendor.toUpperCase()}</option>
-                        )}
-                        {VENDOR_OPTIONS.map((v) => (
-                          <option key={v} value={v}>
-                            {v}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={formData.namaVendor || 'BELUM ADA VENDOR'}
+                      onChange={(e) => handleChange('namaVendor', e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium cursor-pointer uppercase bg-white"
+                    >
+                      {formData.namaVendor && !VENDOR_OPTIONS.includes(formData.namaVendor as any) && (
+                        <option value={formData.namaVendor}>{formData.namaVendor.toUpperCase()}</option>
+                      )}
+                      {VENDOR_OPTIONS.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>

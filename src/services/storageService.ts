@@ -11,7 +11,8 @@ import {
   PROJECT_TRACKING_PIPELINE_COLUMNS 
 } from '../data/tabColumns';
 
-const STORAGE_KEY = 'OSP_PROJECTS_DATA_V4';
+const STORAGE_KEY = 'OSP_PROJECTS_DATA_V5';
+const LEGACY_STORAGE_KEYS = ['OSP_PROJECTS_DATA_V6', 'OSP_PROJECTS_DATA_V4'];
 
 type ProjectChangeListener = (projects: ProjectData[]) => void;
 const listeners: Set<ProjectChangeListener> = new Set();
@@ -59,6 +60,27 @@ function readFromStorage(): ProjectData[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
+      // Check legacy storage keys and migrate while cleaning projectDescription
+      for (const legacyKey of LEGACY_STORAGE_KEYS) {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        if (legacyRaw) {
+          try {
+            const legacyParsed = JSON.parse(legacyRaw);
+            if (Array.isArray(legacyParsed) && legacyParsed.length > 0) {
+              const cleaned = legacyParsed.map((p) => ({
+                ...p,
+                projectDescription: '',
+              })).map(normalizeProject);
+              memoryCache = cleaned;
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+              return memoryCache;
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+
       memoryCache = INITIAL_PROJECTS.map(normalizeProject);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCache));
@@ -68,7 +90,7 @@ function readFromStorage(): ProjectData[] {
       return memoryCache;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
+    if (Array.isArray(parsed) && parsed.length > 0) {
       memoryCache = parsed.map(normalizeProject);
       return memoryCache;
     }
@@ -208,6 +230,24 @@ export const storageService = {
   },
 
   /**
+   * Clear only the projectDescription field across all existing projects.
+   */
+  async clearAllProjectDescriptions(): Promise<{ success: boolean; count: number; timestamp: string }> {
+    const current = readFromStorage();
+    const updated = current.map((p) => ({
+      ...p,
+      projectDescription: '',
+      updatedAt: new Date().toISOString(),
+    }));
+    writeToStorage(updated);
+    return {
+      success: true,
+      count: updated.length,
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  /**
    * Restore default projects (clean 0 projects).
    */
   async restoreDefaultProjects(): Promise<ProjectData[]> {
@@ -229,7 +269,6 @@ export const storageService = {
       'Project Category',
       'Project ID',
       'Project Description',
-      'Zona',
       'Area',
       'Status Project',
       'Status Prioritas',
@@ -285,7 +324,6 @@ export const storageService = {
       p.projectCategory || '',
       p.projectId || '',
       p.projectDescription || '',
-      p.zona || '',
       p.areaKota || '',
       p.projectStatus || '',
       p.priority || 'Normal',

@@ -30,13 +30,15 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 }) => {
   const getTabNumberBadge = (id: TabKey) => {
     switch (id) {
-      case 'project-list': return '1';
-      case 'construction-plan': return '2';
-      case 'status-project': return '3';
+      case 'dashboard-overview': return '1';
+      case 'project-list': return '2';
+      case 'construction-plan': return '3';
       case 'status-construction': return '4';
-      case 'project-tracking-pipeline': return '5';
-      case 'upload-document': return '6';
-      case 'pie-chart-analytics': return '7';
+      case 'status-project': return '5';
+      case 'project-tracking-pipeline': return '6';
+      case 'closing-project': return '7';
+      case 'upload-document': return '8';
+      case 'pie-chart-analytics': return '8';
       default: return '•';
     }
   };
@@ -86,7 +88,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       <div className="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-1">
         {!isCollapsed && (
           <div className="px-3 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Daftar Sheet & Tab
+            Daftar Sheet
           </div>
         )}
 
@@ -144,13 +146,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                    {tab.id === 'project-list' && 'Daftar & identitas project'}
-                    {tab.id === 'construction-plan' && 'Perencanaan teknis & nama vendor'}
-                    {tab.id === 'status-project' && 'Pengadaan MR/PO & closing'}
+                    {tab.id === 'dashboard-overview' && 'Ringkasan KPI & Analitik Pie Chart'}
+                    {tab.id === 'project-list' && 'Tabel master data & CRUD'}
+                    {tab.id === 'construction-plan' && 'Perencanaan teknis & vendor'}
                     {tab.id === 'status-construction' && 'Progress galian & kabel FO'}
-                    {tab.id === 'project-tracking-pipeline' && 'Kanban alur & milestone'}
-                    {tab.id === 'upload-document' && 'Berkas GOV-FMI & DSB - IKR'}
-                    {tab.id === 'pie-chart-analytics' && 'Grafik pie & rincian per klik'}
+                    {tab.id === 'status-project' && 'Pengajuan Material, BOQ Labour & CE/BOQ'}
+                    {tab.id === 'project-tracking-pipeline' && 'Pelacakan menyeluruh pipeline'}
+                    {tab.id === 'closing-project' && 'No. PO, BA Opname, ABD, Foto & Analitik'}
                   </p>
                 </div>
               )}
@@ -174,7 +176,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             </div>
             <div className="p-2 rounded bg-slate-800/60 border border-slate-700/60 text-[10px] text-slate-400">
               <span className="text-emerald-400 font-semibold">● Auto-Save Aktif</span>
-              <p className="mt-0.5 text-slate-400 line-clamp-1">Data 5 tab saling terhubung</p>
+              <p className="mt-0.5 text-slate-400 line-clamp-1">Data 7 halaman saling terhubung</p>
               <p className="mt-1 pt-1 border-t border-slate-700/50 text-[10px] text-slate-400 font-medium tracking-wide">
                 © PAUL
               </p>

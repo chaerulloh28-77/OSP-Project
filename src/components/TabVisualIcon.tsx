@@ -8,7 +8,8 @@ import {
   Radio,
   Workflow,
   FileUp,
-  PieChart
+  PieChart,
+  ShieldCheck
 } from 'lucide-react';
 import { TabKey } from '../types/project';
 
@@ -27,11 +28,22 @@ export const TabVisualIcon: React.FC<TabVisualIconProps> = ({
 }) => {
   const getTabConfig = () => {
     switch (tabKey) {
+      case 'dashboard-overview':
+        return {
+          icon: PieChart,
+          name: 'Dashboard Overview & Pie Chart',
+          num: '1',
+          solidColor: 'from-indigo-500 via-sky-500 to-cyan-500 text-white shadow-sky-500/30',
+          activeBg: 'bg-gradient-to-br from-indigo-500/25 via-sky-500/25 to-cyan-500/25 text-cyan-300 ring-1 ring-cyan-400/40',
+          inactiveBg: 'bg-slate-800 text-cyan-400 group-hover:bg-slate-700/80 group-hover:text-cyan-300 ring-1 ring-slate-700/60',
+          lightBg: 'bg-cyan-100 text-cyan-700 ring-1 ring-cyan-200',
+          pulseColor: 'bg-cyan-400',
+        };
       case 'project-list':
         return {
           icon: FolderGit2,
-          name: 'Project List',
-          num: '1',
+          name: 'Project List (Master Data)',
+          num: '2',
           solidColor: 'from-sky-500 to-blue-600 text-white shadow-sky-500/30',
           activeBg: 'bg-gradient-to-br from-sky-500/25 to-blue-600/25 text-sky-300 ring-1 ring-sky-400/40',
           inactiveBg: 'bg-slate-800 text-sky-400 group-hover:bg-slate-700/80 group-hover:text-sky-300 ring-1 ring-slate-700/60',
@@ -41,24 +53,13 @@ export const TabVisualIcon: React.FC<TabVisualIconProps> = ({
       case 'construction-plan':
         return {
           icon: Compass,
-          name: 'Construction & Plan',
-          num: '2',
+          name: 'Plan Implimentasi Project',
+          num: '3',
           solidColor: 'from-blue-600 to-indigo-600 text-white shadow-blue-500/30',
           activeBg: 'bg-gradient-to-br from-blue-500/25 to-indigo-600/25 text-blue-300 ring-1 ring-blue-400/40',
           inactiveBg: 'bg-slate-800 text-blue-400 group-hover:bg-slate-700/80 group-hover:text-blue-300 ring-1 ring-slate-700/60',
           lightBg: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200',
           pulseColor: 'bg-blue-400',
-        };
-      case 'status-project':
-        return {
-          icon: FileCheck2,
-          name: 'Status Project',
-          num: '3',
-          solidColor: 'from-amber-500 to-orange-600 text-white shadow-amber-500/30',
-          activeBg: 'bg-gradient-to-br from-amber-500/25 to-orange-600/25 text-amber-300 ring-1 ring-amber-400/40',
-          inactiveBg: 'bg-slate-800 text-amber-400 group-hover:bg-slate-700/80 group-hover:text-amber-300 ring-1 ring-slate-700/60',
-          lightBg: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
-          pulseColor: 'bg-amber-400',
         };
       case 'status-construction':
         return {
@@ -71,16 +72,38 @@ export const TabVisualIcon: React.FC<TabVisualIconProps> = ({
           lightBg: 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200',
           pulseColor: 'bg-emerald-400',
         };
+      case 'status-project':
+        return {
+          icon: FileCheck2,
+          name: 'Document Project',
+          num: '5',
+          solidColor: 'from-amber-500 to-orange-600 text-white shadow-amber-500/30',
+          activeBg: 'bg-gradient-to-br from-amber-500/25 to-orange-600/25 text-amber-300 ring-1 ring-amber-400/40',
+          inactiveBg: 'bg-slate-800 text-amber-400 group-hover:bg-slate-700/80 group-hover:text-amber-300 ring-1 ring-slate-700/60',
+          lightBg: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
+          pulseColor: 'bg-amber-400',
+        };
       case 'project-tracking-pipeline':
         return {
           icon: Workflow,
-          name: 'Tracking Pipeline',
-          num: '5',
+          name: 'Project Tracing Pipeline',
+          num: '6',
           solidColor: 'from-purple-500 via-fuchsia-600 to-pink-600 text-white shadow-purple-500/30',
           activeBg: 'bg-gradient-to-br from-purple-500/25 to-fuchsia-600/25 text-purple-300 ring-1 ring-purple-400/40',
           inactiveBg: 'bg-slate-800 text-purple-400 group-hover:bg-slate-700/80 group-hover:text-purple-300 ring-1 ring-slate-700/60',
           lightBg: 'bg-purple-100 text-purple-700 ring-1 ring-purple-200',
           pulseColor: 'bg-purple-400',
+        };
+      case 'closing-project':
+        return {
+          icon: ShieldCheck,
+          name: 'Closing Project',
+          num: '7',
+          solidColor: 'from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-emerald-500/30',
+          activeBg: 'bg-gradient-to-br from-emerald-500/25 to-teal-600/25 text-emerald-300 ring-1 ring-emerald-400/40',
+          inactiveBg: 'bg-slate-800 text-teal-400 group-hover:bg-slate-700/80 group-hover:text-teal-300 ring-1 ring-slate-700/60',
+          lightBg: 'bg-teal-100 text-teal-700 ring-1 ring-teal-200',
+          pulseColor: 'bg-teal-400',
         };
       case 'upload-document':
         return {

@@ -28,6 +28,7 @@ interface ProjectCardGridProps {
   onDelete: (project: ProjectData) => void;
   onViewDetail: (project: ProjectData) => void;
   onJumpToTab: (tab: TabKey, project: ProjectData) => void;
+  isNeonMode?: boolean;
 }
 
 export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
@@ -37,6 +38,7 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
   onDelete,
   onViewDetail,
   onJumpToTab,
+  isNeonMode = true,
 }) => {
   const [activeMenuId, setActiveMenuId] = React.useState<string | null>(null);
 
@@ -121,17 +123,29 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
           <div
             key={proj.id}
             onClick={() => onViewDetail(proj)}
-            className="group interactive-card bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-xl hover:shadow-sky-500/10 hover:border-sky-400 hover:-translate-y-1 active:scale-[0.99] transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer relative"
+            className={`group interactive-card rounded-xl border flex flex-col justify-between overflow-hidden cursor-pointer relative transition-all duration-300 ${
+              isNeonMode 
+                ? 'bg-[#080d20] border-slate-800 hover:border-cyan-400/60 hover:shadow-[0_0_20px_rgba(6,182,212,0.25)] hover:-translate-y-1 text-slate-200' 
+                : 'bg-white border-slate-200/90 shadow-2xs hover:shadow-xl hover:shadow-sky-500/10 hover:border-sky-400 hover:-translate-y-1'
+            }`}
           >
             {/* Card Header */}
-            <div className="p-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/70 to-white">
+            <div className={`p-4 border-b ${
+              isNeonMode ? 'bg-[#0b142c] border-slate-800' : 'bg-gradient-to-b from-slate-50/70 to-white border-slate-100'
+            }`}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200/70">
+                  <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${
+                    isNeonMode 
+                      ? 'text-cyan-300 bg-cyan-950/80 border-cyan-500/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]' 
+                      : 'text-sky-700 bg-sky-50 border-sky-200/70'
+                  }`}>
                     {proj.pmoId}
                   </span>
                   {proj.quarter && proj.quarter !== '-' && (
-                    <span className="font-mono text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                    <span className={`font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                      isNeonMode ? 'text-slate-400 bg-slate-900 border border-slate-800' : 'text-slate-600 bg-slate-100'
+                    }`}>
                       {proj.quarter}
                     </span>
                   )}
@@ -148,59 +162,61 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
               </div>
 
               {/* Title & Category */}
-              <h3 className="text-sm font-bold text-slate-900 group-hover:text-sky-700 transition-colors line-clamp-2 leading-snug">
+              <h3 className={`text-sm font-bold transition-colors line-clamp-2 leading-snug ${
+                isNeonMode ? 'text-white group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-sky-700'
+              }`}>
                 {proj.projectDescription || <span className="text-slate-400 italic font-normal text-xs">(Tanpa deskripsi)</span>}
               </h3>
               
               <div className="flex items-center gap-2 mt-2">
                 <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
                   (proj.projectCategory || '').includes('FTTH')
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    ? isNeonMode ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : (proj.projectCategory || '').includes('IKR')
-                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                    ? isNeonMode ? 'bg-purple-950/80 text-purple-300 border-purple-500/30' : 'bg-purple-50 text-purple-700 border-purple-200'
                     : (proj.projectCategory || '').includes('GOV') || (proj.projectCategory || '').includes('Goverment')
-                    ? 'bg-sky-50 text-sky-700 border-sky-200'
-                    : 'bg-slate-100 text-slate-700 border-slate-200/60'
+                    ? isNeonMode ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/30' : 'bg-sky-50 text-sky-700 border-sky-200'
+                    : isNeonMode ? 'bg-slate-900 text-slate-300 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200/60'
                 }`}>
                   {proj.projectCategory || 'Project'}
                 </span>
-                <span className="text-[11px] font-mono text-slate-400">
+                <span className={`text-[11px] font-mono ${isNeonMode ? 'text-slate-500' : 'text-slate-400'}`}>
                   ID: {proj.projectId || '-'}
                 </span>
               </div>
             </div>
 
             {/* Card Body - Key Attributes */}
-            <div className="p-4 space-y-2.5 text-xs text-slate-600 flex-1">
+            <div className={`p-4 space-y-2.5 text-xs flex-1 ${isNeonMode ? 'text-slate-300 bg-[#060a16]' : 'text-slate-600'}`}>
               {/* Location & Area */}
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-slate-500">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className={`flex items-center gap-1.5 ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                   <span>Area / Kota:</span>
                 </span>
-                <span className="font-medium text-slate-800">
+                <span className={`font-medium ${isNeonMode ? 'text-white' : 'text-slate-800'}`}>
                   {proj.areaKota || '-'}
                 </span>
               </div>
 
               {/* Vendor */}
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-slate-500">
-                  <HardHat className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className={`flex items-center gap-1.5 ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <HardHat className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>Vendor Pelaksana:</span>
                 </span>
-                <span className="font-semibold text-slate-800 max-w-[170px] truncate text-right">
+                <span className={`font-semibold max-w-[170px] truncate text-right ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`}>
                   {proj.namaVendor || '-'}
                 </span>
               </div>
 
               {/* Length FO */}
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-slate-500">
-                  <Ruler className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span className={`flex items-center gap-1.5 ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <Ruler className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                   <span>Panjang Relokasi:</span>
                 </span>
-                <span className="font-mono font-bold text-slate-900">
+                <span className={`font-mono font-bold ${isNeonMode ? 'text-cyan-300' : 'text-slate-900'}`}>
                   {lengthNum > 0 ? `${lengthNum.toLocaleString('id-ID')} m` : '-'}
                 </span>
               </div>
@@ -306,8 +322,18 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
                     className="absolute right-0 bottom-full mb-1.5 z-50 w-52 bg-white rounded-lg shadow-xl border border-slate-200 py-1.5 text-left animate-in fade-in zoom-in-95 duration-100"
                   >
                     <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                      Buka di Tab Lain
+                      Buka di Sheet Lain
                     </div>
+                    <button
+                      onClick={() => {
+                        onJumpToTab('dashboard-overview', proj);
+                        setActiveMenuId(null);
+                      }}
+                      className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
+                    >
+                      <TabVisualIcon tabKey="dashboard-overview" size="sm" variant="badge" />
+                      <span>1. Dashboard Overview</span>
+                    </button>
                     <button
                       onClick={() => {
                         onJumpToTab('project-list', proj);
@@ -316,7 +342,7 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
                       className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
                     >
                       <TabVisualIcon tabKey="project-list" size="sm" variant="badge" />
-                      <span>Tab 1. Project List</span>
+                      <span>2. Project List (Master Data)</span>
                     </button>
                     <button
                       onClick={() => {
@@ -326,17 +352,7 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
                       className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
                     >
                       <TabVisualIcon tabKey="construction-plan" size="sm" variant="badge" />
-                      <span>Tab 2. Construction & Plan</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        onJumpToTab('status-project', proj);
-                        setActiveMenuId(null);
-                      }}
-                      className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
-                    >
-                      <TabVisualIcon tabKey="status-project" size="sm" variant="badge" />
-                      <span>Tab 3. Status Project</span>
+                      <span>3. Plan Implimentasi Project</span>
                     </button>
                     <button
                       onClick={() => {
@@ -346,7 +362,17 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
                       className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
                     >
                       <TabVisualIcon tabKey="status-construction" size="sm" variant="badge" />
-                      <span>Tab 4. Status Construction</span>
+                      <span>4. Status Construction</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onJumpToTab('status-project', proj);
+                        setActiveMenuId(null);
+                      }}
+                      className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
+                    >
+                      <TabVisualIcon tabKey="status-project" size="sm" variant="badge" />
+                      <span>5. Document Project</span>
                     </button>
                     <button
                       onClick={() => {
@@ -356,7 +382,7 @@ export const ProjectCardGrid: React.FC<ProjectCardGridProps> = ({
                       className="w-full px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2 cursor-pointer"
                     >
                       <TabVisualIcon tabKey="project-tracking-pipeline" size="sm" variant="badge" />
-                      <span>Tab 5. Tracking Pipeline</span>
+                      <span>6. Project Tracing Pipeline</span>
                     </button>
                   </div>
                 )}

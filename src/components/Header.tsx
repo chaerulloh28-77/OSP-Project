@@ -139,27 +139,27 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Neon Mode Toggle Button */}
+            {/* Dark Neon / Light Theme Toggle Button */}
             {onToggleNeonMode && (
               <button
                 type="button"
                 onClick={onToggleNeonMode}
-                title={isNeonMode ? "Switch to Classic Mode" : "Switch to Neon Light Mode"}
-                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer border ${
+                title={isNeonMode ? "Ganti ke Tema Terang (Light Theme)" : "Ganti ke Tema Dark Neon Futuristik (Multi-Colour)"}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer border ${
                   isNeonMode 
-                    ? 'bg-slate-950 text-cyan-400 border-cyan-500/60 shadow-[0_0_12px_rgba(34,211,238,0.4)] hover:shadow-[0_0_18px_rgba(34,211,238,0.6)]'
-                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
+                    ? 'bg-[#060a18] text-cyan-300 border-cyan-400/60 shadow-[0_0_15px_rgba(6,182,212,0.45)] hover:shadow-[0_0_20px_rgba(6,182,212,0.7)]'
+                    : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700 hover:text-white'
                 }`}
               >
                 {isNeonMode ? (
                   <>
-                    <Zap className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/30 animate-pulse" />
-                    <span className="text-cyan-300 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)]">Neon ON</span>
+                    <Zap className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/40 animate-pulse" />
+                    <span className="text-cyan-300 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]">Dark Neon ⚡</span>
                   </>
                 ) : (
                   <>
-                    <Sun className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Neon OFF</span>
+                    <Sun className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
+                    <span className="text-amber-300">Light Mode ☀️</span>
                   </>
                 )}
               </button>

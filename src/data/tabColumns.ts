@@ -1,47 +1,54 @@
 import { ColumnDefinition, TabKey } from '../types/project';
 
-// 1. Tab "Project List" columns (Image 1 header)
+// 1. Tab "Project List" columns
 export const PROJECT_LIST_COLUMNS: ColumnDefinition[] = [
   { key: 'no', label: 'No.', width: '60px', align: 'center', isNumeric: true },
-  { key: 'pmoId', label: 'DSB - ID', width: '130px', align: 'left' },
-  { key: 'projectCategory', label: 'Project Category', width: '150px', align: 'left', badgeType: 'category' },
-  { key: 'projectId', label: 'Project ID', width: '200px', align: 'left' },
-  { key: 'projectDescription', label: 'Project Description', width: '280px', align: 'left' },
-  { key: 'areaKota', label: 'Area/Kota', width: '130px', align: 'left' },
-  { key: 'projectStatus', label: 'Project Status', width: '160px', align: 'left', badgeType: 'status' },
+  { key: 'pmoId', label: 'DSB - ID', width: '120px', align: 'left' },
+  { key: 'projectCategory', label: 'Kategori', width: '130px', align: 'left', badgeType: 'category' },
+  { key: 'projectDescription', label: 'Segment Relokasi', width: '260px', align: 'left' },
+  { key: 'areaKota', label: 'Area', width: '120px', align: 'left' },
+  { key: 'namaVendor', label: 'Nama Vendor', width: '150px', align: 'left', badgeType: 'vendor' },
+  { key: 'picSectionHead', label: 'PIC Govrel', width: '140px', align: 'left' },
+  { key: 'waspangDsb', label: 'PIC Internal', width: '140px', align: 'left' },
+  { key: 'tanggalSuratDinas', label: 'Tgl Surat Dinas', width: '130px', align: 'center' },
+  { key: 'docSuratDinas', label: 'Doc Surat Dinas', width: '140px', align: 'center' },
+  { key: 'tanggalSurveyBersama', label: 'Tgl Survey Bersama', width: '140px', align: 'center' },
+  { key: 'docSurveyBersama', label: 'Doc Survey Bersama', width: '140px', align: 'center' },
+  { key: 'tanggalSuratRekomter', label: 'Tgl Surat Rekomter', width: '140px', align: 'center' },
+  { key: 'docSuratRekomter', label: 'Doc Surat Rekomter', width: '140px', align: 'center' },
+  { key: 'tanggalSuratPenunjukanVendor', label: 'Tgl Penunjukan Vendor', width: '150px', align: 'center' },
+  { key: 'docSuratPenunjukanVendor', label: 'Doc Penunjukan Vendor', width: '150px', align: 'center' },
+  { key: 'tanggalStartProject', label: 'Start Project', width: '120px', align: 'center' },
+  { key: 'tanggalEndProject', label: 'End Project', width: '120px', align: 'center' },
+  { key: 'docApdRelokasi', label: 'Doc APD Relokasi', width: '140px', align: 'center' },
+  { key: 'docKmzRelokasi', label: 'Doc KMZ Relokasi', width: '140px', align: 'center' },
+  { key: 'docApdInternal', label: 'Doc APD Internal', width: '140px', align: 'center' },
+  { key: 'timelineRelokasi', label: 'Timeline', width: '130px', align: 'center' },
+  { key: 'docTimeline', label: 'Doc Timeline', width: '130px', align: 'center' },
+  { key: 'projectStatus', label: 'Status Project', width: '160px', align: 'left', badgeType: 'status' },
   { key: 'priority', label: 'Prioritas', width: '110px', align: 'center', badgeType: 'status' },
-  { key: 'quarter', label: 'Quarter', width: '100px', align: 'center' },
-  { key: 'picSectionHead', label: 'PIC Govrel', width: '150px', align: 'left' },
-  { key: 'waspangDsb', label: 'Waspang DSB', width: '150px', align: 'left' },
+  { key: 'remarksProject', label: 'Remarks', width: '220px', align: 'left' },
 ];
 
-// 2. Tab "Construction & Plan" columns (Image 2 header)
+// 2. Tab "Construction & Plan" columns
 export const CONSTRUCTION_PLAN_COLUMNS: ColumnDefinition[] = [
   { key: 'no', label: 'No.', width: '60px', align: 'center', isNumeric: true },
   { key: 'pmoId', label: 'DSB - ID', width: '130px', align: 'left' },
   { key: 'projectCategory', label: 'Project Category', width: '140px', align: 'left', badgeType: 'category' },
   { key: 'projectId', label: 'Project ID', width: '200px', align: 'left' },
-  { key: 'projectDescription', label: 'Project Description', width: '250px', align: 'left' },
+  { key: 'projectDescription', label: 'Segment Relokasi', width: '250px', align: 'left' },
   { key: 'areaKota', label: 'Area/Kota', width: '120px', align: 'left' },
   { key: 'priority', label: 'Prioritas', width: '110px', align: 'center', badgeType: 'status' },
   { key: 'picSectionHead', label: 'PIC Govrel', width: '140px', align: 'left' },
-  { key: 'waspangDsb', label: 'Waspang DSB', width: '140px', align: 'left' },
+  { key: 'waspangDsb', label: 'PIC Internal', width: '140px', align: 'left' },
   { key: 'namaVendor', label: 'Nama Vendor', width: '150px', align: 'left', badgeType: 'vendor' },
-  { key: 'dateSuratPerintahRelokasi', label: 'Date SP Relokasi / Tanggal PO', width: '180px', align: 'center' },
-  { key: 'bulan', label: 'Bulan', width: '110px', align: 'left' },
-  { key: 'tahun', label: 'Tahun', width: '90px', align: 'center', isNumeric: true },
   { key: 'panjangRelokasi', label: 'Panjang Cable FO', width: '150px', align: 'right', isNumeric: true },
+  { key: 'jalurAkses', label: 'Jalur Akses (m)', width: '140px', align: 'right', isNumeric: true },
   { key: 'galianPanjangTotal', label: 'Panjang Galian (m)', width: '150px', align: 'right', isNumeric: true },
   { key: 'galianPanjangSelesai', label: 'Meter Galian Selesai', width: '150px', align: 'right', isNumeric: true },
   { key: 'galianSipilProgress', label: 'Galian Sipil', width: '140px', align: 'center' },
-  { key: 'apdRelokasi', label: 'APD / APD Relokasi', width: '130px', align: 'center' },
-  { key: 'kmzRelokasi', label: 'KMZ / KMZ Relokasi', width: '130px', align: 'center' },
   { key: 'statusAudit', label: 'Status Audit', width: '130px', align: 'left' },
-  { key: 'apdLinknet', label: 'APD Internal', width: '120px', align: 'center' },
-  { key: 'statusSurvey', label: 'Status Survey', width: '130px', align: 'left' },
-  { key: 'baSurvey', label: 'BA Survey', width: '130px', align: 'left' },
   { key: 'ceMaterial', label: 'CE Material', width: '130px', align: 'left' },
-  { key: 'sphBoq', label: 'SPH/BOQ', width: '120px', align: 'left' },
   { key: 'ceLn', label: 'CE LN', width: '110px', align: 'left' },
   { key: 'apdLn', label: 'APD LN', width: '100px', align: 'center' },
   { key: 'timelineRelokasi', label: 'Timeline Relokasi', width: '150px', align: 'left' },
@@ -52,13 +59,13 @@ export const CONSTRUCTION_PLAN_COLUMNS: ColumnDefinition[] = [
   { key: 'remarksPlan', label: 'Remarks', width: '200px', align: 'left' },
 ];
 
-// 3. Tab "Status Project" columns (Image 3 header)
+// 3. Tab "Document Project" columns
 export const STATUS_PROJECT_COLUMNS: ColumnDefinition[] = [
   { key: 'no', label: 'No.', width: '60px', align: 'center', isNumeric: true },
   { key: 'pmoId', label: 'DSB - ID', width: '130px', align: 'left' },
   { key: 'projectCategory', label: 'Project Category', width: '140px', align: 'left', badgeType: 'category' },
   { key: 'projectId', label: 'Project ID', width: '200px', align: 'left' },
-  { key: 'projectDescription', label: 'Project Description', width: '250px', align: 'left' },
+  { key: 'projectDescription', label: 'Segment Relokasi', width: '250px', align: 'left' },
   { key: 'areaKota', label: 'Area/Kota', width: '120px', align: 'left' },
   { key: 'priority', label: 'Prioritas', width: '110px', align: 'center', badgeType: 'status' },
   { key: 'picSectionHead', label: 'PIC Govrel', width: '140px', align: 'left' },
@@ -66,8 +73,6 @@ export const STATUS_PROJECT_COLUMNS: ColumnDefinition[] = [
   { key: 'statusPengajuanProject', label: 'Status Pengajuan Project', width: '180px', align: 'left', badgeType: 'status' },
   { key: 'projectCreateDate', label: 'Project Create Date', width: '160px', align: 'center' },
   { key: 'mrNumber', label: 'MR Number', width: '130px', align: 'left' },
-  { key: 'planPengambilanMaterial', label: 'Plan Pengambilan Material', width: '190px', align: 'left' },
-  { key: 'statusMaterialLocation', label: 'Status Material Location', width: '180px', align: 'left' },
   { key: 'pengajuanProjectRemarks', label: 'Pengajuan Project Remarks', width: '220px', align: 'left' },
   { key: 'statusMaterialReturn', label: 'Status Material Return', width: '170px', align: 'left' },
   { key: 'tanggalPlanReturn', label: 'Tanggal Plan Return', width: '160px', align: 'center' },
@@ -78,27 +83,31 @@ export const STATUS_PROJECT_COLUMNS: ColumnDefinition[] = [
   { key: 'remarksProject', label: 'Remarks', width: '180px', align: 'left' },
 ];
 
-// 4. Tab "Status Construction" columns (Image 4 header)
+export const DOCUMENT_PROJECT_COLUMNS = STATUS_PROJECT_COLUMNS;
+
+// 4. Tab "Status Construction" columns
 export const STATUS_CONSTRUCTION_COLUMNS: ColumnDefinition[] = [
   { key: 'no', label: 'No.', width: '60px', align: 'center', isNumeric: true },
   { key: 'pmoId', label: 'DSB - ID', width: '130px', align: 'left' },
   { key: 'projectCategory', label: 'Project Category', width: '140px', align: 'left', badgeType: 'category' },
   { key: 'projectId', label: 'Project ID', width: '200px', align: 'left' },
-  { key: 'projectDescription', label: 'Project Description', width: '250px', align: 'left' },
+  { key: 'projectDescription', label: 'Segment Relokasi', width: '250px', align: 'left' },
   { key: 'areaKota', label: 'Area/Kota', width: '120px', align: 'left' },
+  { key: 'namaVendor', label: 'Nama Vendor', width: '150px', align: 'left', badgeType: 'vendor' },
   { key: 'priority', label: 'Prioritas', width: '110px', align: 'center', badgeType: 'status' },
   { key: 'picSectionHead', label: 'PIC Govrel', width: '140px', align: 'left' },
   { key: 'waspangDsb', label: 'Waspang DSB', width: '140px', align: 'left' },
   { key: 'statusConstruction', label: 'Status Construction', width: '180px', align: 'left', badgeType: 'status' },
   { key: 'statusLabor', label: 'Status Labor', width: '130px', align: 'left' },
   { key: 'statusMaterial', label: 'Status Material', width: '150px', align: 'left' },
+  { key: 'planPengambilanMaterial', label: 'Plan Pengambilan Material', width: '190px', align: 'left' },
+  { key: 'statusMaterialLocation', label: 'Status Material Location', width: '190px', align: 'left' },
   { key: 'statusPullingCableFo', label: 'Status Pulling Cable FO', width: '180px', align: 'left' },
   { key: 'pullingFoPanjangSelesai', label: 'Meter Selesai FO', width: '140px', align: 'right', isNumeric: true },
   { key: 'pullingFoPanjangTotal', label: 'Target Meter FO', width: '140px', align: 'right', isNumeric: true },
-  { key: 'pullingCableFoProgress', label: 'Pulling Cable FO (Otomatis)', width: '180px', align: 'center' },
-  { key: 'statusCo', label: 'Status CO', width: '130px', align: 'left' },
-  { key: 'laporanOpname', label: 'Laporan Opname', width: '150px', align: 'left' },
-  { key: 'closingSap', label: 'Closing SAP', width: '130px', align: 'center' },
+  { key: 'statusCo', label: 'Status CO', width: '130px', align: 'left', badgeType: 'status' },
+  { key: 'coCableJointSummary', label: 'Cable FO Joint CO (Existing ➔ New Jumper)', width: '280px', align: 'left' },
+  { key: 'coPhaseSummary', label: 'Phase CO & Tanggal Pelaksanaan', width: '240px', align: 'left' },
   { key: 'kebutuhanMaterialPoSap', label: 'Kebutuhan Material PO SAP', width: '200px', align: 'left' },
   { key: 'galianSipilProgress', label: 'Galian Sipil Progress', width: '160px', align: 'left' },
   { key: 'galianAksesProgress', label: 'Galian Akses Progress', width: '160px', align: 'left' },
@@ -107,7 +116,6 @@ export const STATUS_CONSTRUCTION_COLUMNS: ColumnDefinition[] = [
   { key: 'installPoleProgress', label: 'Install Pole Progress', width: '160px', align: 'left' },
   { key: 'ftthIkrSpecProgress', label: 'Spesifikasi IKR / FTTH', width: '220px', align: 'left' },
   { key: 'pullingCableProgress', label: 'Pulling Cable Progress', width: '170px', align: 'left' },
-  { key: 'projectSapId', label: 'Project SAP ID / GOV - ID / DSB - IKR', width: '160px', align: 'left' },
   { key: 'remarksConstruction', label: 'Remarks', width: '180px', align: 'left' },
 ];
 
@@ -115,12 +123,12 @@ export const STATUS_CONSTRUCTION_COLUMNS: ColumnDefinition[] = [
 export const PROJECT_TRACKING_PIPELINE_COLUMNS: ColumnDefinition[] = [
   { key: 'no', label: 'No.', width: '60px', align: 'center', isNumeric: true },
   { key: 'pmoId', label: 'DSB - ID', width: '130px', align: 'left' },
-  { key: 'projectDescription', label: 'Project Description', width: '260px', align: 'left' },
+  { key: 'projectDescription', label: 'Segment Relokasi', width: '260px', align: 'left' },
   { key: 'priority', label: 'Prioritas', width: '110px', align: 'center', badgeType: 'status' },
   { key: 'quarter', label: 'Quarter', width: '100px', align: 'center' },
   { key: 'picSectionHead', label: 'PIC Govrel', width: '140px', align: 'left' },
   { key: 'waspangDsb', label: 'Waspang DSB', width: '140px', align: 'left' },
-  { key: 'projectStatus', label: 'Project Status', width: '160px', align: 'left', badgeType: 'status' },
+  { key: 'projectStatus', label: 'Status Project', width: '160px', align: 'left', badgeType: 'status' },
   { key: 'statusConstruction', label: 'Status Construction', width: '160px', align: 'left', badgeType: 'status' },
   { key: 'namaVendor', label: 'Nama Vendor', width: '140px', align: 'left', badgeType: 'vendor' },
   { key: 'panjangRelokasi', label: 'Panjang FO (m)', width: '130px', align: 'right', isNumeric: true },
@@ -133,12 +141,31 @@ export const PROJECT_TRACKING_PIPELINE_COLUMNS: ColumnDefinition[] = [
   { key: 'remarksConstruction', label: 'Pipeline Remarks', width: '220px', align: 'left' },
 ];
 
+// 6. Tab "Closing Project" columns
+export const CLOSING_PROJECT_COLUMNS: ColumnDefinition[] = [
+  { key: 'no', label: 'No.', width: '60px', align: 'center', isNumeric: true },
+  { key: 'pmoId', label: 'DSB - ID', width: '130px', align: 'left' },
+  { key: 'projectId', label: 'Project ID', width: '190px', align: 'left' },
+  { key: 'projectDescription', label: 'Segment Relokasi', width: '250px', align: 'left' },
+  { key: 'areaKota', label: 'Area / Kota', width: '120px', align: 'left' },
+  { key: 'namaVendor', label: 'Nama Vendor', width: '140px', align: 'left', badgeType: 'vendor' },
+  { key: 'prajectDate', label: 'Praject Date', width: '130px', align: 'center' },
+  { key: 'poNumber', label: 'No. PO', width: '130px', align: 'left' },
+  { key: 'statusPengajuanClosing', label: 'Status Pengajuan', width: '170px', align: 'left', badgeType: 'status' },
+  { key: 'baOpnameMaterial', label: 'BA Opname Material', width: '170px', align: 'center' },
+  { key: 'baOpnameLabour', label: 'BA Opname Labour', width: '170px', align: 'center' },
+  { key: 'closingAbdRelokasi', label: 'ABD Relokasi', width: '160px', align: 'center' },
+  { key: 'closingAbdInternal', label: 'ABD Internal', width: '160px', align: 'center' },
+  { key: 'fotoDokumentasi', label: 'Foto Dokumentasi (Maks 4 MB)', width: '200px', align: 'center' },
+  { key: 'closingRemarks', label: 'Remarks Closing', width: '180px', align: 'left' },
+];
+
 export const TAB_CONFIG = [
-  { id: 'project-list' as TabKey, label: '1. Project List', description: 'Master identitas proyek, PIC Govrel, Waspang DSB, area & status' },
-  { id: 'construction-plan' as TabKey, label: '2. Construction & Plan', description: 'Perencanaan teknis lapangan, nama vendor pelaksana, survey & perizinan' },
-  { id: 'status-project' as TabKey, label: '3. Status Project', description: 'Pengajuan project, Project Create Date, MR Number, logistik material & closing dokumen' },
-  { id: 'status-construction' as TabKey, label: '4. Status Construction', description: 'Progress fisik, galian, pulling FO (Not Yet, In Progress, Done) & SAP closing' },
-  { id: 'project-tracking-pipeline' as TabKey, label: '5. Project Tracking Pipeline', description: 'Pelacakan menyeluruh pipeline, tahapan & progres lintas sheet' },
-  { id: 'upload-document' as TabKey, label: '6. Uploud Doc GOV-FMI & DSB - IKR', description: 'Unggah berkas proyek GOV-FMI & DSB - IKR: MR, Surat Dinas, Rekomtek, APD, KMZ, BA Survey, BOQ & Timeline' },
-  { id: 'pie-chart-analytics' as TabKey, label: '7. Grafik Pie Chart', description: 'Grafik visual interaktif 6 dimensi dengan rincian informasi dan tabel per segmen yang diklik' },
+  { id: 'dashboard-overview' as TabKey, label: '1. Dashboard Overview', description: 'Ringkasan metrik dashboard, statistik performa proyek, dan grafik pie chart interaktif 5 dimensi' },
+  { id: 'project-list' as TabKey, label: '2. Project List (Master Data)', description: 'Tabel master project, filter lengkap, CRUD, input data baru, edit, simpan, hapus, kembali & detail proyek' },
+  { id: 'construction-plan' as TabKey, label: '3. Plan Implimentasi Project', description: 'Perencanaan teknis lapangan, segment relokasi, nama vendor pelaksana, estimasi pemutusan & timeline' },
+  { id: 'status-construction' as TabKey, label: '4. Status Construction', description: 'Progress fisik, galian, pulling FO (12/24/48/96/144/288 Core), plan & lokasi material, dan closing SAP' },
+  { id: 'status-project' as TabKey, label: '5. Document Project', description: 'Pengelompokan & upload dokumen pengajuan Material (11), BOQ Labour (11), dan FORM CE Material & BOQ Labour (11)' },
+  { id: 'project-tracking-pipeline' as TabKey, label: '6. Project Tracing Pipeline', description: 'Pelacakan menyeluruh pipeline, tahapan & progres terintegrasi lintas sheet (Board & Table view)' },
+  { id: 'closing-project' as TabKey, label: '7. Closing Project', description: 'Closing Project: Project Date, No. PO, BA Opname Material/Labour, ABD, Foto Dokumentasi, Analitik Grafik & Matriks Status' },
 ];

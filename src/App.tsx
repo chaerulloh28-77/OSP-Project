@@ -19,7 +19,8 @@ import {
   Trash2,
   RotateCcw,
   ShieldCheck,
-  PieChart
+  PieChart,
+  FolderGit2
 } from 'lucide-react';
 import { ProjectData, TabKey } from './types/project';
 import {
@@ -33,6 +34,7 @@ import {
   STATUS_PROJECT_COLUMNS, 
   STATUS_CONSTRUCTION_COLUMNS,
   PROJECT_TRACKING_PIPELINE_COLUMNS,
+  CLOSING_PROJECT_COLUMNS,
   TAB_CONFIG 
 } from './data/tabColumns';
 import { storageService } from './services/storageService';
@@ -50,6 +52,8 @@ import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { ClearAllConfirmModal } from './components/ClearAllConfirmModal';
 import { ClearDescriptionConfirmModal } from './components/ClearDescriptionConfirmModal';
 import { UploadDocumentView } from './components/UploadDocumentView';
+import { DocumentProjectPageView } from './components/DocumentProjectPageView';
+import { ClosingProjectPageView } from './components/ClosingProjectPageView';
 import { PieChartAnalyticsView } from './components/PieChartAnalyticsView';
 import { LoginPage } from './components/LoginPage';
 import { PriorityTierBar } from './components/PriorityTierBar';
@@ -61,7 +65,8 @@ export default function App() {
 
   // Master projects dataset (pure local storage)
   const [projects, setProjects] = useState<ProjectData[]>([]);
-  const [activeTab, setActiveTab] = useState<TabKey>('pie-chart-analytics');
+  const [activeTab, setActiveTab] = useState<TabKey>('dashboard-overview');
+  const [showPieChartInDashboard, setShowPieChartInDashboard] = useState<boolean>(true);
   const [pieChartInitialTabFocus, setPieChartInitialTabFocus] = useState<TabKey | undefined>(undefined);
   const [lastSavedTime, setLastSavedTime] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -279,6 +284,8 @@ export default function App() {
         return STATUS_CONSTRUCTION_COLUMNS;
       case 'project-tracking-pipeline':
         return PROJECT_TRACKING_PIPELINE_COLUMNS;
+      case 'closing-project':
+        return CLOSING_PROJECT_COLUMNS;
       default:
         return PROJECT_LIST_COLUMNS;
     }
@@ -659,27 +666,29 @@ export default function App() {
         {/* Scrollable Main Content Area */}
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 custom-scrollbar">
           <div className="max-w-[1600px] mx-auto">
-            {/* KPI Stats Summary Bar */}
-            <StatsBar 
-              projects={projects} 
-              onQuickFilter={handleQuickFilter}
-              activeFilterValue={activeKpiFilter?.key || selectedStatus || (searchTerm ? 'Search' : '')}
-              onSelectProject={(proj) => {
-                setDetailProject(proj);
-                setIsDetailDrawerOpen(true);
-              }}
-              showToast={showToast}
-              isNeonMode={isNeonMode}
-            />
+            {/* KPI Stats Summary Bar - ONLY on Page 1 / Sheet 1 (Dashboard Overview) */}
+            {activeTab === 'dashboard-overview' && (
+              <StatsBar 
+                projects={projects} 
+                onQuickFilter={handleQuickFilter}
+                activeFilterValue={activeKpiFilter?.key || selectedStatus || (searchTerm ? 'Search' : '')}
+                onSelectProject={(proj) => {
+                  setDetailProject(proj);
+                  setIsDetailDrawerOpen(true);
+                }}
+                showToast={showToast}
+                isNeonMode={isNeonMode}
+              />
+            )}
 
             {/* Google Sheets-style Horizontal Workbook Tab Bar */}
-            <div className={`mb-4 p-1.5 rounded-xl border flex items-center overflow-x-auto gap-1.5 scrollbar-none transition-all duration-300 ${
+            <div className={`mb-4 p-1.5 rounded-xl border flex items-center overflow-x-auto gap-1.5 custom-scrollbar transition-all duration-300 ${
               isNeonMode 
                 ? 'bg-slate-950/80 border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]' 
                 : 'bg-slate-200/90 border-slate-300/80 shadow-xs'
             }`}>
-              <div className="flex items-center gap-1.5">
-                <span className={`hidden md:flex items-center gap-1 text-[11px] font-bold uppercase px-2 font-mono border-r ${
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className={`hidden md:flex items-center gap-1 text-[11px] font-bold uppercase px-2 font-mono border-r shrink-0 ${
                   isNeonMode ? 'text-slate-400 border-slate-800' : 'text-slate-500 border-slate-300'
                 }`}>
                   <FileSpreadsheet className={`w-3.5 h-3.5 ${isNeonMode ? 'text-cyan-400' : 'text-slate-400'}`} />
@@ -694,7 +703,7 @@ export default function App() {
                         setActiveTab(tab.id);
                         showToast(`Buka Sheet: ${tab.label}`);
                       }}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         isActive
                           ? isNeonMode
                             ? 'bg-[#0e162e] text-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.4)] border border-cyan-400/50 scale-102 font-extrabold'
@@ -704,7 +713,7 @@ export default function App() {
                           : 'bg-white/60 text-slate-600 hover:bg-white hover:text-slate-900 border border-slate-200 shadow-3xs'
                       }`}
                     >
-                      <span className={`font-mono text-[9px] px-1.5 py-0.2 rounded font-extrabold ${
+                      <span className={`font-mono text-[9px] px-1.5 py-0.2 rounded font-extrabold shrink-0 ${
                         isActive 
                           ? isNeonMode ? 'bg-cyan-950 text-cyan-400' : 'bg-slate-800 text-sky-300' 
                           : isNeonMode ? 'bg-slate-900 text-slate-500' : 'bg-slate-100 text-slate-400'
@@ -712,7 +721,7 @@ export default function App() {
                         {idx + 1}
                       </span>
                       <TabVisualIcon tabKey={tab.id} isActive={isActive} size="sm" variant="minimal" />
-                      <span>{tab.label.split('.').slice(1).join('.').trim() || tab.label}</span>
+                      <span className="shrink-0">{tab.label.split('.').slice(1).join('.').trim() || tab.label}</span>
                     </button>
                   );
                 })}
@@ -760,7 +769,7 @@ export default function App() {
                         <span>Kembali ke Tabel</span>
                       </button>
                     </div>
-                  ) : (activeTab !== 'project-tracking-pipeline' && activeTab !== 'upload-document') || pipelineViewMode === 'sheet' ? (
+                  ) : (activeTab !== 'project-tracking-pipeline' && activeTab !== 'status-project') || pipelineViewMode === 'sheet' ? (
                     <div className="flex items-center bg-slate-100/90 p-1 rounded-lg border border-slate-200/90 text-xs">
                       <button
                         type="button"
@@ -816,15 +825,26 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => {
-                          setPieChartInitialTabFocus(activeTab);
-                          setActiveTab('pie-chart-analytics');
-                          showToast(`Membuka Grafik Pie Chart untuk ${currentTabMeta.label}`);
+                          if (activeTab === 'project-list') {
+                            setShowPieChartInDashboard((prev) => !prev);
+                            showToast(`Grafik Pie Chart: ${!showPieChartInDashboard ? 'Ditampilkan' : 'Disembunyikan'}`);
+                          } else {
+                            setPieChartInitialTabFocus(activeTab);
+                            setActiveTab('pie-chart-analytics');
+                            showToast(`Membuka Grafik Pie Chart untuk ${currentTabMeta.label}`);
+                          }
                         }}
-                        title="Buka Tampilan Grafik Pie Chart Analitik 6 Dimensi"
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-medium transition-all text-indigo-700 hover:bg-white/80 cursor-pointer"
+                        title="Tampilkan / Sembunyikan Grafik Pie Chart Analitik"
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md font-bold transition-all cursor-pointer ${
+                          activeTab === 'project-list' && showPieChartInDashboard
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-indigo-700 hover:bg-white/80'
+                        }`}
                       >
-                        <PieChart className="w-3.5 h-3.5 text-indigo-600" />
-                        <span className="hidden sm:inline">Grafik Pie</span>
+                        <PieChart className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">
+                          {activeTab === 'project-list' ? (showPieChartInDashboard ? 'Pie Chart (Aktif)' : 'Grafik Pie') : 'Grafik Pie'}
+                        </span>
                       </button>
                     </div>
                   ) : null}
@@ -915,31 +935,31 @@ export default function App() {
               </div>
             )}
 
-            {/* Dedicated Tab Information Bar for Status Project (Sheet 3) */}
+            {/* Dedicated Tab Information Bar for Document Project (Sheet 5) */}
             {activeTab === 'status-project' && (
               <div className="pt-3 border-t border-slate-150 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs animate-in fade-in duration-150">
                 <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
-                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Status Pengajuan</span>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Status Document Project</span>
                   <span className="text-xs font-semibold text-indigo-700">
                     {tabStats.releasePengajuanCount} Release • {tabStats.approvedPengajuanCount} Approved
                   </span>
                 </div>
                 <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
-                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Project Create Date</span>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Pengajuan Material</span>
                   <span className="text-xs font-semibold text-sky-700 font-mono">
-                    {tabStats.hasCreateDateCount} Proyek Terdata
+                    11 Jenis Berkas
                   </span>
                 </div>
                 <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
-                  <span className="text-slate-500 block text-[10px] uppercase font-bold">MR Number</span>
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Pengajuan BOQ Labour</span>
                   <span className="text-xs font-semibold text-emerald-700 font-mono">
-                    {tabStats.hasMrNumberCount} MR Diterbitkan
+                    11 Jenis Berkas
                   </span>
                 </div>
                 <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
-                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Dokumen Closing</span>
-                  <span className="text-xs font-semibold text-slate-800">
-                    {tabStats.closingDoneCount} Dokumen Selesai / Teco
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Pengajuan CE & BOQ</span>
+                  <span className="text-xs font-semibold text-purple-700 font-mono">
+                    11 Jenis Berkas
                   </span>
                 </div>
               </div>
@@ -968,10 +988,40 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Dedicated Tab Information Bar for Closing Project (Sheet 7) */}
+            {activeTab === 'closing-project' && (
+              <div className="pt-3 border-t border-slate-150 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs animate-in fade-in duration-150">
+                <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Status Pengajuan</span>
+                  <span className="text-xs font-semibold text-teal-700">
+                    Not Yet ➔ Submit ➔ BALAP ➔ BAST ➔ Teco ➔ Invoice
+                  </span>
+                </div>
+                <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Data Identitas</span>
+                  <span className="text-xs font-semibold text-sky-700">
+                    Praject Date & No. PO
+                  </span>
+                </div>
+                <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Berkas BA & ABD</span>
+                  <span className="text-xs font-semibold text-indigo-700">
+                    BA Opname Mat/Lab, ABD Relokasi/Int
+                  </span>
+                </div>
+                <div className="bg-slate-50/90 p-2.5 rounded-lg border border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Foto Dokumentasi</span>
+                  <span className="text-xs font-semibold text-amber-700">
+                    Mendukung Semua Format File (*.*)
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
             {/* Priority Indicator Tiers (Level 1-5) */}
-            {activeTab !== 'upload-document' && activeTab !== 'pie-chart-analytics' && (
+            {activeTab !== 'dashboard-overview' && activeTab !== 'pie-chart-analytics' && (
               <PriorityTierBar
                 projects={projects}
                 selectedPriority={selectedPriority}
@@ -979,8 +1029,8 @@ export default function App() {
               />
             )}
 
-            {/* Filter and Search Bar (Tabs 1-5) */}
-            {activeTab !== 'upload-document' && activeTab !== 'pie-chart-analytics' && (
+            {/* Filter and Search Bar (Tabs 2-6) */}
+            {activeTab !== 'dashboard-overview' && activeTab !== 'pie-chart-analytics' && (
               <FilterBar
                 activeTab={activeTab}
                 searchTerm={searchTerm}
@@ -1009,8 +1059,248 @@ export default function App() {
               />
             )}
 
-            {/* 3. Main View Area (Pie Chart, Upload Document, Board, Card Grid, or Table View) */}
-            {activeTab === 'pie-chart-analytics' ? (
+            {/* 3. Main View Area (Dashboard Overview & Pie Chart, Upload Document, Board, Card Grid, or Table View) */}
+            {activeTab === 'dashboard-overview' ? (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                {/* 5-Dimension Pie Chart Analytics */}
+                <PieChartAnalyticsView
+                  projects={projects}
+                  onViewDetail={(proj) => {
+                    setDetailProject(proj);
+                    setIsDetailDrawerOpen(true);
+                  }}
+                  onEditProject={(proj) => {
+                    setEditingProject(proj);
+                    setIsFormModalOpen(true);
+                  }}
+                  onJumpToTab={handleJumpToTab}
+                  initialTabFocus={pieChartInitialTabFocus}
+                  showToast={showToast}
+                  onNewProject={() => {
+                    setEditingProject(null);
+                    setIsFormModalOpen(true);
+                  }}
+                  isNeonMode={isNeonMode}
+                />
+
+                {/* Quick Navigation Cards to All Sheets */}
+                <div className={`p-4 sm:p-5 rounded-2xl border space-y-3.5 transition-all relative overflow-hidden ${
+                  isNeonMode 
+                    ? 'bg-[#090e23]/95 border-cyan-500/30 text-slate-200 shadow-[0_0_25px_rgba(6,182,212,0.15)] backdrop-blur-xl' 
+                    : 'bg-white border-slate-200 shadow-sm'
+                }`}>
+                  {/* Futuristic Multi-Colour Neon Light Ribbon */}
+                  {isNeonMode && (
+                    <div className="h-0.5 w-full bg-gradient-to-r from-rose-500 via-violet-500 via-purple-500 via-amber-500 via-emerald-500 via-cyan-400 to-white shadow-[0_0_10px_rgba(139,92,246,0.8)] rounded-full mb-1" />
+                  )}
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-black uppercase font-mono px-2 py-0.5 rounded tracking-widest ${
+                        isNeonMode ? 'bg-cyan-950 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        WORKBOOK NAVIGATION
+                      </span>
+                      <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                        isNeonMode ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'text-slate-700'
+                      }`}>
+                        Akses Cepat Antar Halaman Terintegrasi (7 Sheet)
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900/80 border border-slate-700/60">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" title="Red" />
+                        <span className="w-2 h-2 rounded-full bg-violet-500 shadow-[0_0_6px_#8b5cf6]" title="Violet" />
+                        <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_6px_#c026d3]" title="Purple" />
+                        <span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_6px_#f97316]" title="Orange" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]" title="Green" />
+                        <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#06b6d4]" title="Blue" />
+                        <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_6px_#ffffff]" title="White" />
+                      </div>
+                      <span className={`text-[11px] font-mono font-semibold ${isNeonMode ? 'text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]' : 'text-cyan-700'}`}>
+                        Multi-Colour Connected
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+                    {/* Sheet 2: Project List (Blue / Cyan Neon) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('project-list');
+                        showToast('Membuka Halaman 2: Project List (Master Data)');
+                      }}
+                      className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
+                        isNeonMode
+                          ? 'bg-[#071329]/80 hover:bg-[#0b1b3d] border-cyan-500/40 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.45)]'
+                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-sky-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                          isNeonMode 
+                            ? 'bg-cyan-950 text-cyan-300 border-cyan-500/60 shadow-[0_0_6px_rgba(6,182,212,0.4)]' 
+                            : 'bg-sky-950 text-sky-400 border-sky-800'
+                        }`}>
+                          Halaman 2
+                        </span>
+                        <TabVisualIcon tabKey="project-list" size="sm" variant="badge" />
+                      </div>
+                      <h5 className={`text-xs font-bold transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-cyan-300 group-hover:drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]' : 'text-white group-hover:text-sky-300'
+                      }`}>Project List</h5>
+                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Master data, filter, search & CRUD</p>
+                    </button>
+
+                    {/* Sheet 3: Plan Implimentasi (Violet Neon) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('construction-plan');
+                        showToast('Membuka Halaman 3: Plan Implimentasi Project');
+                      }}
+                      className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
+                        isNeonMode
+                          ? 'bg-[#170e2d]/80 hover:bg-[#221345] border-violet-500/40 hover:border-violet-400 hover:shadow-[0_0_20px_rgba(139,92,246,0.45)]'
+                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-blue-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                          isNeonMode 
+                            ? 'bg-violet-950 text-violet-300 border-violet-500/60 shadow-[0_0_6px_rgba(139,92,246,0.4)]' 
+                            : 'bg-blue-950 text-blue-400 border-blue-800'
+                        }`}>
+                          Halaman 3
+                        </span>
+                        <TabVisualIcon tabKey="construction-plan" size="sm" variant="badge" />
+                      </div>
+                      <h5 className={`text-xs font-bold transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-violet-300 group-hover:drop-shadow-[0_0_6px_rgba(139,92,246,0.6)]' : 'text-white group-hover:text-blue-300'
+                      }`}>Plan Implimentasi</h5>
+                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Perencanaan teknis & vendor pelaksana</p>
+                    </button>
+
+                    {/* Sheet 4: Status Construction (Green Neon) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('status-construction');
+                        showToast('Membuka Halaman 4: Status Construction');
+                      }}
+                      className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
+                        isNeonMode
+                          ? 'bg-[#071d15]/80 hover:bg-[#0d2e22] border-emerald-500/40 hover:border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.45)]'
+                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-emerald-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                          isNeonMode 
+                            ? 'bg-emerald-950 text-emerald-300 border-emerald-500/60 shadow-[0_0_6px_rgba(16,185,129,0.4)]' 
+                            : 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                        }`}>
+                          Halaman 4
+                        </span>
+                        <TabVisualIcon tabKey="status-construction" size="sm" variant="badge" />
+                      </div>
+                      <h5 className={`text-xs font-bold transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-emerald-300 group-hover:drop-shadow-[0_0_6px_rgba(16,185,129,0.6)]' : 'text-white group-hover:text-emerald-300'
+                      }`}>Status Construction</h5>
+                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Pulling FO multi-cable & closing SAP</p>
+                    </button>
+
+                    {/* Sheet 5: Document Project (Orange Neon) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('status-project');
+                        showToast('Membuka Halaman 5: Document Project');
+                      }}
+                      className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
+                        isNeonMode
+                          ? 'bg-[#211108]/80 hover:bg-[#331b0c] border-orange-500/40 hover:border-orange-400 hover:shadow-[0_0_20px_rgba(249,115,22,0.45)]'
+                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-amber-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                          isNeonMode 
+                            ? 'bg-amber-950 text-orange-300 border-orange-500/60 shadow-[0_0_6px_rgba(249,115,22,0.4)]' 
+                            : 'bg-amber-950 text-amber-400 border-amber-800'
+                        }`}>
+                          Halaman 5
+                        </span>
+                        <TabVisualIcon tabKey="status-project" size="sm" variant="badge" />
+                      </div>
+                      <h5 className={`text-xs font-bold transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-orange-300 group-hover:drop-shadow-[0_0_6px_rgba(249,115,22,0.6)]' : 'text-white group-hover:text-amber-300'
+                      }`}>Document Project</h5>
+                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">3 Pengajuan berkas (Material, BOQ, CE)</p>
+                    </button>
+
+                    {/* Sheet 6: Project Tracking Pipeline (Purple Neon) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('project-tracking-pipeline');
+                        showToast('Membuka Halaman 6: Project Tracing Pipeline');
+                      }}
+                      className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
+                        isNeonMode
+                          ? 'bg-[#21092a]/80 hover:bg-[#330f40] border-purple-500/40 hover:border-purple-400 hover:shadow-[0_0_20px_rgba(192,38,211,0.45)]'
+                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-purple-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                          isNeonMode 
+                            ? 'bg-purple-950 text-purple-300 border-purple-500/60 shadow-[0_0_6px_rgba(192,38,211,0.4)]' 
+                            : 'bg-purple-950 text-purple-400 border-purple-800'
+                        }`}>
+                          Halaman 6
+                        </span>
+                        <TabVisualIcon tabKey="project-tracking-pipeline" size="sm" variant="badge" />
+                      </div>
+                      <h5 className={`text-xs font-bold transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-purple-300 group-hover:drop-shadow-[0_0_6px_rgba(192,38,211,0.6)]' : 'text-white group-hover:text-purple-300'
+                      }`}>Tracing Pipeline</h5>
+                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Alur tahapan terpadu & Kanban board</p>
+                    </button>
+
+                    {/* Sheet 7: Closing Project (Red / Rose Neon) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('closing-project');
+                        showToast('Membuka Halaman 7: Closing Project');
+                      }}
+                      className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
+                        isNeonMode
+                          ? 'bg-[#280913]/80 hover:bg-[#3d0e1d] border-rose-500/40 hover:border-rose-400 hover:shadow-[0_0_20px_rgba(244,63,94,0.45)]'
+                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-teal-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                          isNeonMode 
+                            ? 'bg-rose-950 text-rose-300 border-rose-500/60 shadow-[0_0_6px_rgba(244,63,94,0.4)]' 
+                            : 'bg-teal-950 text-teal-400 border-teal-800'
+                        }`}>
+                          Halaman 7
+                        </span>
+                        <TabVisualIcon tabKey="closing-project" size="sm" variant="badge" />
+                      </div>
+                      <h5 className={`text-xs font-bold transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-rose-300 group-hover:drop-shadow-[0_0_6px_rgba(244,63,94,0.6)]' : 'text-white group-hover:text-teal-300'
+                      }`}>Closing Project</h5>
+                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Praject Date, PO, BA, ABD & Foto</p>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === 'pie-chart-analytics' ? (
               <PieChartAnalyticsView
                 projects={projects}
                 onViewDetail={(proj) => {
@@ -1029,14 +1319,47 @@ export default function App() {
                   setIsFormModalOpen(true);
                 }}
               />
-            ) : activeTab === 'upload-document' ? (
-              <UploadDocumentView
+            ) : activeTab === 'status-project' ? (
+              <DocumentProjectPageView
                 projects={projects}
-                onOpenNewProject={() => {
-                  setEditingProject(null);
+                filteredProjects={filteredProjects}
+                onUpdateProject={(updated) => {
+                  const updatedList = projects.map((p) => (p.id === updated.id ? updated : p));
+                  persistChanges(updatedList);
+                  showToast(`Dokumen proyek ${updated.pmoId} berhasil diperbarui.`);
+                }}
+                onViewDetail={(proj) => {
+                  setDetailProject(proj);
+                  setIsDetailDrawerOpen(true);
+                }}
+                onEditProject={(proj) => {
+                  setEditingProject(proj);
                   setIsFormModalOpen(true);
                 }}
+                onJumpToTab={handleJumpToTab}
                 showToast={showToast}
+                isNeonMode={isNeonMode}
+              />
+            ) : activeTab === 'closing-project' ? (
+              <ClosingProjectPageView
+                projects={projects}
+                filteredProjects={filteredProjects}
+                onUpdateProject={(updated) => {
+                  const updatedList = projects.map((p) => (p.id === updated.id ? updated : p));
+                  persistChanges(updatedList);
+                  showToast(`Data closing proyek ${updated.pmoId} berhasil diperbarui.`);
+                }}
+                onViewDetail={(proj) => {
+                  setDetailProject(proj);
+                  setIsDetailDrawerOpen(true);
+                }}
+                onEditProject={(proj) => {
+                  setEditingProject(proj);
+                  setIsFormModalOpen(true);
+                }}
+                onJumpToTab={handleJumpToTab}
+                showToast={showToast}
+                isNeonMode={isNeonMode}
               />
             ) : activeTab === 'project-tracking-pipeline' && pipelineViewMode === 'board' ? (
               <PipelineBoard
@@ -1050,6 +1373,7 @@ export default function App() {
                   setIsFormModalOpen(true);
                 }}
                 onJumpToTab={handleJumpToTab}
+                isNeonMode={isNeonMode}
               />
             ) : tableViewMode === 'card' ? (
               <ProjectCardGrid
@@ -1068,6 +1392,7 @@ export default function App() {
                   setIsDetailDrawerOpen(true);
                 }}
                 onJumpToTab={handleJumpToTab}
+                isNeonMode={isNeonMode}
               />
             ) : (
               <TableView
@@ -1093,6 +1418,7 @@ export default function App() {
                   setEditingProject(null);
                   setIsFormModalOpen(true);
                 }}
+                isNeonMode={isNeonMode}
               />
             )}
 
@@ -1140,6 +1466,8 @@ export default function App() {
           setIsFormModalOpen(true);
         }}
         onJumpToTab={handleJumpToTab}
+        onUpdateProject={handleSaveProject}
+        isNeonMode={isNeonMode}
       />
 
       {/* Delete Single Project Confirmation Modal */}

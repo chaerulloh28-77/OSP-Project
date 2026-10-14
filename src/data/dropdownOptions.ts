@@ -43,19 +43,11 @@ export const KMZ_FTTH_IKR_OPTIONS = [
   'Belum ada',
 ] as const;
 
-export function getApdOptions(category?: string): readonly string[] {
-  const cat = (category || '').toUpperCase().trim();
-  if (cat === 'DSB - IKR' || cat === 'IKR' || cat.includes('IKR') || cat === 'FTTH') {
-    return APD_FTTH_IKR_OPTIONS;
-  }
+export function getApdOptions(_category?: string): readonly string[] {
   return APD_RELOKASI_OPTIONS;
 }
 
-export function getKmzOptions(category?: string): readonly string[] {
-  const cat = (category || '').toUpperCase().trim();
-  if (cat === 'DSB - IKR' || cat === 'IKR' || cat.includes('IKR') || cat === 'FTTH') {
-    return KMZ_FTTH_IKR_OPTIONS;
-  }
+export function getKmzOptions(_category?: string): readonly string[] {
   return KMZ_RELOKASI_OPTIONS;
 }
 
@@ -100,106 +92,153 @@ export const SPH_BOQ_OPTIONS = [
   'Release',
 ] as const;
 
-// Status Project Master Options (including Review Dinas & Masih Review Dinas)
+// Status Project Master Options
 export const PROJECT_STATUS_OPTIONS = [
-  'Project Not Started',
+  'Done (Civil Work)',
+  'Done (Completed)',
+  'Done (Pulling)',
   'In Progress',
-  'Review Dinas',
   'Masih Review Dinas',
-  'Cancelled',
-  'Completed',
-] as const;
-
-// Specific Project Status Options for FTTH & IKR
-export const FTTH_IKR_PROJECT_STATUS_OPTIONS = [
-  'Project Not Started',
-  'In Progress',
-  'Canceled',
-  'Completed',
-] as const;
-
-// Helper to get conditional project status options based on category
-export function getProjectStatusOptions(category?: string): readonly string[] {
-  const cat = (category || '').toUpperCase().trim();
-  if (cat.includes('IKR') || cat.includes('FTTH')) {
-    return FTTH_IKR_PROJECT_STATUS_OPTIONS;
-  }
-  return PROJECT_STATUS_OPTIONS;
-}
-
-// Status Pengajuan PO / MR: Not Yet, Submit, Approved, Release, Released, N/A
-export const STATUS_PENGAJUAN_PO_OPTIONS = [
-  'Not Yet',
-  'Submit',
-  'Approved',
-  'Release',
-  'Released',
-  'N/A',
-] as const;
-
-// Status Pengajuan Project: Not Yet, Submit, Release, Project Cancel
-export const STATUS_PENGAJUAN_PROJECT_OPTIONS = [
-  'Not Yet',
-  'Submit',
-  'Release',
+  'Not Started',
   'Project Cancel',
 ] as const;
 
-// Plan Pengambilan Material: Not Yet, Warehouse User, Warehouse Inhouse
-export const PLAN_PENGAMBILAN_MATERIAL_OPTIONS = [
+export const FTTH_IKR_PROJECT_STATUS_OPTIONS = PROJECT_STATUS_OPTIONS;
+
+// Helper to get project status options
+export function getProjectStatusOptions(_category?: string): readonly string[] {
+  return PROJECT_STATUS_OPTIONS;
+}
+
+// Status Pengajuan PO / MR: Approved, N/A, Not Yet, Release, Released, Submit
+export const STATUS_PENGAJUAN_PO_OPTIONS = [
+  'Approved',
+  'N/A',
   'Not Yet',
-  'Warehouse User',
-  'Warehouse Inhouse',
+  'Release',
+  'Released',
+  'Submit',
 ] as const;
 
-// Status Material Location: Not Yet, Warehouse User, Warehouse Inhouse, Warehouse Vendor
+// Status Pengajuan Project: Not Yet, Project Cancel, Release, Submit
+export const STATUS_PENGAJUAN_PROJECT_OPTIONS = [
+  'Not Yet',
+  'Project Cancel',
+  'Release',
+  'Submit',
+] as const;
+
+// Plan Pengambilan Material: Not Yet, Warehouse Inhouse, Warehouse User
+export const PLAN_PENGAMBILAN_MATERIAL_OPTIONS = [
+  'Not Yet',
+  'Warehouse Inhouse',
+  'Warehouse User',
+] as const;
+
+// Status Material Location: Not Yet, Warehouse Inhouse, Warehouse User, Warehouse Vendor
 export const STATUS_MATERIAL_LOCATION_OPTIONS = [
   'Not Yet',
-  'Warehouse User',
   'Warehouse Inhouse',
+  'Warehouse User',
   'Warehouse Vendor',
 ] as const;
 
-// Status Dokumen Closing:
-// Not Yet, Completed waspang mobility, Submit dokumen SAP, Approval completed SAP, Approval BALAP, Approval BAST, Teco done
-export const STATUS_DOKUMEN_CLOSING_OPTIONS = [
+// Status Pengajuan Closing Project: Not Yet, Submit, Approval BALAP, Approval BAST, Teco Done, Invoice
+export const STATUS_PENGAJUAN_CLOSING_OPTIONS = [
   'Not Yet',
-  'Completed waspang mobility',
-  'Submit dokumen SAP',
-  'Approval completed SAP',
+  'Submit',
   'Approval BALAP',
   'Approval BAST',
+  'Teco Done',
+  'Invoice',
+] as const;
+
+// Status Dokumen Closing:
+// Approval BALAP, Approval BAST, Approval completed SAP, Completed waspang mobility, Not Yet, Submit dokumen SAP, Teco done
+export const STATUS_DOKUMEN_CLOSING_OPTIONS = [
+  'Approval BALAP',
+  'Approval BAST',
+  'Approval completed SAP',
+  'Completed waspang mobility',
+  'Not Yet',
+  'Submit dokumen SAP',
   'Teco done',
+  'Invoice',
 ] as const;
 
-// Status Audit: Not Yet, In Progress, Done
+// Status Audit: Done, In Progress, Not Yet
 export const STATUS_AUDIT_OPTIONS = [
-  'Not Yet',
-  'In Progress',
   'Done',
+  'In Progress',
+  'Not Yet',
 ] as const;
 
-// Status Material: Not Yet, No need MR, Release
+// Status Material: No need MR, Not Yet, Release
 export const STATUS_MATERIAL_OPTIONS = [
-  'Not Yet',
   'No need MR',
+  'Not Yet',
   'Release',
 ] as const;
 
-// Status Pulling Cable FO: Not Started, Not Yet, In Progress, Done
+// Status Pulling Cable FO: Done, In Progress, Not Started, Not Yet
 export const STATUS_PULLING_CABLE_FO_OPTIONS = [
+  'Done',
+  'In Progress',
   'Not Started',
   'Not Yet',
-  'In Progress',
-  'Done',
 ] as const;
 
-// Status CO: Not Yet, In Progress, Done
+import type { CoCableJointItem, CoPhaseItem } from '../types/project';
+
+// Status CO: Done, In Progress, Not Yet
 export const STATUS_CO_OPTIONS = [
-  'Not Yet',
-  'In Progress',
   'Done',
+  'In Progress',
+  'Not Yet',
 ] as const;
+
+// Cable FO Options for Cut Over (Existing & New Jumper)
+export const CABLE_FO_CO_OPTIONS = [
+  'Cable 12 FO',
+  'Cable 24 FO',
+  'Cable 48 FO',
+  'Cable 96 FO',
+  'Cable 144 FO',
+  'Cable 288 FO',
+  'Cable 12 Core',
+  'Cable FO 2 core Flat Type (Aerial)',
+  'Cable FO 2 core Flat Type (Underground)',
+  'Cable Fiber Optic 6 Core',
+  'Cable FO 12Core Loose Tube, Single Mode',
+  'Cable FO 24Core Loose Tube, Single Mode',
+  'Cable FO 48Core Loose Tube, Single Mode',
+] as const;
+
+// Status Phase CO
+export const PHASE_CO_STATUS_OPTIONS = [
+  'Done',
+  'In Progress',
+  'Scheduled',
+  'Pending',
+] as const;
+
+// Helper to format Cable FO Joint summary: "Cable FO Existing di-joint dengan Cable FO New Jumper"
+export function formatCoCableJointSummary(items: CoCableJointItem[]): string {
+  if (!items || items.length === 0) return '';
+  return items
+    .filter((it) => it.cableExisting || it.cableNewJumper)
+    .map((it, idx) => `${idx + 1}. ${it.cableExisting || 'FO'} di-joint dgn ${it.cableNewJumper || 'FO'}`)
+    .join('; ');
+}
+
+// Helper to format Phase CO summary: "Phase CO 1 (YYYY-MM-DD), Phase CO 2 (YYYY-MM-DD)"
+export function formatCoPhaseSummary(items: CoPhaseItem[]): string {
+  if (!items || items.length === 0) return '';
+  return items
+    .filter((it) => it.phaseName || it.tanggal)
+    .map((it) => `${it.phaseName || 'Phase CO'}${it.tanggal ? ` di tgl ${it.tanggal}` : ''}`)
+    .join(', ');
+}
 
 // Laporan Opname: Not Yet, Done
 export const LAPORAN_OPNAME_OPTIONS = [
@@ -215,19 +254,18 @@ export const CLOSING_SAP_OPTIONS = [
 ] as const;
 
 // Install HH & Pole Progress specifications
-// HG, HM, HS, Tutup HG, Tutup HM, Tutup HS (Unit): 80x80, 60x60, 40x60
-export const HH_TYPE_OPTIONS = ['HG', 'HM', 'HS', 'Tutup HG', 'Tutup HM', 'Tutup HS'] as const;
-export const HH_SIZE_OPTIONS = ['80x80', '60x60', '40x60'] as const;
+export const HH_TYPE_OPTIONS = ['HH', 'HS', 'HG'] as const;
+export const HH_SIZE_OPTIONS = ['40x60', '60x60', '80x80'] as const;
 
-export const HH_TYPE_DSB_IKR_OPTIONS = ['HG', 'HM', 'HS', 'Tutup HG', 'Tutup HM', 'Tutup HS'] as const;
-export const HH_SIZE_DSB_IKR_OPTIONS = ['80x80', '60x60', '40x60'] as const;
+export const HH_TYPE_DSB_IKR_OPTIONS = HH_TYPE_OPTIONS;
+export const HH_SIZE_DSB_IKR_OPTIONS = HH_SIZE_OPTIONS;
 
 export function getHhTypeOptions(_category?: string): readonly string[] {
-  return HH_TYPE_DSB_IKR_OPTIONS;
+  return HH_TYPE_OPTIONS;
 }
 
 export function getHhSizeOptions(_category?: string): readonly string[] {
-  return HH_SIZE_DSB_IKR_OPTIONS;
+  return HH_SIZE_OPTIONS;
 }
 
 // Pole (Ea): Tiang 7, Tiang 8, Tiang 9
@@ -237,8 +275,13 @@ export const POLE_OPTIONS = ['Tiang 7', 'Tiang 8', 'Tiang 9'] as const;
 export const GALVANIS_OPTIONS = ['2"', '4"', '6"'] as const;
 
 // FTTH & IKR Specification Options:
-// Pulling Cable FO Options:
 export const PULLING_FO_CABLE_TYPE_OPTIONS = [
+  'Cable 12 Core',
+  'Cable 24 FO',
+  'Cable 48 FO',
+  'Cable 96 FO',
+  'Cable 144',
+  'Cable 288',
   'Cable FO 2 core Flat Type (Underground)',
   'Cable FO 2 core Flat Type (Aerial)',
   'Cable Fiber Optic 6 Core',
@@ -292,8 +335,7 @@ export const SPLICING_STATUS_OPTIONS = [
 ] as const;
 
 /**
- * Helper to calculate Galian Sipil Progress percentage automatically:
- * Based on inputs: target (meters or segments), progress done, or status stages.
+ * Helper to calculate Galian Sipil Progress percentage automatically
  */
 export function calculateGalianPercentage(statusConstruction: string, galianInput?: string | number): string {
   if (statusConstruction === 'Completed') return '100%';
@@ -318,8 +360,7 @@ export function calculateGalianPercentage(statusConstruction: string, galianInpu
 }
 
 /**
- * Helper to calculate Pulling Cable FO Progress percentage automatically:
- * Based on statusPullingCableFo, meters, or statusConstruction
+ * Helper to calculate Pulling Cable FO Progress percentage automatically
  */
 export function calculatePullingFoPercentage(
   statusFo: string,
@@ -346,7 +387,7 @@ export function calculatePullingFoPercentage(
 }
 
 /**
- * Helper to calculate Pulling Cable Progress percentage automatically based on FO:
+ * Helper to calculate Pulling Cable Progress percentage automatically
  */
 export function calculatePullingPercentage(
   statusFo: string,
@@ -362,31 +403,33 @@ export function calculatePullingPercentage(
   return '0%';
 }
 
-// Project Categories: GOV IPPJU, GOV APJATEL, GOV SJUT, DSB - IKR
+// Project Categories: GOV APJATEL, GOV IPPJU, GOV SJUT, GOV PUPR KOTA, GOV PUPR KAB, GOV SDA DBM
 export const PROJECT_CATEGORY_OPTIONS = [
-  'GOV IPPJU',
   'GOV APJATEL',
+  'GOV IPPJU',
   'GOV SJUT',
-  'DSB - IKR',
+  'GOV PUPR KOTA',
+  'GOV PUPR KAB',
+  'GOV SDA DBM',
 ] as const;
 export type ProjectCategory = typeof PROJECT_CATEGORY_OPTIONS[number];
 
 // Area / Kota Options
 export const AREA_KOTA_OPTIONS = [
   'Jakarta Pusat',
-  'Jakarta Utara',
-  'Jakarta Selatan',
   'Jakarta Timur',
   'Jakarta Barat',
+  'Jakarta Utara',
+  'Jakarta Selatan',
   'Kota Bekasi',
   'Kab. Bekasi',
+  'Kota Bogor',
+  'Kab. Bogor',
   'Kota Tangerang',
   'Kab. Tangerang',
-  'Kab. Bogor',
-  'Kota Bogor',
   'Cilegon',
-  'Banten',
   'Serang',
+  'Banten',
 ] as const;
 
 // PIC Govrel Options (Sorted Alphabetically based on master list)
@@ -412,14 +455,13 @@ export const PIC_GOVREL_OPTIONS = [
 
 // Waspang DSB Options (Sorted Alphabetically)
 export const WASPANG_DSB_OPTIONS = [
-  'Abdul Ra\'uf',
   'Alfy',
   'Amir',
-  'Dodi',
+  'Dodo',
   'Hasan',
   'Krisna',
   'Lorenz',
-  'Mardinah',
+  'Mardanih',
   'Suroso',
   'Wahyu',
 ] as const;

@@ -229,73 +229,7 @@ export const FTTH_IKR_DOCUMENT_SLOTS: DocumentSlotDefinition[] = [
  * If FTTH/IKR generic: returns 6 slots with APD FTTH/IKR & KMZ FTTH/IKR.
  * Otherwise (GOV): returns 11 slots.
  */
-export function getDocumentSlots(category?: string): DocumentSlotDefinition[] {
-  const cat = (category || '').toUpperCase().trim();
-  if (cat === 'DSB - IKR' || cat === 'IKR' || cat.includes('IKR') || cat.includes('FTTH')) {
-    return [
-      {
-        key: 'spk',
-        num: 1,
-        label: 'Surat Kesepakatan Kerja ( SPK )',
-        accept: 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.xlsx,.xls',
-        fileHint: 'PDF / Scan / Foto SPK',
-        category: 'perizinan',
-        formatBadge: 'PDF / Scan',
-        iconType: 'pdf',
-      },
-      {
-        key: 'apdRelokasi',
-        num: 2,
-        label: 'APD IKRD',
-        accept: 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.xlsx,.xls',
-        fileHint: 'PDF / Gambar / Excel APD IKRD',
-        category: 'teknis',
-        formatBadge: 'PDF / Gambar',
-        iconType: 'pdf',
-      },
-      {
-        key: 'kmzRelokasi',
-        num: 3,
-        label: 'KMZ IKR',
-        accept: '.kmz,.kml,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml,application/pdf,.pdf',
-        fileHint: 'KMZ / KML / GIS IKR',
-        category: 'teknis',
-        formatBadge: 'KMZ / KML',
-        iconType: 'kmz',
-      },
-      {
-        key: 'baSurveyInternal',
-        num: 4,
-        label: 'BA Survey',
-        accept: 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp',
-        fileHint: 'PDF / Foto Berita Acara',
-        category: 'survey',
-        formatBadge: 'PDF / Foto',
-        iconType: 'pdf',
-      },
-      {
-        key: 'formBoq',
-        num: 5,
-        label: 'FORM BOQ MATERIAL DAN LABOUR',
-        accept: '.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,.pdf',
-        fileHint: 'File Excel (.xlsx/.xls) atau PDF',
-        category: 'komersial',
-        formatBadge: 'Excel / PDF',
-        iconType: 'excel',
-      },
-      {
-        key: 'timelineRelokasi',
-        num: 6,
-        label: 'TIMELINE',
-        accept: '.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/pdf,.pdf',
-        fileHint: 'File Excel (.xlsx/.xls) atau PDF',
-        category: 'teknis',
-        formatBadge: 'Excel / PDF',
-        iconType: 'excel',
-      },
-    ];
-  }
-
+export function getDocumentSlots(_category?: string): DocumentSlotDefinition[] {
   return GOV_DOCUMENT_SLOTS;
 }
 
@@ -320,10 +254,130 @@ export interface EmailSharePayload {
   includeDriveLink: boolean;
 }
 
-export interface GoogleDriveSyncState {
-  isSyncing: boolean;
-  progress: number;
-  stageMessage: string;
-  driveFolderUrl?: string;
-  error?: string;
+export interface DocumentProjectSlotDef {
+  key: string;
+  num: number;
+  label: string;
+  fileHint: string;
+  accept: string;
 }
+
+// Slot List for 1. Pengajuan Material
+export const PENGAJUAN_MATERIAL_SLOTS: DocumentProjectSlotDef[] = [
+  { key: 'suratDinas', num: 1, label: 'Surat Dinas', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratRekomtek', num: 2, label: 'Surat Rekomtek', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratPenunjukanVendor', num: 3, label: 'Surat Penunjukan Vendor APJATEL', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratBaSurveyBersama', num: 4, label: 'Surat BA Survey Bersama', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratBaInternal', num: 5, label: 'Surat BA Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'apdRelokasi', num: 6, label: 'APD Relokasi', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'apdInternal', num: 7, label: 'APD Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'kmz', num: 8, label: 'KMZ', fileHint: 'KMZ / KML / Semua Format', accept: '*' },
+  { key: 'formCeMaterial', num: 9, label: 'FORM CE Material', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'timelineRelokasi', num: 10, label: 'Timeline Relokasi', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'timelineInternal', num: 11, label: 'Timeline Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+];
+
+// Slot List for 2. Pengajuan BOQ Labour
+export const PENGAJUAN_BOQ_LABOUR_SLOTS: DocumentProjectSlotDef[] = [
+  { key: 'suratDinas', num: 1, label: 'Surat Dinas', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratRekomtek', num: 2, label: 'Surat Rekomtek', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratPenunjukanVendor', num: 3, label: 'Surat Penunjukan Vendor APJATEL', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratBaSurveyBersama', num: 4, label: 'Surat BA Survey Bersama', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratBaInternal', num: 5, label: 'Surat BA Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'apdRelokasi', num: 6, label: 'APD Relokasi', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'apdInternal', num: 7, label: 'APD Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'kmz', num: 8, label: 'KMZ', fileHint: 'KMZ / KML / Semua Format', accept: '*' },
+  { key: 'formBoqLabour', num: 9, label: 'FORM BOQ Labour', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'timelineRelokasi', num: 10, label: 'Timeline Relokasi', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'timelineInternal', num: 11, label: 'Timeline Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+];
+
+// Slot List for 3. Pengajuan FORM CE Material & BOQ Labour
+export const PENGAJUAN_CE_BOQ_SLOTS: DocumentProjectSlotDef[] = [
+  { key: 'suratDinas', num: 1, label: 'Surat Dinas', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratRekomtek', num: 2, label: 'Surat Rekomtek', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratPenunjukanVendor', num: 3, label: 'Surat Penunjukan Vendor APJATEL', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratBaSurveyBersama', num: 4, label: 'Surat BA Survey Bersama', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'suratBaInternal', num: 5, label: 'Surat BA Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'apdRelokasi', num: 6, label: 'APD Relokasi', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'apdInternal', num: 7, label: 'APD Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'kmz', num: 8, label: 'KMZ', fileHint: 'KMZ / KML / Semua Format', accept: '*' },
+  { key: 'formCeBoqLabour', num: 9, label: 'FORM CE Material & BOQ Labour', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'timelineRelokasi', num: 10, label: 'Timeline Relokasi', fileHint: 'Semua Format File (*.*)', accept: '*' },
+  { key: 'timelineInternal', num: 11, label: 'Timeline Internal', fileHint: 'Semua Format File (*.*)', accept: '*' },
+];
+
+export interface DocumentProjectSubmission {
+  status?: string;
+  submissionDate?: string;
+  remarks?: string;
+  documents: Record<string, UploadedFileMeta | undefined>;
+}
+
+export interface DocumentProjectData {
+  pengajuanMaterial?: DocumentProjectSubmission;
+  pengajuanBoqLabour?: DocumentProjectSubmission;
+  pengajuanCeAndBoqLabour?: DocumentProjectSubmission;
+}
+
+// Slot List for Closing Project
+export const CLOSING_PROJECT_SLOTS: DocumentProjectSlotDef[] = [
+  { key: 'baOpnameMaterial', num: 1, label: 'BA Opname Material', fileHint: 'Upload document semua jenis file (*.*)', accept: '*' },
+  { key: 'baOpnameLabour', num: 2, label: 'BA Opname Labour', fileHint: 'Upload document semua jenis file (*.*)', accept: '*' },
+  { key: 'abdRelokasi', num: 3, label: 'ABD Relokasi', fileHint: 'Upload document semua jenis file (*.*)', accept: '*' },
+  { key: 'abdInternal', num: 4, label: 'ABD Internal', fileHint: 'Upload document semua jenis file (*.*)', accept: '*' },
+  { key: 'fotoDokumentasi', num: 5, label: 'Foto Dokumentasi', fileHint: 'Upload document semua jenis file (Maksimal 4 MB)', accept: '*' },
+];
+
+export interface ClosingProjectData {
+  projectDate?: string; // Praject Date
+  poNumber?: string;    // No. PO
+  statusPengajuan?: string; // Not Yet, Submit, Approval BALAP, Approval BAST, Teco Done, Invoice
+  documents: Record<string, UploadedFileMeta | undefined>;
+  remarks?: string;
+  updatedAt?: string;
+}
+
+// ============================================================================
+// EMAIL DISPATCH SYSTEM FOR DOCUMENT PROJECT
+// ============================================================================
+export type DocumentEmailDispatchType =
+  | 'pengajuan-material'
+  | 'pengajuan-boq'
+  | 'pengajuan-material-and-boq';
+
+export interface DocumentEmailDispatchRecord {
+  id: string;
+  projectId: string;
+  pmoId: string;
+  dispatchType: DocumentEmailDispatchType;
+  dispatchTypeName: string; // e.g. "Pengajuan Material" | "Pengajuan BOQ Labour" | "Pengajuan Material & BOQ Labour"
+  sentAt: string; // ISO string
+  sentBy?: string;
+  to: string; // primary recipient(s)
+  cc: string[]; // array of CC email addresses
+  subject: string;
+  body: string;
+  attachedDocumentKeys: string[];
+  attachedDocumentNames: string[];
+  status: 'sent' | 'client_opened' | 'failed';
+  transportMethod: 'smtp_api' | 'client_mailto' | 'gmail_web';
+  deliveryNote?: string;
+}
+
+export interface EmailDispatchContactSuggestion {
+  name: string;
+  email: string;
+  role: string;
+}
+
+export const DEFAULT_EMAIL_CONTACT_SUGGESTIONS: EmailDispatchContactSuggestion[] = [
+  { name: 'PIC Govrel (Gov Relation)', email: 'pic.govrel@linknet.co.id', role: 'PIC Govrel' },
+  { name: 'Waspang Internal DSB', email: 'waspang.dsb@linknet.co.id', role: 'Pengawas DSB' },
+  { name: 'Tim Procurement & Material', email: 'procurement.relokasi@linknet.co.id', role: 'Procurement' },
+  { name: 'Tim Engineering & Planning', email: 'planning.fiber@linknet.co.id', role: 'Engineering' },
+  { name: 'Mitra Vendor Pelaksana', email: 'vendor.operasional@mitra.com', role: 'Vendor Mitra' },
+  { name: 'PMO Master Control', email: 'pmo.relokasi@linknet.co.id', role: 'PMO Lead' },
+];
+
+

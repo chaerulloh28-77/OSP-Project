@@ -102,7 +102,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Category list
-  const categoryList = ['all', 'GOV IPPJU', 'GOV APJATEL', 'GOV SJUT', 'DSB - IKR'] as const;
+  const categoryList = ['all', 'GOV APJATEL', 'GOV IPPJU', 'GOV SJUT', 'GOV PUPR KOTA', 'GOV PUPR KAB', 'GOV SDA DBM'] as const;
 
   const uniqueAreas = useMemo(() => {
     const set = new Set<string>(AREA_KOTA_OPTIONS);
@@ -561,7 +561,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                 ? projects.length 
                 : projects.filter(p => p.projectCategory === cat).length;
               const isActive = categoryFilter === cat;
-              const isDsbIkr = cat === 'DSB - IKR';
+              const isDsbIkr = (cat as string) === 'DSB - IKR';
 
               return (
                 <button
@@ -624,7 +624,7 @@ export const UploadDocumentView: React.FC<UploadDocumentViewProps> = ({
                 setCurrentPage(1);
               }}
               placeholder="Cari Project Description, ID, PMO, Vendor, PIC..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-slate-50/50"
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white text-slate-900 font-semibold placeholder:text-slate-900 placeholder:font-semibold"
             />
             {searchTerm && (
               <button

@@ -36,7 +36,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
               {project.pmoId}{project.projectDescription ? ` - ${project.projectDescription}` : ''}
             </div>
             <p className="text-[11px] text-rose-700">
-              Data akan dihapus dari 5 sheet: Project List, Construction & Plan, Status Project, Status Construction, dan Tracking Pipeline.
+              Data akan dihapus dari 5 sheet: Project List, Plan Implementasi Project, Status Project, Status Construction, dan Tracking Pipeline.
               Sistem akan membuat cadangan otomatis sebelum penghapusan.
             </p>
           </div>

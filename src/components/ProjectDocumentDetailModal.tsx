@@ -523,11 +523,11 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
                           value={editCustomName}
                           onChange={(e) => setEditCustomName(e.target.value)}
                           placeholder="Nama dokumen..."
-                          className="w-full px-2 py-1 text-xs bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500"
+                          className="w-full px-2 py-1 text-xs bg-white border border-slate-300 rounded text-slate-900 font-semibold placeholder:text-slate-900 placeholder:font-semibold focus:outline-none focus:ring-1 focus:ring-sky-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">
+                        <label className="block text-[10px] font-bold text-slate-700 uppercase mb-0.5">
                           Catatan / No. Surat / Keterangan
                         </label>
                         <textarea
@@ -535,7 +535,7 @@ export const ProjectDocumentDetailModal: React.FC<ProjectDocumentDetailModalProp
                           value={editNotes}
                           onChange={(e) => setEditNotes(e.target.value)}
                           placeholder="Contoh: No. Surat 021/DISPU/2026, status approved..."
-                          className="w-full px-2 py-1 text-xs bg-white border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none"
+                          className="w-full px-2 py-1 text-xs bg-white border border-slate-300 rounded text-slate-900 font-semibold placeholder:text-slate-900 placeholder:font-semibold focus:outline-none focus:ring-1 focus:ring-sky-500 resize-none"
                         />
                       </div>
                       <div className="flex items-center justify-end gap-1.5 pt-1">

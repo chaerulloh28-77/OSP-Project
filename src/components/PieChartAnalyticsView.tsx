@@ -10,6 +10,7 @@ import {
   FileText, 
   CheckCircle2, 
   Clock, 
+  Cable,
   Filter, 
   X, 
   Download, 
@@ -44,9 +45,37 @@ import { documentStorageService } from '../services/documentStorageService';
 import { DOCUMENT_SLOTS } from '../types/document';
 import { PriorityBadge } from './PriorityBadge';
 import { getPriorityMeta, PRIORITY_TIERS } from '../utils/priorityHelpers';
+import { 
+  getGalvanisSummary, 
+  getHhSummary, 
+  getTutupHhSummary, 
+  getPullingStartDate, 
+  getPullingEndDate, 
+  getReadyToCoStatus, 
+  getPhaseCoStatus, 
+  getAbdStatus, 
+  getBastStatus, 
+  getTecoDoneStatus, 
+  getInvoiceStatus 
+} from '../utils/dashboardHelpers';
 
-// Curated Professional Color Themes
+// Curated Professional & Futuristic Neon Color Themes
 export const COLOR_THEMES = {
+  // 1. Futuristic Multi-Colour Neon (Red, Violet, Purple, Orange, Green, Blue, White)
+  neonMultiColour: [
+    '#00f0ff', // Electric Cyan / Blue Neon
+    '#8b5cf6', // Electric Violet Neon
+    '#c026d3', // Neon Purple / Magenta
+    '#ff7700', // Electric Orange Neon
+    '#00ff88', // Cyber Neon Green
+    '#ff0055', // Laser Red Neon
+    '#ffffff', // Diamond Pure White Neon
+    '#3b82f6', // Cyber Blue Neon
+    '#a855f7', // Vivid Purple Neon
+    '#10e080', // Mint Green Neon
+    '#f43f5e', // Hot Crimson Red Neon
+    '#fb923c', // Warm Amber Orange Neon
+  ],
   executive: [
     '#0284c7', // Sky 600
     '#10b981', // Emerald 500
@@ -106,6 +135,7 @@ interface PieChartAnalyticsViewProps {
   initialTabFocus?: TabKey;
   showToast?: (msg: string) => void;
   onNewProject?: () => void;
+  isNeonMode?: boolean;
 }
 
 export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
@@ -116,6 +146,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
   initialTabFocus,
   showToast,
   onNewProject,
+  isNeonMode = true,
 }) => {
   // View mode: 'showcase' (Single Featured Chart + Deep Analysis) | 'grid' (Aesthetic Multi-Card) | 'bar' (Progress Distribution)
   const [viewLayoutMode, setViewLayoutMode] = useState<'showcase' | 'grid' | 'bar'>('showcase');
@@ -140,6 +171,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
         initialTabFocus === 'status-project' ? 'chart-status-project' :
         initialTabFocus === 'status-construction' ? 'chart-status-construction' :
         initialTabFocus === 'project-tracking-pipeline' ? 'chart-pipeline' :
+        initialTabFocus === 'closing-project' ? 'chart-closing-project' :
         initialTabFocus === 'upload-document' ? 'chart-upload-document' : 'chart-project-list'
       );
     }
@@ -173,8 +205,58 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
 
   const detailPanelRef = useRef<HTMLDivElement>(null);
 
-  // Colors palette
-  const colors = COLOR_THEMES.executive;
+  // Colors palette (Futuristic Neon Multi-Colour when in Neon Mode)
+  const colors = isNeonMode ? COLOR_THEMES.neonMultiColour : COLOR_THEMES.executive;
+
+  // Domain Tab Active Button Style Helper
+  const getDomainTabActiveStyle = (chartId: string) => {
+    if (!isNeonMode) return 'bg-sky-600 text-white border-sky-700 shadow-xs ring-2 ring-sky-300/50';
+    switch (chartId) {
+      case 'chart-project-list':
+        return 'bg-cyan-950 text-cyan-300 border-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.55)] ring-1 ring-cyan-400/50 font-black';
+      case 'chart-construction-plan':
+        return 'bg-violet-950 text-violet-300 border-violet-400 shadow-[0_0_16px_rgba(139,92,246,0.55)] ring-1 ring-violet-400/50 font-black';
+      case 'chart-status-project':
+        return 'bg-orange-950 text-orange-300 border-orange-400 shadow-[0_0_16px_rgba(249,115,22,0.55)] ring-1 ring-orange-400/50 font-black';
+      case 'chart-status-construction':
+        return 'bg-emerald-950 text-emerald-300 border-emerald-400 shadow-[0_0_16px_rgba(16,185,129,0.55)] ring-1 ring-emerald-400/50 font-black';
+      case 'chart-pipeline':
+        return 'bg-purple-950 text-purple-300 border-purple-400 shadow-[0_0_16px_rgba(192,38,211,0.55)] ring-1 ring-purple-400/50 font-black';
+      case 'chart-upload-document':
+        return 'bg-rose-950 text-rose-300 border-rose-400 shadow-[0_0_16px_rgba(244,63,94,0.55)] ring-1 ring-rose-400/50 font-black';
+      case 'chart-closing-project':
+        return 'bg-teal-950 text-teal-300 border-teal-400 shadow-[0_0_16px_rgba(20,184,166,0.55)] ring-1 ring-teal-400/50 font-black';
+      case 'chart-priority-distribution':
+        return 'bg-slate-900 text-white border-white/80 shadow-[0_0_16px_rgba(255,255,255,0.55)] ring-1 ring-white/50 font-black';
+      default:
+        return 'bg-cyan-950 text-cyan-300 border-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.55)] font-black';
+    }
+  };
+
+  // Multi-Grid Card Neon Border & Glow Helper
+  const getGridCardNeonStyle = (chartId: string) => {
+    if (!isNeonMode) return 'bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md';
+    switch (chartId) {
+      case 'chart-project-list':
+        return 'bg-[#071329]/95 rounded-2xl border border-cyan-500/40 p-5 shadow-[0_0_22px_rgba(6,182,212,0.2)] hover:border-cyan-400 hover:shadow-[0_0_28px_rgba(6,182,212,0.4)]';
+      case 'chart-construction-plan':
+        return 'bg-[#170e2d]/95 rounded-2xl border border-violet-500/40 p-5 shadow-[0_0_22px_rgba(139,92,246,0.2)] hover:border-violet-400 hover:shadow-[0_0_28px_rgba(139,92,246,0.4)]';
+      case 'chart-status-project':
+        return 'bg-[#211108]/95 rounded-2xl border border-orange-500/40 p-5 shadow-[0_0_22px_rgba(249,115,22,0.2)] hover:border-orange-400 hover:shadow-[0_0_28px_rgba(249,115,22,0.4)]';
+      case 'chart-status-construction':
+        return 'bg-[#071d15]/95 rounded-2xl border border-emerald-500/40 p-5 shadow-[0_0_22px_rgba(16,185,129,0.2)] hover:border-emerald-400 hover:shadow-[0_0_28px_rgba(0,255,136,0.4)]';
+      case 'chart-pipeline':
+        return 'bg-[#21092a]/95 rounded-2xl border border-purple-500/40 p-5 shadow-[0_0_22px_rgba(192,38,211,0.2)] hover:border-purple-400 hover:shadow-[0_0_28px_rgba(192,38,211,0.4)]';
+      case 'chart-upload-document':
+        return 'bg-[#280913]/95 rounded-2xl border border-rose-500/40 p-5 shadow-[0_0_22px_rgba(244,63,94,0.2)] hover:border-rose-400 hover:shadow-[0_0_28px_rgba(255,0,85,0.4)]';
+      case 'chart-closing-project':
+        return 'bg-[#06181b]/95 rounded-2xl border border-teal-500/40 p-5 shadow-[0_0_22px_rgba(20,184,166,0.2)] hover:border-teal-400 hover:shadow-[0_0_28px_rgba(20,184,166,0.4)]';
+      case 'chart-priority-distribution':
+        return 'bg-[#141824]/95 rounded-2xl border border-white/50 p-5 shadow-[0_0_22px_rgba(255,255,255,0.2)] hover:border-white hover:shadow-[0_0_28px_rgba(255,255,255,0.4)]';
+      default:
+        return 'bg-[#080d22]/95 rounded-2xl border border-cyan-500/40 p-5 shadow-[0_0_22px_rgba(6,182,212,0.2)] hover:border-cyan-400';
+    }
+  };
 
   // Reset all filters to clean initial state
   const handleResetToInitialView = () => {
@@ -297,7 +379,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       id: 'chart-construction-plan',
       tabKey: 'construction-plan',
       tabNumber: 2,
-      title: '2. Construction Plan',
+      title: '2. Plan Implementasi Project',
       subtitle: 'Mitra Nama Vendor, Quarter Target, & SP Relokasi',
       icon: HardHat,
       badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
@@ -369,72 +451,15 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       ],
     },
 
-    // 3. Tab 3: Status Project
-    {
-      id: 'chart-status-project',
-      tabKey: 'status-project',
-      tabNumber: 3,
-      title: '3. Status Project',
-      subtitle: 'Kemajuan Proyek & Kelengkapan MR Number',
-      icon: Activity,
-      badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-      metricOptions: [
-        {
-          key: 'status',
-          label: 'Status Utama Proyek',
-          getData: (data, palette) => {
-            const counts: Record<string, number> = {};
-            data.forEach((p) => {
-              const s = (p.projectStatus || 'Draft / New').trim();
-              counts[s] = (counts[s] || 0) + 1;
-            });
-            return Object.entries(counts)
-              .sort((a, b) => b[1] - a[1])
-              .map(([label, value], idx) => ({
-                id: `st-${label}`,
-                label,
-                value,
-                color: palette[idx % palette.length],
-                filterFn: (p) => (p.projectStatus || 'Draft / New').trim() === label,
-              }));
-          },
-        },
-        {
-          key: 'mrNumber',
-          label: 'Kelengkapan Nomor MR',
-          getData: (data, palette) => {
-            const hasMr = data.filter((p) => Boolean(p.mrNumber && p.mrNumber.trim() !== '' && p.mrNumber !== '-')).length;
-            const noMr = data.length - hasMr;
-            return [
-              {
-                id: 'mr-yes',
-                label: 'Nomor MR Ada',
-                value: hasMr,
-                color: palette[0],
-                filterFn: (p) => Boolean(p.mrNumber && p.mrNumber.trim() !== '' && p.mrNumber !== '-'),
-              },
-              {
-                id: 'mr-no',
-                label: 'Belum Ada MR',
-                value: noMr,
-                color: palette[3],
-                filterFn: (p) => !p.mrNumber || p.mrNumber.trim() === '' || p.mrNumber === '-',
-              },
-            ];
-          },
-        },
-      ],
-    },
-
-    // 4. Tab 4: Status Construction
+    // 3. Tab 3: Status Construction
     {
       id: 'chart-status-construction',
       tabKey: 'status-construction',
-      tabNumber: 4,
-      title: '4. Status Construction',
+      tabNumber: 3,
+      title: '3. Status Construction',
       subtitle: 'Progres Pekerjaan Lapangan & Cable Pulling',
       icon: GitCommit,
-      badgeColor: 'bg-amber-100 text-amber-800 border-amber-300',
+      badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
       metricOptions: [
         {
           key: 'construction',
@@ -523,6 +548,63 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                   const done = Number(p.pullingFoPanjangSelesai || p.pullingPanjangSelesai) || 0;
                   return done === 0;
                 },
+              },
+            ];
+          },
+        },
+      ],
+    },
+
+    // 5. Tab 5: Document Project
+    {
+      id: 'chart-status-project',
+      tabKey: 'status-project',
+      tabNumber: 5,
+      title: '5. Document Project',
+      subtitle: 'Kemajuan Proyek & Kelengkapan Dokumen Pengajuan',
+      icon: Activity,
+      badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+      metricOptions: [
+        {
+          key: 'status',
+          label: 'Status Utama Proyek',
+          getData: (data, palette) => {
+            const counts: Record<string, number> = {};
+            data.forEach((p) => {
+              const s = (p.projectStatus || 'Draft / New').trim();
+              counts[s] = (counts[s] || 0) + 1;
+            });
+            return Object.entries(counts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([label, value], idx) => ({
+                id: `st-${label}`,
+                label,
+                value,
+                color: palette[idx % palette.length],
+                filterFn: (p) => (p.projectStatus || 'Draft / New').trim() === label,
+              }));
+          },
+        },
+        {
+          key: 'mrNumber',
+          label: 'Kelengkapan Nomor MR',
+          getData: (data, palette) => {
+            const hasMr = data.filter((p) => Boolean(p.mrNumber && p.mrNumber.trim() !== '' && p.mrNumber !== '-')).length;
+            const noMr = data.length - hasMr;
+            return [
+              {
+                id: 'mr-yes',
+                label: 'Nomor MR Ada',
+                value: hasMr,
+                color: palette[0],
+                filterFn: (p) => Boolean(p.mrNumber && p.mrNumber.trim() !== '' && p.mrNumber !== '-'),
+              },
+              {
+                id: 'mr-no',
+                label: 'Belum Ada MR',
+                value: noMr,
+                color: palette[3],
+                filterFn: (p) => !p.mrNumber || p.mrNumber.trim() === '' || p.mrNumber === '-',
               },
             ];
           },
@@ -657,12 +739,85 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
       ],
     },
 
-    // 7. Matriks Prioritas Level 1-6
+    // 7. Tab 7: Closing Project
+    {
+      id: 'chart-closing-project',
+      tabKey: 'closing-project',
+      tabNumber: 7,
+      title: '7. Closing Project',
+      subtitle: 'Status Pengajuan (Not Yet ➔ Invoice) & Berkas Closing',
+      icon: ShieldCheck,
+      badgeColor: 'bg-teal-100 text-teal-800 border-teal-300',
+      metricOptions: [
+        {
+          key: 'statusPengajuan',
+          label: 'Status Pengajuan Closing',
+          getData: (data, palette) => {
+            const counts: Record<string, number> = {
+              'Not Yet': 0,
+              'Submit': 0,
+              'Approval BALAP': 0,
+              'Approval BAST': 0,
+              'Teco Done': 0,
+              'Invoice': 0,
+            };
+            data.forEach((p) => {
+              const st = p.statusPengajuanClosing || p.closingProject?.statusPengajuan || 'Not Yet';
+              if (counts[st] !== undefined) counts[st] += 1;
+              else counts['Not Yet'] += 1;
+            });
+            return Object.entries(counts).map(([label, value], idx) => ({
+              id: `closing-st-${label}`,
+              label,
+              value,
+              color: palette[idx % palette.length],
+              filterFn: (p) => (p.statusPengajuanClosing || p.closingProject?.statusPengajuan || 'Not Yet') === label,
+            }));
+          },
+        },
+        {
+          key: 'closingDocs',
+          label: 'Kelengkapan 5 Berkas Closing (BA Opname, ABD, Foto)',
+          getData: (data, palette) => {
+            const counts: Record<string, number> = {
+              'Lengkap (5/5 Berkas)': 0,
+              'Sebagian (3-4 Berkas)': 0,
+              'Minimal (1-2 Berkas)': 0,
+              'Belum Ada Berkas': 0,
+            };
+            data.forEach((p) => {
+              const docs = p.closingProject?.documents || {};
+              const cnt = Object.values(docs).filter(Boolean).length;
+              if (cnt === 5) counts['Lengkap (5/5 Berkas)'] += 1;
+              else if (cnt >= 3) counts['Sebagian (3-4 Berkas)'] += 1;
+              else if (cnt >= 1) counts['Minimal (1-2 Berkas)'] += 1;
+              else counts['Belum Ada Berkas'] += 1;
+            });
+            return Object.entries(counts).map(([label, value], idx) => ({
+              id: `closing-doc-${label}`,
+              label,
+              value,
+              color: palette[idx % palette.length],
+              filterFn: (p) => {
+                const docs = p.closingProject?.documents || {};
+                const cnt = Object.values(docs).filter(Boolean).length;
+                if (label === 'Lengkap (5/5 Berkas)') return cnt === 5;
+                if (label === 'Sebagian (3-4 Berkas)') return cnt >= 3 && cnt < 5;
+                if (label === 'Minimal (1-2 Berkas)') return cnt >= 1 && cnt < 3;
+                return cnt === 0;
+              },
+            }));
+          },
+        },
+      ],
+    },
+
+    // 8. Matriks Prioritas Level 1-6
     {
       id: 'chart-priority-distribution',
       tabKey: 'project-list',
-      tabNumber: 7,
-      title: '7. Priority Tier Levels',
+      tabNumber: 8,
+      title: '8. Priority Tier Levels',
       subtitle: 'Distribusi Prioritas Proyek (Level 1 Kritis s/d Level 6)',
       icon: Flame,
       badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
@@ -837,50 +992,100 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Executive Command Header */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col gap-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div className={`rounded-2xl p-4 sm:p-5 border transition-all duration-300 flex flex-col gap-4 relative overflow-hidden ${
+        isNeonMode 
+          ? 'bg-[#080d22]/95 border-cyan-500/30 text-slate-100 shadow-[0_0_30px_rgba(6,182,212,0.18)] backdrop-blur-xl' 
+          : 'bg-white border-slate-200/90 shadow-sm'
+      }`}>
+        {/* Futuristic Multi-Colour Neon Light Bar (Red, Violet, Purple, Orange, Green, Blue, White) */}
+        {isNeonMode && (
+          <div className="h-1 w-full bg-gradient-to-r from-[#ff0055] via-[#8b5cf6] via-[#c026d3] via-[#ff7700] via-[#00ff88] via-[#00f0ff] to-[#ffffff] rounded-full shadow-[0_0_12px_rgba(139,92,246,0.8)] animate-pulse" />
+        )}
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b pb-4 ${isNeonMode ? 'border-slate-800' : 'border-slate-100'}">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
-            <div className="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center shadow-md shrink-0 ring-1 ring-slate-800">
-              <PieChartIcon className="w-6 h-6 text-amber-400" />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+              isNeonMode 
+                ? 'bg-cyan-950/80 text-cyan-400 border border-cyan-400/50 shadow-[0_0_18px_rgba(6,182,212,0.5)]' 
+                : 'bg-slate-900 text-amber-400 shadow-md ring-1 ring-slate-800'
+            }`}>
+              <PieChartIcon className="w-6 h-6" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-widest bg-slate-100 text-slate-700 border border-slate-200">
-                  EXECUTIVE DASHBOARD
+                <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-widest border font-mono ${
+                  isNeonMode 
+                    ? 'bg-cyan-950/80 text-cyan-300 border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]' 
+                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                }`}>
+                  {isNeonMode ? 'FUTURISTIC NEON COMMAND' : 'EXECUTIVE DASHBOARD'}
                 </span>
-                <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight">
+                <h2 className={`text-base sm:text-xl font-black tracking-tight ${
+                  isNeonMode ? 'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]' : 'text-slate-900'
+                }`}>
                   Analitik Grafik Proyek & Matriks Status
                 </h2>
-                <span className="text-xs font-bold px-3 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300 font-mono">
+                <span className={`text-xs font-bold px-3 py-0.5 rounded-full border font-mono ${
+                  isNeonMode 
+                    ? 'bg-cyan-950 text-cyan-300 border-cyan-400/50 shadow-[0_0_8px_rgba(6,182,212,0.3)]' 
+                    : 'bg-sky-100 text-sky-800 border-sky-300'
+                }`}>
                   {projects.length} Proyek
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Visualisasi rasio, persentase, dan distribusi proyek. Pilih tampilan dan klik segmen grafik untuk filter data.
-              </p>
+              
+              <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
+                <p className={`text-xs ${isNeonMode ? 'text-slate-300' : 'text-slate-500'}`}>
+                  Visualisasi rasio, persentase, dan distribusi proyek multi-dimensi. Klik segmen grafik untuk filter data interaktif.
+                </p>
+
+                {/* Multi-Colour Neon Light Indicator Swatches */}
+                {isNeonMode && (
+                  <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-slate-700/80">
+                    <span className="text-[9.5px] font-mono font-bold text-slate-300 mr-1">MULTI COLOUR:</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ff0055] shadow-[0_0_8px_#ff0055]" title="Red" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] shadow-[0_0_8px_#8b5cf6]" title="Violet" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#c026d3] shadow-[0_0_8px_#c026d3]" title="Purple" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ff7700] shadow-[0_0_8px_#ff7700]" title="Orange" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#00ff88] shadow-[0_0_8px_#00ff88]" title="Green" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#00f0ff] shadow-[0_0_8px_#00f0ff]" title="Blue" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ffffff] shadow-[0_0_8px_#ffffff]" title="White" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Controls: Reset, Export PPT & Layout Switcher */}
+          {/* Controls: Reset & Layout Switcher */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleResetToInitialView}
               title="Reset ke Tampilan Awal"
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer border border-slate-200 shrink-0"
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer border shrink-0 ${
+                isNeonMode 
+                  ? 'bg-[#0d162d] hover:bg-[#142347] text-cyan-300 border-cyan-500/30 hover:border-cyan-400 hover:shadow-[0_0_12px_rgba(6,182,212,0.3)]' 
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+              }`}
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+              <RotateCcw className={`w-3.5 h-3.5 ${isNeonMode ? 'text-cyan-400' : 'text-slate-500'}`} />
               <span>Reset Awal</span>
             </button>
 
             {/* Layout Mode Selector Switcher */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <div className={`flex items-center p-1 rounded-xl border ${
+              isNeonMode ? 'bg-[#060a17] border-cyan-500/30' : 'bg-slate-100 border-slate-200'
+            }`}>
               <button
                 type="button"
                 onClick={() => setViewLayoutMode('showcase')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewLayoutMode === 'showcase'
-                    ? 'bg-slate-900 text-white shadow-xs'
+                    ? isNeonMode
+                      ? 'bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.6)] font-black'
+                      : 'bg-slate-900 text-white shadow-xs'
+                    : isNeonMode
+                    ? 'text-slate-400 hover:text-cyan-300'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Tampilan Showcase Interaktif (Satu Grafik Utama & Rincian Lengkap)"
@@ -894,7 +1099,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                 onClick={() => setViewLayoutMode('grid')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewLayoutMode === 'grid'
-                    ? 'bg-slate-900 text-white shadow-xs'
+                    ? isNeonMode
+                      ? 'bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.6)] font-black'
+                      : 'bg-slate-900 text-white shadow-xs'
+                    : isNeonMode
+                    ? 'text-slate-400 hover:text-cyan-300'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Tampilan Multi-Card Grid Dashboard"
@@ -908,7 +1117,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                 onClick={() => setViewLayoutMode('bar')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewLayoutMode === 'bar'
-                    ? 'bg-slate-900 text-white shadow-xs'
+                    ? isNeonMode
+                      ? 'bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.6)] font-black'
+                      : 'bg-slate-900 text-white shadow-xs'
+                    : isNeonMode
+                    ? 'text-slate-400 hover:text-cyan-300'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Tampilan Progres Distribution Bar"
@@ -944,7 +1157,9 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border whitespace-nowrap flex items-center gap-1.5 ${
                     isActive
-                      ? 'bg-sky-600 text-white border-sky-700 shadow-xs ring-2 ring-sky-300/50'
+                      ? getDomainTabActiveStyle(c.id)
+                      : isNeonMode
+                      ? 'bg-slate-900/60 hover:bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
                       : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                   }`}
                 >
@@ -957,13 +1172,21 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
 
           {/* Chart Shape Style Toggle (Donut vs Pie) */}
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-            <span className="text-[11px] font-semibold text-slate-400">Bentuk Grafik:</span>
-            <div className="inline-flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <span className={`text-[11px] font-semibold ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>Bentuk Grafik:</span>
+            <div className={`inline-flex p-0.5 rounded-lg border ${
+              isNeonMode ? 'bg-[#060a17] border-cyan-500/30' : 'bg-slate-100 border-slate-200'
+            }`}>
               <button
                 type="button"
                 onClick={() => setChartStyle('donut')}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                  chartStyle === 'donut' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                  chartStyle === 'donut'
+                    ? isNeonMode
+                      ? 'bg-cyan-500 text-slate-950 shadow-[0_0_10px_rgba(6,182,212,0.5)] font-black'
+                      : 'bg-white text-slate-900 shadow-xs'
+                    : isNeonMode
+                    ? 'text-slate-400 hover:text-white'
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Donut Ring
@@ -972,7 +1195,13 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                 type="button"
                 onClick={() => setChartStyle('pie')}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                  chartStyle === 'pie' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                  chartStyle === 'pie'
+                    ? isNeonMode
+                      ? 'bg-cyan-500 text-slate-950 shadow-[0_0_10px_rgba(6,182,212,0.5)] font-black'
+                      : 'bg-white text-slate-900 shadow-xs'
+                    : isNeonMode
+                    ? 'text-slate-400 hover:text-white'
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Pie Chart
@@ -1013,7 +1242,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
 
       {/* ================= MODE 1: SHOWCASE FEATURED VIEW ================= */}
       {viewLayoutMode === 'showcase' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 space-y-6">
+        <div className={`rounded-2xl border p-5 sm:p-6 space-y-6 transition-all duration-300 ${
+          isNeonMode 
+            ? 'bg-[#080d22]/95 border-cyan-500/30 text-slate-100 shadow-[0_0_30px_rgba(6,182,212,0.18)] backdrop-blur-xl' 
+            : 'bg-white border-slate-200/90 shadow-sm'
+        }`}>
           {/* Showcase Chart Header */}
           {(() => {
             const chart = currentShowcaseChart;
@@ -1024,16 +1257,24 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
 
             return (
               <div className="space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 ${
+                  isNeonMode ? 'border-slate-800' : 'border-slate-100'
+                }`}>
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 text-sky-400 flex items-center justify-center shrink-0">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      isNeonMode 
+                        ? 'bg-cyan-950/80 text-cyan-400 border border-cyan-400/50 shadow-[0_0_12px_rgba(6,182,212,0.4)]' 
+                        : 'bg-slate-900 text-sky-400'
+                    }`}>
                       <chart.icon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-base sm:text-lg text-slate-900">
+                      <h3 className={`font-extrabold text-base sm:text-lg ${
+                        isNeonMode ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]' : 'text-slate-900'
+                      }`}>
                         {chart.title}
                       </h3>
-                      <p className="text-xs text-slate-500">
+                      <p className={`text-xs ${isNeonMode ? 'text-slate-300' : 'text-slate-500'}`}>
                         {chart.subtitle}
                       </p>
                     </div>
@@ -1041,8 +1282,10 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
 
                   {/* Sub metric dropdown */}
                   {chart.metricOptions.length > 1 && (
-                    <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                      <span className="text-xs font-bold text-slate-600">Pilih Metrik:</span>
+                    <div className={`flex items-center gap-2 p-2 rounded-xl border ${
+                      isNeonMode ? 'bg-[#060a17] border-cyan-500/30 text-cyan-300' : 'bg-slate-50 border-slate-200'
+                    }`}>
+                      <span className={`text-xs font-bold ${isNeonMode ? 'text-cyan-300' : 'text-slate-600'}`}>Pilih Metrik:</span>
                       <select
                         value={selectedMetricKey}
                         onChange={(e) => {
@@ -1054,10 +1297,14 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                             setSelectedSegment(null);
                           }
                         }}
-                        className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer shadow-xs"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 cursor-pointer shadow-xs ${
+                          isNeonMode 
+                            ? 'bg-[#0d162d] border-cyan-500/40 text-cyan-200 focus:ring-cyan-400' 
+                            : 'bg-white border-slate-300 text-slate-800 focus:ring-sky-500'
+                        }`}
                       >
                         {chart.metricOptions.map((opt) => (
-                          <option key={opt.key} value={opt.key}>
+                          <option key={opt.key} value={opt.key} className={isNeonMode ? 'bg-[#080d22] text-slate-100' : ''}>
                             {opt.label}
                           </option>
                         ))}
@@ -1069,7 +1316,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                 {/* Main Showcase Split View: SVG Chart Left | Interactive Progress Bars Right */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                   {/* Left Column: Big Interactive Showcase SVG Chart */}
-                  <div className="lg:col-span-5 flex flex-col items-center justify-center p-6 bg-slate-50/70 rounded-2xl border border-slate-200/80 relative min-h-[300px]">
+                  <div className={`lg:col-span-5 flex flex-col items-center justify-center p-6 rounded-2xl border relative min-h-[300px] transition-all ${
+                    isNeonMode 
+                      ? 'bg-[#050917]/90 border-slate-800 shadow-[inset_0_0_30px_rgba(0,240,255,0.06)] ring-1 ring-cyan-500/20' 
+                      : 'bg-slate-50/70 border-slate-200/80'
+                  }`}>
                     <ShowcaseSvgChart
                       slices={slices}
                       totalValue={totalValue}
@@ -1078,12 +1329,13 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                         selectedSegment?.chartId === chart.id ? selectedSegment.sliceLabel : null
                       }
                       onSliceClick={(slice) => handleSliceClick(chart, currentMetric.label, slice)}
+                      isNeonMode={isNeonMode}
                     />
                     <div className="mt-4 text-center">
-                      <span className="text-xs font-semibold text-slate-500 block">
-                        Metrik Aktif: <strong className="text-slate-900">{currentMetric.label}</strong>
+                      <span className={`text-xs font-semibold block ${isNeonMode ? 'text-slate-300' : 'text-slate-500'}`}>
+                        Metrik Aktif: <strong className={isNeonMode ? 'text-cyan-300 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]' : 'text-slate-900'}>{currentMetric.label}</strong>
                       </span>
-                      <span className="text-[11px] text-slate-400 mt-0.5 block">
+                      <span className={`text-[11px] mt-0.5 block ${isNeonMode ? 'text-slate-400' : 'text-slate-400'}`}>
                         Petunjuk: Klik segmen pada grafik di atas untuk filter rincian proyek.
                       </span>
                     </div>
@@ -1091,7 +1343,9 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
 
                   {/* Right Column: Sleek Legend Progress Bars */}
                   <div className="lg:col-span-7 space-y-3">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-100">
+                    <div className={`flex items-center justify-between text-xs font-bold uppercase tracking-wider pb-1 border-b ${
+                      isNeonMode ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-400'
+                    }`}>
                       <span>Kategori / Segmen</span>
                       <span>Jumlah Proyek & Persentase</span>
                     </div>
@@ -1109,7 +1363,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                             onClick={() => handleSliceClick(chart, currentMetric.label, slice)}
                             className={`p-3 rounded-xl border transition-all cursor-pointer group ${
                               isSelected
-                                ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-sky-400'
+                                ? isNeonMode 
+                                  ? 'bg-[#0e1938] text-white border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.45)] ring-2 ring-cyan-400/50' 
+                                  : 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-sky-400'
+                                : isNeonMode
+                                ? 'bg-[#0a1024]/70 hover:bg-[#0e1633] text-slate-200 border-slate-800/80 hover:border-slate-700 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)]'
                                 : 'bg-slate-50 hover:bg-slate-100/90 text-slate-800 border-slate-200/80'
                             }`}
                           >
@@ -1117,18 +1375,23 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                               <div className="flex items-center gap-2 min-w-0">
                                 <span
                                   className="w-3 h-3 rounded-full shrink-0 shadow-xs"
-                                  style={{ backgroundColor: slice.color }}
+                                  style={{ 
+                                    backgroundColor: slice.color,
+                                    boxShadow: isNeonMode ? `0 0 8px ${slice.color}` : 'none'
+                                  }}
                                 />
                                 <span className="truncate">{slice.label}</span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
-                                <span className={isSelected ? 'text-sky-300' : 'text-slate-900'}>
+                                <span className={isSelected ? 'text-cyan-300' : isNeonMode ? 'text-slate-200' : 'text-slate-900'}>
                                   {slice.value} Proyek
                                 </span>
                                 <span
                                   className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${
                                     isSelected
                                       ? 'bg-white/20 text-white'
+                                      : isNeonMode
+                                      ? 'bg-slate-800 text-slate-300'
                                       : 'bg-slate-200/70 text-slate-700'
                                   }`}
                                 >
@@ -1138,12 +1401,15 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                             </div>
 
                             {/* Animated Percentage Bar */}
-                            <div className="w-full bg-slate-200/70 h-2 rounded-full overflow-hidden">
+                            <div className={`w-full h-2 rounded-full overflow-hidden ${
+                              isNeonMode ? 'bg-slate-800/80' : 'bg-slate-200/70'
+                            }`}>
                               <div
                                 className="h-full rounded-full transition-all duration-500"
                                 style={{
                                   width: `${pct}%`,
                                   backgroundColor: slice.color,
+                                  boxShadow: isNeonMode ? `0 0 10px ${slice.color}` : 'none',
                                 }}
                               />
                             </div>
@@ -1175,20 +1441,26 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
             return (
               <div
                 key={chart.id}
-                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                className={`${getGridCardNeonStyle(chart.id)} transition-all duration-200 flex flex-col justify-between`}
               >
                 <div>
                   {/* Card Header */}
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className={`flex items-center justify-between gap-2 border-b pb-3 ${
+                    isNeonMode ? 'border-slate-800/80' : 'border-slate-100'
+                  }`}>
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-slate-900 text-sky-400 flex items-center justify-center shrink-0">
-                        <chart.icon className="w-4 h-4 text-sky-400" />
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                        isNeonMode ? 'bg-slate-900/90 text-cyan-400 border border-slate-700' : 'bg-slate-900 text-sky-400'
+                      }`}>
+                        <chart.icon className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                        <h3 className={`font-bold text-xs sm:text-sm truncate ${
+                          isNeonMode ? 'text-white' : 'text-slate-900'
+                        }`}>
                           {chart.title}
                         </h3>
-                        <p className="text-[10px] text-slate-400 truncate">
+                        <p className={`text-[10px] truncate ${isNeonMode ? 'text-slate-400' : 'text-slate-400'}`}>
                           {chart.subtitle}
                         </p>
                       </div>
@@ -1207,10 +1479,14 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                             setSelectedSegment(null);
                           }
                         }}
-                        className="px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer shrink-0 max-w-[130px] truncate"
+                        className={`px-2 py-1 rounded-lg text-[11px] font-semibold focus:outline-none cursor-pointer shrink-0 max-w-[130px] truncate ${
+                          isNeonMode 
+                            ? 'bg-[#0a1024] border border-slate-700 text-cyan-200 focus:ring-1 focus:ring-cyan-500' 
+                            : 'bg-slate-50 border border-slate-300 text-slate-700 focus:ring-1 focus:ring-sky-500'
+                        }`}
                       >
                         {chart.metricOptions.map((opt) => (
-                          <option key={opt.key} value={opt.key}>
+                          <option key={opt.key} value={opt.key} className={isNeonMode ? 'bg-[#080d22] text-slate-100' : ''}>
                             {opt.label}
                           </option>
                         ))}
@@ -1219,10 +1495,10 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                   </div>
 
                   <div className="mt-3 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-500 font-medium">
-                      Metrik: <strong className="text-slate-800">{currentMetric.label}</strong>
+                    <span className={`font-medium ${isNeonMode ? 'text-slate-300' : 'text-slate-500'}`}>
+                      Metrik: <strong className={isNeonMode ? 'text-white' : 'text-slate-800'}>{currentMetric.label}</strong>
                     </span>
-                    <span className="font-mono text-slate-400 text-[10px]">
+                    <span className={`font-mono text-[10px] ${isNeonMode ? 'text-slate-400' : 'text-slate-400'}`}>
                       Total: {totalValue} Proyek
                     </span>
                   </div>
@@ -1237,13 +1513,16 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                         selectedSegment?.chartId === chart.id ? selectedSegment.sliceLabel : null
                       }
                       onSliceClick={(slice) => handleSliceClick(chart, currentMetric.label, slice)}
+                      isNeonMode={isNeonMode}
                     />
                   </div>
                 </div>
 
                 {/* Legend Chips */}
-                <div className="pt-3 border-t border-slate-100">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                <div className={`pt-3 border-t ${isNeonMode ? 'border-slate-800/80' : 'border-slate-100'}`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider block mb-1.5 ${
+                    isNeonMode ? 'text-slate-400' : 'text-slate-400'
+                  }`}>
                     Rincian Segmen:
                   </span>
                   <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto custom-scrollbar pr-1">
@@ -1260,18 +1539,29 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                           onClick={() => handleSliceClick(chart, currentMetric.label, slice)}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
                             isSelected
-                              ? 'bg-slate-900 text-white border-slate-900 shadow-xs ring-2 ring-sky-400'
+                              ? isNeonMode
+                                ? 'bg-slate-900 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.5)] ring-1 ring-cyan-400'
+                                : 'bg-slate-900 text-white border-slate-900 shadow-xs ring-2 ring-sky-400'
+                              : isNeonMode
+                              ? 'bg-slate-900/60 hover:bg-slate-900 text-slate-300 border-slate-800'
                               : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                           }`}
                         >
                           <span
                             className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: slice.color }}
+                            style={{ 
+                              backgroundColor: slice.color,
+                              boxShadow: isNeonMode ? `0 0 6px ${slice.color}` : 'none'
+                            }}
                           />
                           <span className="truncate max-w-[110px]">{slice.label}</span>
                           <span
                             className={`font-mono text-[9px] px-1 py-0.2 rounded ${
-                              isSelected ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-600'
+                              isSelected 
+                                ? 'bg-white/20 text-white' 
+                                : isNeonMode
+                                ? 'bg-slate-800 text-slate-300'
+                                : 'bg-slate-200/80 text-slate-600'
                             }`}
                           >
                             {slice.value} ({pct}%)
@@ -1299,19 +1589,25 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
             return (
               <div
                 key={chart.id}
-                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4"
+                className={`${getGridCardNeonStyle(chart.id)} space-y-4`}
               >
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className={`flex items-center justify-between border-b pb-3 ${
+                  isNeonMode ? 'border-slate-800/80' : 'border-slate-100'
+                }`}>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-slate-900 text-sky-400 flex items-center justify-center shrink-0">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                      isNeonMode ? 'bg-slate-900 text-cyan-400 border border-slate-700' : 'bg-slate-900 text-sky-400'
+                    }`}>
                       <chart.icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-sm text-slate-900">{chart.title}</h3>
-                      <p className="text-[10px] text-slate-400">{currentMetric.label}</p>
+                      <h3 className={`font-extrabold text-sm ${isNeonMode ? 'text-white' : 'text-slate-900'}`}>{chart.title}</h3>
+                      <p className={`text-[10px] ${isNeonMode ? 'text-slate-400' : 'text-slate-400'}`}>{currentMetric.label}</p>
                     </div>
                   </div>
-                  <span className="text-xs font-mono font-bold bg-slate-100 px-2.5 py-1 rounded-lg text-slate-700">
+                  <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg ${
+                    isNeonMode ? 'bg-slate-900 text-cyan-300 border border-slate-800' : 'bg-slate-100 text-slate-700'
+                  }`}>
                     Total: {totalValue}
                   </span>
                 </div>
@@ -1329,7 +1625,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                         onClick={() => handleSliceClick(chart, currentMetric.label, slice)}
                         className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-sky-400'
+                            ? isNeonMode
+                              ? 'bg-slate-900 text-white border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)] ring-1 ring-cyan-400'
+                              : 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-sky-400'
+                            : isNeonMode
+                            ? 'bg-slate-900/60 hover:bg-slate-900 text-slate-200 border-slate-800/80'
                             : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200/80'
                         }`}
                       >
@@ -1337,7 +1637,10 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                           <div className="flex items-center gap-2 min-w-0">
                             <span
                               className="w-2.5 h-2.5 rounded-full shrink-0"
-                              style={{ backgroundColor: slice.color }}
+                              style={{ 
+                                backgroundColor: slice.color,
+                                boxShadow: isNeonMode ? `0 0 6px ${slice.color}` : 'none'
+                              }}
                             />
                             <span className="truncate">{slice.label}</span>
                           </div>
@@ -1345,12 +1648,15 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                             {slice.value} ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div className={`w-full h-2 rounded-full overflow-hidden ${
+                          isNeonMode ? 'bg-slate-800/80' : 'bg-slate-200'
+                        }`}>
                           <div
                             className="h-full rounded-full transition-all duration-300"
                             style={{
                               width: `${pct}%`,
                               backgroundColor: slice.color,
+                              boxShadow: isNeonMode ? `0 0 8px ${slice.color}` : 'none',
                             }}
                           />
                         </div>
@@ -1372,21 +1678,31 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
         return (
           <div 
             ref={detailPanelRef}
-            className="bg-white rounded-2xl border-2 border-sky-500 shadow-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300 ring-4 ring-sky-500/10"
+            className={`rounded-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300 ${
+              isNeonMode 
+                ? 'bg-[#070b1a]/98 border-2 border-cyan-400/60 shadow-[0_0_35px_rgba(34,211,238,0.25)] ring-2 ring-cyan-500/20' 
+                : 'bg-white border-2 border-sky-500 shadow-xl ring-4 ring-sky-500/10'
+            }`}
           >
           {/* Header */}
-          <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative">
+            {isNeonMode && (
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-rose-500 via-violet-500 via-amber-500 to-cyan-400" />
+            )}
             <div className="flex items-center gap-3">
               <span
                 className="w-4.5 h-4.5 rounded-full ring-2 ring-white/80 shrink-0"
-                style={{ backgroundColor: selectedSegment.color }}
+                style={{ 
+                  backgroundColor: selectedSegment.color,
+                  boxShadow: isNeonMode ? `0 0 10px ${selectedSegment.color}` : 'none'
+                }}
               />
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-white/10 text-sky-200 border border-white/20">
                     {selectedSegment.chartTitle} • {selectedSegment.metricLabel}
                   </span>
-                  <span className="text-xs text-sky-300 font-mono">Filter Segmen Aktif</span>
+                  <span className={`text-xs font-mono ${isNeonMode ? 'text-cyan-300' : 'text-sky-300'}`}>Filter Segmen Aktif</span>
                 </div>
                 <h3 className="text-base sm:text-lg font-black text-white mt-0.5">
                   &quot;{selectedSegment.sliceLabel}&quot; ({matchingProjects.length} Proyek)
@@ -1398,7 +1714,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
               <button
                 type="button"
                 onClick={handleExportSegmentCsv}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs active:scale-[0.98]"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
@@ -1417,51 +1733,89 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
 
           {/* Segment KPI Cards */}
           {segmentKpis && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-slate-50 border-b border-slate-200/80">
-              <div className="p-3 bg-white rounded-xl border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 p-4 border-b ${
+              isNeonMode ? 'bg-[#050814] border-slate-800' : 'bg-slate-50 border-slate-200/80'
+            }`}>
+              {/* Proporsi (Pure White Neon) */}
+              <div className={`p-3 rounded-xl border ${
+                isNeonMode 
+                  ? 'bg-[#141824] border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.18)] text-white' 
+                  : 'bg-white border-slate-200'
+              }`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wider block ${
+                  isNeonMode ? 'text-slate-300' : 'text-slate-400'
+                }`}>
                   Proporsi Dataset
                 </span>
-                <span className="text-lg font-black font-mono text-slate-900 mt-0.5 block">
+                <span className={`text-lg font-black font-mono mt-0.5 block ${
+                  isNeonMode ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]' : 'text-slate-900'
+                }`}>
                   {segmentKpis.pctOfAll}%
                 </span>
-                <span className="text-[10px] text-slate-500">
+                <span className={`text-[10px] ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   dari total {projects.length} proyek
                 </span>
               </div>
 
-              <div className="p-3 bg-white rounded-xl border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              {/* Total FO (Cyan / Blue Neon) */}
+              <div className={`p-3 rounded-xl border ${
+                isNeonMode 
+                  ? 'bg-[#071329] border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.18)] text-cyan-300' 
+                  : 'bg-white border-slate-200'
+              }`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wider block ${
+                  isNeonMode ? 'text-cyan-400/80' : 'text-slate-400'
+                }`}>
                   Total Long Span FO
                 </span>
-                <span className="text-lg font-black font-mono text-sky-700 mt-0.5 block">
+                <span className={`text-lg font-black font-mono mt-0.5 block ${
+                  isNeonMode ? 'text-cyan-300 drop-shadow-[0_0_6px_rgba(6,182,212,0.7)]' : 'text-sky-700'
+                }`}>
                   {segmentKpis.totalFo.toLocaleString('id-ID')} m
                 </span>
-                <span className="text-[10px] text-slate-500">
+                <span className={`text-[10px] ${isNeonMode ? 'text-cyan-400/60' : 'text-slate-500'}`}>
                   Target panjang kabel
                 </span>
               </div>
 
-              <div className="p-3 bg-white rounded-xl border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              {/* Galian (Green Neon) */}
+              <div className={`p-3 rounded-xl border ${
+                isNeonMode 
+                  ? 'bg-[#071d15] border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.18)] text-emerald-300' 
+                  : 'bg-white border-slate-200'
+              }`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wider block ${
+                  isNeonMode ? 'text-emerald-400/80' : 'text-slate-400'
+                }`}>
                   Panjang Galian Selesai
                 </span>
-                <span className="text-lg font-black font-mono text-emerald-700 mt-0.5 block">
+                <span className={`text-lg font-black font-mono mt-0.5 block ${
+                  isNeonMode ? 'text-emerald-300 drop-shadow-[0_0_6px_rgba(16,185,129,0.7)]' : 'text-emerald-700'
+                }`}>
                   {segmentKpis.totalGalianDone.toLocaleString('id-ID')} m
                 </span>
-                <span className="text-[10px] text-slate-500">
+                <span className={`text-[10px] ${isNeonMode ? 'text-emerald-400/60' : 'text-slate-500'}`}>
                   Progres pekerjaan tanah
                 </span>
               </div>
 
-              <div className="p-3 bg-white rounded-xl border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              {/* Konstruksi Selesai (Purple Neon) */}
+              <div className={`p-3 rounded-xl border ${
+                isNeonMode 
+                  ? 'bg-[#21092a] border-purple-500/40 shadow-[0_0_15px_rgba(192,38,211,0.18)] text-purple-300' 
+                  : 'bg-white border-slate-200'
+              }`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wider block ${
+                  isNeonMode ? 'text-purple-400/80' : 'text-slate-400'
+                }`}>
                   Konstruksi Selesai
                 </span>
-                <span className="text-lg font-black font-mono text-indigo-700 mt-0.5 block">
+                <span className={`text-lg font-black font-mono mt-0.5 block ${
+                  isNeonMode ? 'text-purple-300 drop-shadow-[0_0_6px_rgba(192,38,211,0.7)]' : 'text-indigo-700'
+                }`}>
                   {segmentKpis.completedConstruction} Proyek
                 </span>
-                <span className="text-[10px] text-slate-500">
+                <span className={`text-[10px] ${isNeonMode ? 'text-purple-400/60' : 'text-slate-500'}`}>
                   Status &quot;Completed&quot;
                 </span>
               </div>
@@ -1469,7 +1823,9 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
           )}
 
           {/* Search Bar inside Inspector */}
-          <div className="p-4 bg-white border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className={`p-4 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 ${
+            isNeonMode ? 'bg-[#060a17] border-slate-800' : 'bg-white border-slate-100'
+          }`}>
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -1480,7 +1836,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                   setCurrentPage(1);
                 }}
                 placeholder="Cari PMO ID, nama vendor, deskripsi proyek..."
-                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className={`w-full pl-9 pr-8 py-2 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 ${
+                  isNeonMode 
+                    ? 'bg-[#080d22] border border-slate-700 text-slate-100 placeholder:text-slate-400 placeholder:font-semibold focus:ring-cyan-500' 
+                    : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-900 placeholder:font-semibold focus:ring-sky-500'
+                }`}
               />
               {tableSearchTerm && (
                 <button
@@ -1493,7 +1853,7 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
               )}
             </div>
 
-            <div className="text-xs font-bold text-slate-500">
+            <div className={`text-xs font-bold ${isNeonMode ? 'text-cyan-400' : 'text-slate-500'}`}>
               Menampilkan {paginatedProjects.length} dari {searchedMatchingProjects.length} proyek
             </div>
           </div>
@@ -1502,86 +1862,276 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider">
-                  <th className="py-3 px-3">No</th>
-                  <th className="py-3 px-3">PMO ID</th>
-                  <th className="py-3 px-3">Prioritas</th>
-                  <th className="py-3 px-3">Deskripsi Proyek</th>
-                  <th className="py-3 px-3">Nama Vendor</th>
-                  <th className="py-3 px-3">Status Proyek</th>
-                  <th className="py-3 px-3">Status Konstruksi</th>
-                  <th className="py-3 px-3 text-right">Panjang FO</th>
-                  <th className="py-3 px-3 text-center">Aksi</th>
-                </tr>
+                {currentChart.id === 'chart-project-list' ? (
+                  <tr className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-3">No</th>
+                    <th className="py-3 px-3">PMO ID</th>
+                    <th className="py-3 px-3">Project Name</th>
+                    <th className="py-3 px-3">Area</th>
+                    <th className="py-3 px-3">Nama Vendor</th>
+                    <th className="py-3 px-3">PIC Govrel</th>
+                    <th className="py-3 px-3">PIC Internal</th>
+                    <th className="py-3 px-3 text-center">Aksi</th>
+                  </tr>
+                ) : currentChart.id === 'chart-status-project' ? (
+                  <tr className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-3">No</th>
+                    <th className="py-3 px-3">PMO ID</th>
+                    <th className="py-3 px-3">Project Name</th>
+                    <th className="py-3 px-3">Area</th>
+                    <th className="py-3 px-3">Nama Vendor</th>
+                    <th className="py-3 px-3">Project Start</th>
+                    <th className="py-3 px-3">Project End</th>
+                    <th className="py-3 px-3">Construction Status</th>
+                    <th className="py-3 px-3 text-center">Aksi</th>
+                  </tr>
+                ) : currentChart.id === 'chart-status-construction' ? (
+                  <tr className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-3">No</th>
+                    <th className="py-3 px-3">PMO ID</th>
+                    <th className="py-3 px-3">Project Name</th>
+                    <th className="py-3 px-3">Area</th>
+                    <th className="py-3 px-3">Nama Vendor</th>
+                    <th className="py-3 px-3">Panjang Galian</th>
+                    <th className="py-3 px-3">Panjang Akses</th>
+                    <th className="py-3 px-3">Instal Galvanis (2", 4", 6")</th>
+                    <th className="py-3 px-3">Instal HH (40x60, 60x60, 80x80)</th>
+                    <th className="py-3 px-3">Instal Tutup HH</th>
+                    <th className="py-3 px-3 text-center">Aksi</th>
+                  </tr>
+                ) : currentChart.id === 'chart-pulling-cable' ? (
+                  <tr className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-3">No</th>
+                    <th className="py-3 px-3">PMO ID</th>
+                    <th className="py-3 px-3">Project Name</th>
+                    <th className="py-3 px-3">Area</th>
+                    <th className="py-3 px-3">Nama Vendor</th>
+                    <th className="py-3 px-3">Start Pulling</th>
+                    <th className="py-3 px-3">End Pulling</th>
+                    <th className="py-3 px-3">Ready to CO</th>
+                    <th className="py-3 px-3">Phase CO</th>
+                    <th className="py-3 px-3 text-center">Aksi</th>
+                  </tr>
+                ) : currentChart.id === 'chart-upload-document' ? (
+                  <tr className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-3">No</th>
+                    <th className="py-3 px-3">PMO ID</th>
+                    <th className="py-3 px-3">Project Name</th>
+                    <th className="py-3 px-3">Area</th>
+                    <th className="py-3 px-3">Nama Vendor</th>
+                    <th className="py-3 px-3">Document</th>
+                    <th className="py-3 px-3">ABD</th>
+                    <th className="py-3 px-3">BAST</th>
+                    <th className="py-3 px-3">TECO Done</th>
+                    <th className="py-3 px-3">Invoice</th>
+                    <th className="py-3 px-3 text-center">Aksi</th>
+                  </tr>
+                ) : (
+                  <tr className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-3">No</th>
+                    <th className="py-3 px-3">PMO ID</th>
+                    <th className="py-3 px-3">Prioritas</th>
+                    <th className="py-3 px-3">Deskripsi Proyek</th>
+                    <th className="py-3 px-3">Nama Vendor</th>
+                    <th className="py-3 px-3">Status Proyek</th>
+                    <th className="py-3 px-3">Status Konstruksi</th>
+                    <th className="py-3 px-3 text-right">Panjang FO</th>
+                    <th className="py-3 px-3 text-center">Aksi</th>
+                  </tr>
+                )}
               </thead>
-              <tbody className="divide-y divide-slate-200/80 text-xs text-slate-800">
+              <tbody className={`text-xs ${
+                isNeonMode ? 'divide-y divide-slate-800 text-slate-200' : 'divide-y divide-slate-200/80 text-slate-800'
+              }`}>
                 {paginatedProjects.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-slate-400">
+                    <td colSpan={12} className={`py-8 text-center ${isNeonMode ? 'text-slate-500' : 'text-slate-400'}`}>
                       Tidak ditemukan proyek yang cocok dengan filter pencarian.
                     </td>
                   </tr>
                 ) : (
                   paginatedProjects.map((p, idx) => {
                     const rowNum = (currentPage - 1) * pageSize + idx + 1;
+                    const actionsCell = (
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1">
+                          {onJumpToTab && (
+                            <button
+                              type="button"
+                              onClick={() => onJumpToTab(currentChart.tabKey, p)}
+                              className={`p-1 rounded cursor-pointer transition-colors ${
+                                isNeonMode 
+                                  ? 'bg-cyan-950/80 text-cyan-300 hover:bg-cyan-900 border border-cyan-500/30 shadow-[0_0_8px_rgba(6,182,212,0.3)]' 
+                                  : 'bg-sky-100 hover:bg-sky-200 text-sky-700'
+                              }`}
+                              title={`Buka di Sheet: ${currentChart.title.split('.')[1]?.trim() || ''}`}
+                            >
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {onViewDetail && (
+                            <button
+                              type="button"
+                              onClick={() => onViewDetail(p)}
+                              className={`p-1 rounded cursor-pointer transition-colors ${
+                                isNeonMode 
+                                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700' 
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                              }`}
+                              title="Lihat Detail"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {onEditProject && (
+                            <button
+                              type="button"
+                              onClick={() => onEditProject(p)}
+                              className={`p-1 rounded cursor-pointer transition-colors ${
+                                isNeonMode 
+                                  ? 'bg-amber-950/80 text-amber-300 hover:bg-amber-900 border border-amber-500/30' 
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                              }`}
+                              title="Edit Proyek"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    );
+
+                    if (currentChart.id === 'chart-project-list') {
+                      return (
+                        <tr key={p.id} className={`transition-colors ${isNeonMode ? 'hover:bg-cyan-950/30 border-b border-slate-800/60' : 'hover:bg-sky-50/50'}`}>
+                          <td className="py-2.5 px-3 font-mono text-slate-400">{rowNum}</td>
+                          <td className={`py-2.5 px-3 font-bold font-mono ${isNeonMode ? 'text-cyan-300' : 'text-slate-900'}`}>{p.pmoId || '-'}</td>
+                          <td className={`py-2.5 px-3 font-medium max-w-[200px] truncate ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`} title={p.projectDescription}>{p.projectDescription || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.areaKota || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.namaVendor || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`}>{p.picSectionHead || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`}>{p.waspangDsb || '-'}</td>
+                          {actionsCell}
+                        </tr>
+                      );
+                    }
+
+                    if (currentChart.id === 'chart-status-project') {
+                      return (
+                        <tr key={p.id} className={`transition-colors ${isNeonMode ? 'hover:bg-cyan-950/30 border-b border-slate-800/60' : 'hover:bg-sky-50/50'}`}>
+                          <td className="py-2.5 px-3 font-mono text-slate-400">{rowNum}</td>
+                          <td className={`py-2.5 px-3 font-bold font-mono ${isNeonMode ? 'text-cyan-300' : 'text-slate-900'}`}>{p.pmoId || '-'}</td>
+                          <td className={`py-2.5 px-3 font-medium max-w-[200px] truncate ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`} title={p.projectDescription}>{p.projectDescription || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.areaKota || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.namaVendor || '-'}</td>
+                          <td className={`py-2.5 px-3 font-mono ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.tanggalStartProject || p.dateSuratPerintahRelokasi || '-'}</td>
+                          <td className={`py-2.5 px-3 font-mono ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.tanggalEndProject || p.tanggalPemutusan || '-'}</td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              isNeonMode ? 'bg-indigo-950/80 text-indigo-300 border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.3)]' : 'bg-indigo-100 text-indigo-800 border-indigo-200'
+                            }`}>
+                              {p.statusConstruction || p.projectStatus || 'Not Started'}
+                            </span>
+                          </td>
+                          {actionsCell}
+                        </tr>
+                      );
+                    }
+
+                    if (currentChart.id === 'chart-status-construction') {
+                      return (
+                        <tr key={p.id} className={`transition-colors ${isNeonMode ? 'hover:bg-cyan-950/30 border-b border-slate-800/60' : 'hover:bg-sky-50/50'}`}>
+                          <td className="py-2.5 px-3 font-mono text-slate-400">{rowNum}</td>
+                          <td className={`py-2.5 px-3 font-bold font-mono ${isNeonMode ? 'text-cyan-300' : 'text-slate-900'}`}>{p.pmoId || '-'}</td>
+                          <td className={`py-2.5 px-3 font-medium max-w-[180px] truncate ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`} title={p.projectDescription}>{p.projectDescription || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.areaKota || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.namaVendor || '-'}</td>
+                          <td className={`py-2.5 px-3 font-mono font-semibold ${isNeonMode ? 'text-emerald-300' : 'text-slate-800'}`}>{p.galianPanjangSelesai ? `${p.galianPanjangSelesai}m / ${p.galianPanjangTotal || 0}m` : p.galianSipilProgress || '0m'}</td>
+                          <td className={`py-2.5 px-3 font-mono ${isNeonMode ? 'text-slate-300' : 'text-slate-800'}`}>{p.galianAksesProgress || '-'}</td>
+                          <td className={`py-2.5 px-3 font-mono text-xs ${isNeonMode ? 'text-cyan-300' : 'text-sky-800'}`}>{getGalvanisSummary(p)}</td>
+                          <td className={`py-2.5 px-3 font-mono text-xs ${isNeonMode ? 'text-indigo-300' : 'text-indigo-800'}`}>{getHhSummary(p)}</td>
+                          <td className={`py-2.5 px-3 font-mono text-xs ${isNeonMode ? 'text-purple-300' : 'text-purple-800'}`}>{getTutupHhSummary(p)}</td>
+                          {actionsCell}
+                        </tr>
+                      );
+                    }
+
+                    if (currentChart.id === 'chart-pulling-cable') {
+                      return (
+                        <tr key={p.id} className={`transition-colors ${isNeonMode ? 'hover:bg-cyan-950/30 border-b border-slate-800/60' : 'hover:bg-sky-50/50'}`}>
+                          <td className="py-2.5 px-3 font-mono text-slate-400">{rowNum}</td>
+                          <td className={`py-2.5 px-3 font-bold font-mono ${isNeonMode ? 'text-cyan-300' : 'text-slate-900'}`}>{p.pmoId || '-'}</td>
+                          <td className={`py-2.5 px-3 font-medium max-w-[200px] truncate ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`} title={p.projectDescription}>{p.projectDescription || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.areaKota || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.namaVendor || '-'}</td>
+                          <td className={`py-2.5 px-3 font-mono ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{getPullingStartDate(p)}</td>
+                          <td className={`py-2.5 px-3 font-mono ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{getPullingEndDate(p)}</td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              isNeonMode ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                            }`}>
+                              {getReadyToCoStatus(p)}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              isNeonMode ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-sky-100 text-sky-800 border-sky-200'
+                            }`}>
+                              {getPhaseCoStatus(p)}
+                            </span>
+                          </td>
+                          {actionsCell}
+                        </tr>
+                      );
+                    }
+
+                    if (currentChart.id === 'chart-upload-document') {
+                      return (
+                        <tr key={p.id} className={`transition-colors ${isNeonMode ? 'hover:bg-cyan-950/30 border-b border-slate-800/60' : 'hover:bg-sky-50/50'}`}>
+                          <td className="py-2.5 px-3 font-mono text-slate-400">{rowNum}</td>
+                          <td className={`py-2.5 px-3 font-bold font-mono ${isNeonMode ? 'text-cyan-300' : 'text-slate-900'}`}>{p.pmoId || '-'}</td>
+                          <td className={`py-2.5 px-3 font-medium max-w-[180px] truncate ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`} title={p.projectDescription}>{p.projectDescription || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.areaKota || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.namaVendor || '-'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`}>{p.statusDokumenClosing || 'Pending'}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-cyan-300' : 'text-sky-800'}`}>{getAbdStatus(p)}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-emerald-300' : 'text-emerald-800'}`}>{getBastStatus(p)}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-indigo-300' : 'text-indigo-800'}`}>{getTecoDoneStatus(p)}</td>
+                          <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-purple-300' : 'text-purple-800'}`}>{getInvoiceStatus(p)}</td>
+                          {actionsCell}
+                        </tr>
+                      );
+                    }
+
                     return (
-                      <tr key={p.id} className="hover:bg-sky-50/50 transition-colors">
+                      <tr key={p.id} className={`transition-colors ${isNeonMode ? 'hover:bg-cyan-950/30 border-b border-slate-800/60' : 'hover:bg-sky-50/50'}`}>
                         <td className="py-2.5 px-3 font-mono text-slate-400">{rowNum}</td>
-                        <td className="py-2.5 px-3 font-bold font-mono text-slate-900">{p.pmoId || '-'}</td>
+                        <td className={`py-2.5 px-3 font-bold font-mono ${isNeonMode ? 'text-cyan-300' : 'text-slate-900'}`}>{p.pmoId || '-'}</td>
                         <td className="py-2.5 px-3">
                           <PriorityBadge priority={p.priority} />
                         </td>
-                        <td className="py-2.5 px-3 max-w-[220px] truncate font-medium" title={p.projectDescription}>
+                        <td className={`py-2.5 px-3 max-w-[220px] truncate font-medium ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`} title={p.projectDescription}>
                           {p.projectDescription || '-'}
                         </td>
-                        <td className="py-2.5 px-3 font-semibold text-slate-700">{p.namaVendor || '-'}</td>
+                        <td className={`py-2.5 px-3 font-semibold ${isNeonMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.namaVendor || '-'}</td>
                         <td className="py-2.5 px-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            isNeonMode ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-sky-100 text-sky-800 border-sky-200'
+                          }`}>
                             {p.projectStatus || 'Draft'}
                           </span>
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            isNeonMode ? 'bg-indigo-950/80 text-indigo-300 border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.3)]' : 'bg-indigo-100 text-indigo-800 border-indigo-200'
+                          }`}>
                             {p.statusConstruction || 'Not Started'}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                        <td className={`py-2.5 px-3 text-right font-mono font-bold ${isNeonMode ? 'text-white' : 'text-slate-900'}`}>
                           {Number(p.panjangRelokasi) || 0} m
                         </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            {onJumpToTab && (
-                              <button
-                                type="button"
-                                onClick={() => onJumpToTab(currentChart.tabKey, p)}
-                                className="p-1 rounded bg-sky-100 hover:bg-sky-200 text-sky-700 cursor-pointer"
-                                title={`Buka di Tab: ${currentChart.title.split('.')[1].trim()}`}
-                              >
-                                <ArrowUpRight className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            {onViewDetail && (
-                              <button
-                                type="button"
-                                onClick={() => onViewDetail(p)}
-                                className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
-                                title="Lihat Detail"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            {onEditProject && (
-                              <button
-                                type="button"
-                                onClick={() => onEditProject(p)}
-                                className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
-                                title="Edit Proyek"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                        {actionsCell}
                       </tr>
                     );
                   })
@@ -1592,8 +2142,10 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
 
           {/* Inspector Footer Pagination */}
           {totalPages > 1 && (
-            <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-semibold">
+            <div className={`px-5 py-3 border-t flex items-center justify-between text-xs ${
+              isNeonMode ? 'bg-[#050814] border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <span className={`font-semibold ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>
                 Halaman {currentPage} dari {totalPages}
               </span>
               <div className="flex items-center gap-1.5">
@@ -1601,7 +2153,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-slate-700 font-bold disabled:opacity-40 cursor-pointer"
+                  className={`px-3 py-1 rounded-lg font-bold disabled:opacity-40 cursor-pointer transition-all ${
+                    isNeonMode 
+                      ? 'bg-[#090e24] border border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/80 hover:border-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.2)]' 
+                      : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                  }`}
                 >
                   Sebelumnya
                 </button>
@@ -1609,7 +2165,11 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
                   type="button"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-slate-700 font-bold disabled:opacity-40 cursor-pointer"
+                  className={`px-3 py-1 rounded-lg font-bold disabled:opacity-40 cursor-pointer transition-all ${
+                    isNeonMode 
+                      ? 'bg-[#090e24] border border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/80 hover:border-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.2)]' 
+                      : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                  }`}
                 >
                   Selanjutnya
                 </button>
@@ -1623,13 +2183,14 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
   );
 };
 
-// High Quality SVG Showcase Chart Component
+// High Quality SVG Showcase Chart Component with Futuristic Multi-Colour Neon Lighting
 interface ShowcaseSvgChartProps {
   slices: PieChartSlice[];
   totalValue: number;
   chartStyle: 'donut' | 'pie';
   activeSliceLabel: string | null;
   onSliceClick: (slice: PieChartSlice) => void;
+  isNeonMode?: boolean;
 }
 
 const ShowcaseSvgChart: React.FC<ShowcaseSvgChartProps> = ({
@@ -1638,6 +2199,7 @@ const ShowcaseSvgChart: React.FC<ShowcaseSvgChartProps> = ({
   chartStyle,
   activeSliceLabel,
   onSliceClick,
+  isNeonMode = true,
 }) => {
   const [hoveredSlice, setHoveredSlice] = useState<PieChartSlice | null>(null);
 
@@ -1710,7 +2272,7 @@ const ShowcaseSvgChart: React.FC<ShowcaseSvgChartProps> = ({
             cy="100"
             r="70"
             fill="none"
-            stroke="#cbd5e1"
+            stroke={isNeonMode ? '#1e293b' : '#cbd5e1'}
             strokeWidth="16"
             strokeDasharray="6 4"
           />
@@ -1719,7 +2281,7 @@ const ShowcaseSvgChart: React.FC<ShowcaseSvgChartProps> = ({
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             Data Kosong
           </span>
-          <span className="text-base font-black font-mono text-slate-400 my-0.5">
+          <span className={`text-base font-black font-mono my-0.5 ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>
             0 Proyek
           </span>
         </div>
@@ -1731,12 +2293,24 @@ const ShowcaseSvgChart: React.FC<ShowcaseSvgChartProps> = ({
 
   return (
     <div className="relative flex flex-col items-center justify-center select-none py-2 group/chart">
-      {/* Floating Hover Tooltip Pill */}
+      {/* Floating Hover Tooltip Pill with Neon Glow */}
       {hoveredSlice && (
-        <div className="absolute -top-3 z-20 px-3 py-1 bg-slate-900/90 text-white backdrop-blur-md rounded-full shadow-lg border border-slate-700/60 text-[11px] font-bold flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150 pointer-events-none">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: hoveredSlice.color }} />
+        <div className={`absolute -top-3.5 z-20 px-3.5 py-1 backdrop-blur-md rounded-full text-[11px] font-bold flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150 pointer-events-none ${
+          isNeonMode 
+            ? 'bg-[#050917]/95 text-white border border-cyan-400/60 shadow-[0_0_15px_rgba(6,182,212,0.45)]' 
+            : 'bg-slate-900/90 text-white border border-slate-700/60 shadow-lg'
+        }`}>
+          <span
+            className="w-2.5 h-2.5 rounded-full shrink-0 animate-pulse"
+            style={{ 
+              backgroundColor: hoveredSlice.color,
+              boxShadow: isNeonMode ? `0 0 8px ${hoveredSlice.color}` : 'none'
+            }}
+          />
           <span>{hoveredSlice.label}:</span>
-          <span className="text-amber-300 font-mono">{hoveredSlice.value} Proyek ({totalValue > 0 ? Math.round((hoveredSlice.value / totalValue) * 100) : 0}%)</span>
+          <span className="text-cyan-300 font-mono font-bold">
+            {hoveredSlice.value} Proyek ({totalValue > 0 ? Math.round((hoveredSlice.value / totalValue) * 100) : 0}%)
+          </span>
           <span className="text-[9px] text-slate-300 font-normal underline ml-1">Klik filter</span>
         </div>
       )}
@@ -1745,6 +2319,47 @@ const ShowcaseSvgChart: React.FC<ShowcaseSvgChartProps> = ({
         viewBox="0 0 200 200"
         className="w-52 h-52 sm:w-60 sm:h-60 overflow-visible drop-shadow-md"
       >
+        {/* SVG Neon Filters & Futuristic Defs */}
+        <defs>
+          <filter id="neon-chart-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        {/* Futuristic Orbital HUD Concentric Guides in Neon Mode */}
+        {isNeonMode && (
+          <g className="pointer-events-none opacity-40">
+            {/* Outer Orbital Ring */}
+            <circle
+              cx="100"
+              cy="100"
+              r="92"
+              fill="none"
+              stroke="#00f0ff"
+              strokeWidth="0.8"
+              strokeDasharray="3 4"
+            />
+            {/* Outer Compass Cardinal Ticks */}
+            <line x1="100" y1="5" x2="100" y2="10" stroke="#00f0ff" strokeWidth="1.5" />
+            <line x1="100" y1="190" x2="100" y2="195" stroke="#00f0ff" strokeWidth="1.5" />
+            <line x1="5" y1="100" x2="10" y2="100" stroke="#00f0ff" strokeWidth="1.5" />
+            <line x1="190" y1="100" x2="195" y2="100" stroke="#00f0ff" strokeWidth="1.5" />
+            {/* Inner Ring Guide */}
+            {chartStyle === 'donut' && (
+              <circle
+                cx="100"
+                cy="100"
+                r="44"
+                fill="none"
+                stroke="#8b5cf6"
+                strokeWidth="0.8"
+                strokeDasharray="2 3"
+              />
+            )}
+          </g>
+        )}
+
         <g>
           {pathData.map(({ slice, d }) => {
             const isActive = activeSliceLabel === slice.label;
@@ -1755,14 +2370,16 @@ const ShowcaseSvgChart: React.FC<ShowcaseSvgChartProps> = ({
                 key={slice.id}
                 d={d}
                 fill={slice.color}
-                stroke="#ffffff"
-                strokeWidth={isHovered || isActive ? 3 : 2}
+                stroke={isNeonMode ? '#070b1a' : '#ffffff'}
+                strokeWidth={isHovered || isActive ? 3 : isNeonMode ? 2 : 2}
                 className="transition-all duration-300 cursor-pointer origin-center hover:brightness-110 active:scale-95"
                 style={{
                   filter: isActive
-                    ? `drop-shadow(0 0 10px ${slice.color})`
+                    ? `drop-shadow(0 0 14px ${slice.color})`
                     : isHovered
-                    ? `drop-shadow(0 8px 16px ${slice.color}66)`
+                    ? `drop-shadow(0 0 12px ${slice.color})`
+                    : isNeonMode
+                    ? `drop-shadow(0 0 5px ${slice.color}99)`
                     : 'none',
                   transform: isHovered ? 'scale(1.07)' : isActive ? 'scale(1.05)' : 'scale(1)',
                   transformOrigin: `${center}px ${center}px`,
@@ -1782,27 +2399,42 @@ const ShowcaseSvgChart: React.FC<ShowcaseSvgChartProps> = ({
           {currentCenterSlice ? (
             <div className="transition-all duration-200 animate-in fade-in zoom-in-95">
               <span
-                className="text-[10px] font-extrabold uppercase tracking-wider truncate max-w-[110px] block mx-auto"
-                style={{ color: currentCenterSlice.color }}
+                className="text-[10px] font-extrabold uppercase tracking-wider truncate max-w-[110px] block mx-auto font-mono"
+                style={{ 
+                  color: currentCenterSlice.color,
+                  textShadow: isNeonMode ? `0 0 8px ${currentCenterSlice.color}` : 'none'
+                }}
               >
                 {currentCenterSlice.label}
               </span>
-              <span className="text-2xl font-black font-mono text-slate-900 leading-none my-1 block">
+              <span className={`text-2xl font-black font-mono leading-none my-1 block ${
+                isNeonMode ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]' : 'text-slate-900'
+              }`}>
                 {currentCenterSlice.value}
               </span>
-              <span className="text-[10px] font-extrabold font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 inline-block">
+              <span className={`text-[10px] font-extrabold font-mono px-2 py-0.5 rounded-full border inline-block ${
+                isNeonMode 
+                  ? 'bg-[#060a18] border-cyan-400/40 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.3)]' 
+                  : 'bg-slate-100 text-slate-700 border border-slate-200'
+              }`}>
                 {Math.round((currentCenterSlice.value / totalValue) * 100)}% Rasio
               </span>
             </div>
           ) : (
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              <span className={`text-[10px] font-bold uppercase tracking-wider block ${
+                isNeonMode ? 'text-slate-400' : 'text-slate-400'
+              }`}>
                 Total Ringkasan
               </span>
-              <span className="text-2xl font-black font-mono text-slate-900 leading-none my-1 block">
+              <span className={`text-2xl font-black font-mono leading-none my-1 block ${
+                isNeonMode ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : 'text-slate-900'
+              }`}>
                 {totalValue}
               </span>
-              <span className="text-[10px] font-bold text-slate-500 block">
+              <span className={`text-[10px] font-bold block ${
+                isNeonMode ? 'text-cyan-400/80' : 'text-slate-500'
+              }`}>
                 Paket Proyek
               </span>
             </div>

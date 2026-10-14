@@ -44,7 +44,9 @@ export type KpiItemKey =
   | 'cancelled' 
   | 'completed' 
   | 'mr-po' 
-  | 'pulling-cable';
+  | 'pulling-cable'
+  | 'bast'
+  | 'invoice';
 
 interface KpiItemDetailModalProps {
   isOpen: boolean;
@@ -138,6 +140,20 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
             (Boolean(p.pullingCableFoProgress) && p.pullingCableFoProgress !== '0%' && p.pullingCableFoProgress !== 'N/A') ||
             Number(p.pullingFoPanjangSelesai || 0) > 0 ||
             Number(p.pullingPanjangSelesai || 0) > 0
+        );
+
+      case 'bast':
+        return projects.filter(
+          (p) =>
+            (Boolean(p.baSurvey) && p.baSurvey !== '-' && p.baSurvey !== 'Belum Ada BA') ||
+            (Boolean(p.laporanOpname) && p.laporanOpname !== 'Not Yet')
+        );
+
+      case 'invoice':
+        return projects.filter(
+          (p) =>
+            (Boolean(p.sphBoq) && p.sphBoq !== '-' && p.sphBoq !== 'Belum') ||
+            p.statusDokumenClosing === 'Completed'
         );
 
       default:
@@ -364,8 +380,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
 
       case 'mr-po': {
         const count = kpiFilteredProjects.length;
-        const warehouseUserCount = kpiFilteredProjects.filter((p) => p.planPengambilanMaterial === 'Warehouse User').length;
-        const warehouseInhouseCount = kpiFilteredProjects.filter((p) => p.planPengambilanMaterial === 'Warehouse Inhouse').length;
+        const hasMrCount = kpiFilteredProjects.filter((p) => Boolean(p.mrNumber && p.mrNumber !== '-')).length;
 
         return {
           title: 'MR / PO (Material Request & Purchase Order Approved)',
@@ -375,11 +390,10 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
           gradientBg: 'from-slate-900 via-indigo-950 to-slate-900',
           accentColor: 'from-indigo-500 to-purple-600',
           icon: FileCheck2,
-          description: 'Status MR/PO Approved mengonfirmasi bahwa alokasi material kabel, closure, dan aksesoris tiang telah disetujui dan siap diambil di gudang logistik (Warehouse User / Warehouse Inhouse).',
+          description: 'Status MR/PO Approved mengonfirmasi bahwa alokasi material kabel, closure, dan aksesoris tiang telah disetujui dan siap diambil di gudang logistik.',
           insights: [
             { label: 'MR / PO Approved', value: `${count} paket`, desc: 'Siap tarik material' },
-            { label: 'Plan Warehouse User', value: `${warehouseUserCount} paket`, desc: 'Pengambilan gudang user' },
-            { label: 'Plan Warehouse Inhouse', value: `${warehouseInhouseCount} paket`, desc: 'Pengambilan gudang inhouse' },
+            { label: 'Nomor MR Terbit', value: `${hasMrCount} paket`, desc: 'MR terdaftar di SAP' },
             { label: 'Kesiapan Logistik', value: '100% Release', desc: 'Material terverifikasi' },
           ],
           filterKey: 'statusPengajuanProject',
@@ -410,6 +424,52 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
           ],
           filterKey: 'statusPullingCableFo',
           filterVal: 'Pulling Cable',
+        };
+      }
+
+      case 'bast': {
+        const count = kpiFilteredProjects.length;
+
+        return {
+          title: 'BAST (Berita Acara Serah Terima Project)',
+          subtitle: 'Proyek dengan Berita Acara Serah Terima (BAST) atau BA Lapangan / Laporan Opname terbit.',
+          badge: `${count} Paket BAST`,
+          badgeClass: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30',
+          gradientBg: 'from-slate-900 via-emerald-950 to-slate-900',
+          accentColor: 'from-emerald-500 to-teal-600',
+          icon: FileCheck2,
+          description: 'Berita Acara Serah Terima (BAST) mengonfirmasi bahwa pekerjaan fisik di lapangan telah diperiksa bersama oleh pengawas, dinas, dan vendor serta disetujui tanpa komplain.',
+          insights: [
+            { label: 'Proyek Ada BAST', value: `${count} paket`, desc: 'BAST / BA Survey terbit' },
+            { label: 'Rasio BAST', value: `${projects.length > 0 ? Math.round((count / projects.length) * 100) : 0}%`, desc: 'Porsi dari total database' },
+            { label: 'Kesiapan Penagihan', value: 'Siap Invoice', desc: 'Syarat administrasi komplit' },
+            { label: 'Status Verifikasi', value: 'Terverifikasi', desc: 'Pemeriksaan lapangan selesai' },
+          ],
+          filterKey: 'baSurvey',
+          filterVal: 'Sudah BA',
+        };
+      }
+
+      case 'invoice': {
+        const count = kpiFilteredProjects.length;
+
+        return {
+          title: 'Invoice (Proyek Tahap Penagihan & Finansial)',
+          subtitle: 'Paket proyek yang telah memiliki dokumen SPH/BOQ, closing administrasi, atau tagihan terbit.',
+          badge: `${count} Paket Invoice`,
+          badgeClass: 'bg-sky-500/20 text-sky-200 border-sky-400/30',
+          gradientBg: 'from-slate-900 via-sky-950 to-slate-900',
+          accentColor: 'from-sky-500 to-blue-600',
+          icon: FileText,
+          description: 'Invoice mencakup seluruh paket pekerjaan yang telah memenuhi tahapan penagihan finansial, penerbitan invoice resmi, dan siap/telah dicairkan pembayarannya.',
+          insights: [
+            { label: 'Proyek Siap Invoice', value: `${count} paket`, desc: 'Tagihan terproses' },
+            { label: 'Rasio Invoice', value: `${projects.length > 0 ? Math.round((count / projects.length) * 100) : 0}%`, desc: 'Porsi transaksi keuangan' },
+            { label: 'Status Dokumen', value: 'Complete SPH/BOQ', desc: 'Rincian biaya approved' },
+            { label: 'Pencairan Finansial', value: 'Proses / Done', desc: 'Alur penagihan aktif' },
+          ],
+          filterKey: 'sphBoq',
+          filterVal: 'Invoice',
         };
       }
     }
@@ -569,7 +629,7 @@ export const KpiItemDetailModal: React.FC<KpiItemDetailModalProps> = ({
                     placeholder="Cari PMO ID, Project, Vendor..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full pl-8 pr-7 py-1.5 text-xs bg-white text-slate-900 font-semibold placeholder:text-slate-900 placeholder:font-semibold border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 shadow-xs"
                   />
                   {searchQuery && (
                     <button

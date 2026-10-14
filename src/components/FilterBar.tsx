@@ -72,9 +72,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   totalResults,
   allProjects,
 }) => {
-  const defaultStatuses = ['In Progress', 'Project Not Started', 'Review Dinas', 'Masih Review Dinas', 'MR/PO Approved', 'Cancelled', 'Completed'];
-  const uniqueStatuses = Array.from(new Set([...defaultStatuses, ...allProjects.map((p) => p.projectStatus).filter(Boolean)]));
-  const defaultCategories = ['GOV IPPJU', 'GOV APJATEL', 'GOV SJUT', 'FTTH', 'IKR'];
+  const defaultStatuses = ['Done (Civil Work)', 'Done (Completed)', 'Done (Pulling)', 'In Progress', 'Masih Review Dinas', 'Not Started', 'Project Cancel'];
+  const uniqueStatuses = Array.from(new Set([...defaultStatuses, ...allProjects.map((p) => p.projectStatus).filter(Boolean)])).sort((a, b) => a.localeCompare(b));
+  const defaultCategories = ['GOV APJATEL', 'GOV IPPJU', 'GOV SJUT', 'GOV PUPR KOTA', 'GOV PUPR KAB', 'GOV SDA DBM'];
   const categoryOptions = Array.from(new Set([...defaultCategories, ...allProjects.map((p) => p.projectCategory).filter(Boolean)]));
   const quarterOptions = ['Q1-26', 'Q2-26', 'Q3-26', 'Q4-26'];
 
@@ -96,7 +96,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             placeholder="Cari PMO ID, Project ID, Deskripsi, PIC, Nama Vendor, Lokasi..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 text-xs text-slate-800 bg-slate-50/90 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400 shadow-2xs font-medium"
+            className="w-full pl-9 pr-8 py-2 text-xs text-slate-900 bg-white border border-slate-300 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all placeholder:text-slate-900 placeholder:font-semibold shadow-xs font-semibold"
           />
           {searchTerm && (
             <button
@@ -121,11 +121,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               value={selectedArea}
               onChange={(e) => onAreaChange(e.target.value)}
               title="Filter Area/Kota"
-              className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60 max-w-[170px]"
+              className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-800 bg-slate-50/90 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/80 min-w-[150px] max-w-full"
             >
-              <option value="">Semua Area/Kota</option>
+              <option value="" className="bg-white text-slate-800 py-1 font-medium">Semua Area/Kota</option>
               {AREA_KOTA_OPTIONS.map((area) => (
-                <option key={area} value={area}>
+                <option key={area} value={area} className="bg-white text-slate-800 py-1 font-medium">
                   {area}
                 </option>
               ))}
@@ -150,11 +150,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               value={selectedVendor}
               onChange={(e) => onVendorChange(e.target.value)}
               title="Filter Nama Vendor"
-              className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60 max-w-[190px]"
+              className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-800 bg-slate-50/90 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/80 min-w-[160px] max-w-full"
             >
-              <option value="">Semua Nama Vendor</option>
+              <option value="" className="bg-white text-slate-800 py-1 font-medium">Semua Nama Vendor</option>
               {VENDOR_OPTIONS.map((v) => (
-                <option key={v} value={v}>
+                <option key={v} value={v} className="bg-white text-slate-800 py-1 font-medium">
                   {v}
                 </option>
               ))}
@@ -180,11 +180,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 value={selectedPic}
                 onChange={(e) => onPicChange(e.target.value)}
                 title="Filter PIC"
-                className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60 max-w-[170px]"
+                className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-800 bg-slate-50/90 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/80 min-w-[140px] max-w-full"
               >
-                <option value="">Semua PIC</option>
+                <option value="" className="bg-white text-slate-800 py-1 font-medium">Semua PIC</option>
                 {PIC_GOVREL_OPTIONS.map((pic) => (
-                  <option key={pic} value={pic}>
+                  <option key={pic} value={pic} className="bg-white text-slate-800 py-1 font-medium">
                     {pic}
                   </option>
                 ))}
@@ -211,11 +211,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 value={selectedWaspang}
                 onChange={(e) => onWaspangChange(e.target.value)}
                 title="Filter Waspang DSB"
-                className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60 max-w-[180px]"
+                className="h-8.5 pl-8 pr-6 py-1 text-xs font-medium text-slate-800 bg-slate-50/90 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/80 min-w-[150px] max-w-full"
               >
-                <option value="">Semua Waspang DSB</option>
+                <option value="" className="bg-white text-slate-800 py-1 font-medium">Semua Waspang DSB</option>
                 {WASPANG_DSB_OPTIONS.map((w) => (
-                  <option key={w} value={w}>
+                  <option key={w} value={w} className="bg-white text-slate-800 py-1 font-medium">
                     {w}
                   </option>
                 ))}
@@ -237,11 +237,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <select
               value={selectedQuarter}
               onChange={(e) => onQuarterChange(e.target.value)}
-              className="h-8.5 pl-2.5 pr-6 py-1 text-xs font-medium text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60"
+              className="h-8.5 pl-2.5 pr-6 py-1 text-xs font-medium text-slate-800 bg-slate-50/90 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/80 min-w-[120px]"
             >
-              <option value="">Semua Quarter</option>
+              <option value="" className="bg-white text-slate-800 py-1 font-medium">Semua Quarter</option>
               {quarterOptions.map((q) => (
-                <option key={q} value={q}>
+                <option key={q} value={q} className="bg-white text-slate-800 py-1 font-medium">
                   {q}
                 </option>
               ))}
@@ -253,11 +253,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <select
               value={selectedStatus}
               onChange={(e) => onStatusChange(e.target.value)}
-              className="h-8.5 pl-2.5 pr-6 py-1 text-xs text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60"
+              className="h-8.5 pl-2.5 pr-6 py-1 text-xs text-slate-800 bg-slate-50/90 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/80 min-w-[130px]"
             >
-              <option value="">Semua Status</option>
+              <option value="" className="bg-white text-slate-800 py-1 font-medium">Semua Status</option>
               {uniqueStatuses.map((st) => (
-                <option key={st} value={st}>
+                <option key={st} value={st} className="bg-white text-slate-800 py-1 font-medium">
                   {st}
                 </option>
               ))}
@@ -270,13 +270,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               <select
                 value={selectedPriority}
                 onChange={(e) => onPriorityChange(e.target.value)}
-                className="h-8.5 pl-2.5 pr-6 py-1 text-xs text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60"
+                className="h-8.5 pl-2.5 pr-6 py-1 text-xs text-slate-800 bg-slate-50/90 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/80 min-w-[150px]"
               >
-                <option value="">Semua Tingkat Prioritas</option>
+                <option value="" className="bg-white text-slate-800 py-1 font-medium">Semua Tingkat Prioritas</option>
                 {PRIORITY_OPTIONS.map((p) => {
                   const meta = getPriorityMeta(p);
                   return (
-                    <option key={p} value={p}>
+                    <option key={p} value={p} className="bg-white text-slate-800 py-1 font-medium">
                       [L{meta.level}] {p} - {meta.levelName}
                     </option>
                   );
@@ -290,11 +290,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <select
               value={selectedCategory}
               onChange={(e) => onCategoryChange(e.target.value)}
-              className="h-8.5 pl-2.5 pr-6 py-1 text-xs text-slate-700 bg-slate-50/80 border border-slate-300/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/60"
+              className="h-8.5 pl-2.5 pr-6 py-1 text-xs text-slate-800 bg-slate-50/90 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 cursor-pointer transition-all hover:bg-slate-100/80 min-w-[140px]"
             >
-              <option value="">Semua Kategori</option>
+              <option value="" className="bg-white text-slate-800 py-1 font-medium">Semua Kategori</option>
               {categoryOptions.map((cat) => (
-                <option key={cat} value={cat}>
+                <option key={cat} value={cat} className="bg-white text-slate-800 py-1 font-medium">
                   {cat}
                 </option>
               ))}

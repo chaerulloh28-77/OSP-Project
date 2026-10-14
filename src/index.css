@@ -120,14 +120,86 @@
   animation: pulse-ring 2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
-/* Slice Pop Animation */
-.pie-slice-interactive {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
-  transform-origin: center;
-  cursor: pointer;
+/* Universal option visibility fix for native HTML select controls across all browsers & themes */
+select {
+  color: #0f172a;
 }
 
-.pie-slice-interactive:hover {
-  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
+select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important; /* High contrast dark text */
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 6px 12px !important;
+}
+
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked {
+  background-color: #0284c7 !important; /* sky-600 */
+  color: #ffffff !important;
+}
+
+select option:disabled {
+  color: #94a3b8 !important; /* slate-400 */
+  background-color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   GLOBAL INPUT & TEXTAREA CONTRAST CONSTITUTION
+   Requirement: Text values and placeholders in "Segment Relokasi", "Remarks", 
+   and all form inputs must be crisp, assertive dark (text-slate-900 font-semibold)
+   on light/white backgrounds with zero washed-out grays or low opacities.
+   ========================================================================== */
+
+/* Universal assertive dark text for inputs and textareas on light/white surfaces */
+input:not([class*="text-white"]):not([class*="text-slate-100"]):not([class*="text-slate-200"]):not([class*="text-cyan-"]):not([class*="text-emerald-"]),
+textarea:not([class*="text-white"]):not([class*="text-slate-100"]):not([class*="text-slate-200"]):not([class*="text-cyan-"]):not([class*="text-emerald-"]) {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Ensure inputs on white/light backgrounds in forms and tables are text-slate-900 font-semibold */
+input.bg-white,
+textarea.bg-white,
+input.bg-slate-50,
+textarea.bg-slate-50,
+input.bg-slate-50\/90,
+textarea.bg-slate-50\/90,
+form input,
+form textarea,
+dialog input,
+dialog textarea {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+/* High contrast, bold placeholders for all inputs and textareas on light backgrounds */
+input:not([class*="text-white"]):not([class*="bg-slate-900"]):not([class*="bg-slate-950"]):not([class*="bg-[#"])::placeholder,
+textarea:not([class*="text-white"]):not([class*="bg-slate-900"]):not([class*="bg-slate-950"]):not([class*="bg-[#"])::placeholder {
+  color: #0f172a !important;
+  opacity: 0.82 !important;
+  font-weight: 600 !important;
+}
+
+/* Dark mode inputs retain crisp readability */
+input.text-white::placeholder,
+textarea.text-white::placeholder,
+input[class*="bg-slate-900"]::placeholder,
+textarea[class*="bg-slate-900"]::placeholder,
+input[class*="bg-slate-950"]::placeholder,
+textarea[class*="bg-slate-950"]::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.95 !important;
+  font-weight: 600 !important;
+}
+
+/* Form labels on light backgrounds */
+form label,
+.form-label-contrast {
+  color: #1e293b !important;
+  font-weight: 700 !important;
 }
 

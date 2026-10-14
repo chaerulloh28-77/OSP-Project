@@ -524,7 +524,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
                     placeholder="Cari PMO ID, Project, Nama Vendor, PIC..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full pl-8 pr-7 py-1.5 text-xs bg-white text-slate-900 font-semibold placeholder:text-slate-900 placeholder:font-semibold border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 shadow-xs"
                   />
                   {searchQuery && (
                     <button
@@ -543,7 +543,7 @@ export const DocumentCompletenessInfoModal: React.FC<DocumentCompletenessInfoMod
               <div className="p-8 text-center text-slate-400 text-xs bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                 <FileX className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                 <p className="font-semibold text-slate-600">Tidak ada data proyek yang sesuai dengan kriteria.</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Coba ubah filter pencarian atau pilih tab status lain.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Coba ubah filter pencarian atau pilih opsi status lain.</p>
               </div>
             ) : (
               <div className="space-y-2.5 max-h-[380px] overflow-y-auto custom-scrollbar pr-1">

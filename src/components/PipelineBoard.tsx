@@ -27,6 +27,7 @@ interface PipelineBoardProps {
   onEdit: (project: ProjectData) => void;
   onJumpToTab: (tab: TabKey, project: ProjectData) => void;
   onQuickUpdateStage?: (project: ProjectData, newStage: string) => void;
+  isNeonMode?: boolean;
 }
 
 interface StageColumn {
@@ -45,6 +46,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
   onViewDetail,
   onEdit,
   onJumpToTab,
+  isNeonMode = true,
 }) => {
   // Define pipeline stages
   const stages: StageColumn[] = [
@@ -210,27 +212,43 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
           return (
             <div
               key={stage.id}
-              className="bg-white rounded-xl border border-slate-200/90 shadow-xs flex flex-col min-h-[480px] overflow-hidden"
+              className={`rounded-xl border flex flex-col min-h-[480px] overflow-hidden transition-all duration-300 ${
+                isNeonMode 
+                  ? 'bg-[#080d1e] border-slate-800 shadow-[0_0_15px_rgba(6,182,212,0.06)]' 
+                  : 'bg-white border-slate-200/90 shadow-xs'
+              }`}
             >
               {/* Stage Header */}
-              <div className="p-3 border-b border-slate-100 bg-slate-50/70">
+              <div className={`p-3 border-b ${
+                isNeonMode ? 'bg-[#0b142c] border-slate-800' : 'bg-slate-50/70 border-slate-100'
+              }`}>
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
+                  <div className={`flex items-center gap-1.5 font-bold text-xs ${
+                    isNeonMode ? 'text-white' : 'text-slate-800'
+                  }`}>
                     <StageIcon className={`w-3.5 h-3.5 ${stage.colorClass}`} />
                     <span className="truncate">{stage.title}</span>
                   </div>
-                  <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full ${stage.badgeBg}`}>
+                  <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                    isNeonMode 
+                      ? 'bg-slate-900 text-cyan-300 border border-cyan-500/30' 
+                      : stage.badgeBg
+                  }`}>
                     {stageProjects.length}
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 line-clamp-1">{stage.shortDesc}</p>
+                <p className={`text-[10px] line-clamp-1 ${isNeonMode ? 'text-slate-400' : 'text-slate-400'}`}>{stage.shortDesc}</p>
               </div>
 
               {/* Cards Container */}
-              <div className="p-2.5 flex-1 overflow-y-auto space-y-2.5 custom-scrollbar bg-slate-50/30">
+              <div className={`p-2.5 flex-1 overflow-y-auto space-y-2.5 custom-scrollbar ${
+                isNeonMode ? 'bg-[#060a16]' : 'bg-slate-50/30'
+              }`}>
                 {stageProjects.length === 0 ? (
-                  <div className="h-32 flex flex-col items-center justify-center text-center p-3 text-slate-400">
-                    <AlertCircle className="w-5 h-5 text-slate-300 mb-1" />
+                  <div className={`h-32 flex flex-col items-center justify-center text-center p-3 ${
+                    isNeonMode ? 'text-slate-500' : 'text-slate-400'
+                  }`}>
+                    <AlertCircle className={`w-5 h-5 mb-1 ${isNeonMode ? 'text-slate-600' : 'text-slate-300'}`} />
                     <span className="text-[11px]">Tidak ada project di tahap ini</span>
                   </div>
                 ) : (
@@ -240,29 +258,37 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
                     return (
                       <div
                         key={p.id}
-                        className="interactive-card bg-white border border-slate-200 rounded-lg p-3 shadow-2xs hover:shadow-md hover:border-sky-400 hover:-translate-y-1 active:scale-[0.98] transition-all duration-200 cursor-pointer group space-y-2.5"
+                        className={`interactive-card rounded-lg p-3 active:scale-[0.98] transition-all duration-200 cursor-pointer group space-y-2.5 border ${
+                          isNeonMode 
+                            ? 'bg-[#0a1128] border-slate-800 hover:border-cyan-400/60 hover:shadow-[0_0_15px_rgba(6,182,212,0.25)] text-slate-200' 
+                            : 'bg-white border-slate-200 shadow-2xs hover:shadow-md hover:border-sky-400 text-slate-800'
+                        }`}
                         onClick={() => onViewDetail(p)}
                       >
                         {/* Header: PMO ID & Category */}
                         <div className="flex items-center justify-between gap-1">
-                          <span className="font-mono text-xs font-bold text-sky-700 group-hover:text-sky-800">
+                          <span className={`font-mono text-xs font-bold ${
+                            isNeonMode ? 'text-cyan-300 drop-shadow-[0_0_4px_rgba(6,182,212,0.6)]' : 'text-sky-700'
+                          }`}>
                             {p.pmoId}
                           </span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold border ${
                             p.projectCategory === 'GOV IPPJU'
-                              ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                              ? isNeonMode ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/30' : 'bg-sky-50 text-sky-700 border-sky-200'
                               : p.projectCategory === 'GOV APJATEL'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              ? isNeonMode ? 'bg-amber-950/80 text-amber-300 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-200'
                               : p.projectCategory === 'GOV SJUT'
-                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                              : 'bg-slate-100 text-slate-600'
+                              ? isNeonMode ? 'bg-indigo-950/80 text-indigo-300 border-indigo-500/30' : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : isNeonMode ? 'bg-slate-900 text-slate-300 border-slate-800' : 'bg-slate-100 text-slate-600 border-slate-200'
                           }`}>
                             {p.projectCategory || 'GOV IPPJU'}
                           </span>
                         </div>
 
                         {/* Title / Description */}
-                        <p className="text-xs font-semibold text-slate-800 line-clamp-2 leading-snug">
+                        <p className={`text-xs font-semibold line-clamp-2 leading-snug ${
+                          isNeonMode ? 'text-slate-100 group-hover:text-cyan-200' : 'text-slate-800 group-hover:text-sky-700'
+                        }`}>
                           {p.projectDescription || <span className="text-slate-400 italic font-normal text-[11px]">(Tanpa deskripsi)</span>}
                         </p>
 
@@ -272,43 +298,53 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
                             <PriorityBadge priority={p.priority} showLevel={true} size="xs" />
                           )}
                           {p.areaKota && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200/60 font-semibold font-mono">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border font-semibold font-mono ${
+                              isNeonMode ? 'bg-cyan-950/60 text-cyan-300 border-cyan-500/30' : 'bg-sky-50 text-sky-700 border-sky-200/60'
+                            }`}>
                               <MapPin className="w-2.5 h-2.5" />
                               {p.areaKota}
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/60 font-semibold font-mono">
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border font-semibold font-mono ${
+                            isNeonMode ? 'bg-indigo-950/60 text-indigo-300 border-indigo-500/30' : 'bg-indigo-50 text-indigo-700 border-indigo-200/60'
+                          }`}>
                             <Calendar className="w-2.5 h-2.5" />
                             {p.quarter || 'Q1-26'}
                           </span>
                         </div>
 
                         {/* Vendor & Length */}
-                        <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                        <div className={`pt-1 border-t flex items-center justify-between text-[11px] ${
+                          isNeonMode ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-600'
+                        }`}>
                           <span className="truncate max-w-[110px]" title={p.namaVendor}>
                             {p.namaVendor || 'Belum Vendor'}
                           </span>
-                          <span className="font-mono font-medium text-slate-800">
+                          <span className={`font-mono font-medium ${isNeonMode ? 'text-white' : 'text-slate-800'}`}>
                             {p.panjangRelokasi ? `${Number(p.panjangRelokasi).toLocaleString('id-ID')} m` : '-'}
                           </span>
                         </div>
 
                         {/* Progress Bar */}
                         <div>
-                          <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                          <div className={`flex items-center justify-between text-[10px] mb-1 ${
+                            isNeonMode ? 'text-slate-400' : 'text-slate-500'
+                          }`}>
                             <span>Estimasi Progres</span>
-                            <span className="font-mono font-semibold">{progressPct}%</span>
+                            <span className={`font-mono font-semibold ${isNeonMode ? 'text-cyan-300' : 'text-slate-700'}`}>{progressPct}%</span>
                           </div>
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`w-full h-1.5 rounded-full overflow-hidden ${
+                            isNeonMode ? 'bg-slate-800' : 'bg-slate-100'
+                          }`}>
                             <div
                               className={`h-full rounded-full transition-all ${
                                 stage.id === 'stage-cancelled'
                                   ? 'bg-rose-400'
                                   : progressPct >= 80
-                                  ? 'bg-emerald-500'
+                                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
                                   : progressPct >= 40
-                                  ? 'bg-sky-500'
-                                  : 'bg-amber-400'
+                                  ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]'
+                                  : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]'
                               }`}
                               style={{ width: `${progressPct}%` }}
                             />
@@ -316,7 +352,9 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
                         </div>
 
                         {/* Action buttons on hover */}
-                        <div className="pt-1.5 flex items-center justify-between gap-1 text-[11px]">
+                        <div className={`pt-1.5 flex items-center justify-between gap-1 text-[11px] border-t ${
+                          isNeonMode ? 'border-slate-800/80' : 'border-slate-100'
+                        }`}>
                           <div className="flex items-center gap-1">
                             <button
                               onClick={(e) => {
@@ -324,7 +362,9 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
                                 onEdit(p);
                               }}
                               title="Edit Data Project"
-                              className="p-1 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
+                              className={`p-1 rounded cursor-pointer transition-colors ${
+                                isNeonMode ? 'text-amber-400 hover:bg-amber-950/60' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                              }`}
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
@@ -334,7 +374,9 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
                                 onViewDetail(p);
                               }}
                               title="Lihat Detail 4 Sheet"
-                              className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-50 cursor-pointer transition-colors"
+                              className={`p-1 rounded cursor-pointer transition-colors ${
+                                isNeonMode ? 'text-cyan-400 hover:bg-cyan-950/60' : 'text-slate-400 hover:text-sky-600 hover:bg-sky-50'
+                              }`}
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>

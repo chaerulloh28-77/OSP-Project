@@ -150,8 +150,10 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
 
   // Handle Delete Mandor
   const handleDeleteMandor = (targetMandorName: string) => {
-    const updated = mandorStorageService.deleteMandor(targetMandorName);
-    setMandors(updated);
+    const updatedMandors = mandorStorageService.deleteMandor(targetMandorName);
+    const updatedReports = mandorStorageService.getReports();
+    setMandors(updatedMandors);
+    setReports(updatedReports);
     if (selectedMandor === targetMandorName) {
       setSelectedMandor('ALL');
     }
@@ -271,6 +273,8 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
   // Delete Report (CRUD - Hapus)
   const handleDeleteReport = (id: string) => {
     mandorStorageService.deleteReport(id);
+    const updatedReports = mandorStorageService.getReports();
+    setReports(updatedReports);
     setDeleteConfirmId(null);
     if (onShowToast) onShowToast('Laporan daily mandor telah berhasil dihapus.');
   };

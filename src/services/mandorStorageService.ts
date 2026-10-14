@@ -131,16 +131,16 @@ export const mandorStorageService = {
     if (typeof window === 'undefined') return [...DEFAULT_MANDORS];
     try {
       const stored = localStorage.getItem(MANDOR_LIST_KEY);
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
     } catch (e) {
       console.error('Failed reading mandor list from local storage:', e);
     }
-    // Default fallback
+    // Default fallback ONLY on first run when key does not exist
     this.saveMandors([...DEFAULT_MANDORS]);
     return [...DEFAULT_MANDORS];
   },
@@ -170,12 +170,18 @@ export const mandorStorageService = {
     return current;
   },
 
-  // Delete a mandor dynamically
+  // Delete a mandor dynamically AND remove reports assigned to this mandor
   deleteMandor(mandorName: string): string[] {
     const current = this.getMandors();
-    const updated = current.filter((m) => m !== mandorName);
-    this.saveMandors(updated);
-    return updated;
+    const updatedMandors = current.filter((m) => m !== mandorName);
+    this.saveMandors(updatedMandors);
+
+    // Also remove daily reports for this deleted mandor so they don't linger
+    const reports = this.getReports();
+    const updatedReports = reports.filter((r) => r.mandorName !== mandorName);
+    this.saveReports(updatedReports);
+
+    return updatedMandors;
   },
 
   // Get daily reports
@@ -183,16 +189,16 @@ export const mandorStorageService = {
     if (typeof window === 'undefined') return INITIAL_DAILY_REPORTS;
     try {
       const stored = localStorage.getItem(MANDOR_REPORTS_KEY);
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
     } catch (e) {
       console.error('Failed reading daily mandor reports:', e);
     }
-    // Initialize with default reports
+    // Initialize with default sample reports ONLY on first run when key does not exist
     this.saveReports(INITIAL_DAILY_REPORTS);
     return INITIAL_DAILY_REPORTS;
   },

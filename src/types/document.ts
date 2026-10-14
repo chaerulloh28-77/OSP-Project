@@ -344,14 +344,15 @@ export interface ClosingProjectData {
 export type DocumentEmailDispatchType =
   | 'pengajuan-material'
   | 'pengajuan-boq'
-  | 'pengajuan-material-and-boq';
+  | 'pengajuan-material-and-boq'
+  | 'closing-project';
 
 export interface DocumentEmailDispatchRecord {
   id: string;
   projectId: string;
   pmoId: string;
   dispatchType: DocumentEmailDispatchType;
-  dispatchTypeName: string; // e.g. "Pengajuan Material" | "Pengajuan BOQ Labour" | "Pengajuan Material & BOQ Labour"
+  dispatchTypeName: string; // e.g. "Pengajuan Material" | "Pengajuan BOQ Labour" | "Pengajuan Material & BOQ Labour" | "Closing Project"
   sentAt: string; // ISO string
   sentBy?: string;
   to: string; // primary recipient(s)
@@ -374,6 +375,8 @@ export interface EmailDispatchContactSuggestion {
 export const DEFAULT_EMAIL_CONTACT_SUGGESTIONS: EmailDispatchContactSuggestion[] = [
   { name: 'PIC Govrel (Gov Relation)', email: 'pic.govrel@linknet.co.id', role: 'PIC Govrel' },
   { name: 'Waspang Internal DSB', email: 'waspang.dsb@linknet.co.id', role: 'Pengawas DSB' },
+  { name: 'Tim Finance & Invoicing', email: 'finance.closing@linknet.co.id', role: 'Finance / Invoice' },
+  { name: 'Tim BAST & BALAP Approval', email: 'bast.approval@linknet.co.id', role: 'Approval BAST' },
   { name: 'Tim Procurement & Material', email: 'procurement.relokasi@linknet.co.id', role: 'Procurement' },
   { name: 'Tim Engineering & Planning', email: 'planning.fiber@linknet.co.id', role: 'Engineering' },
   { name: 'Mitra Vendor Pelaksana', email: 'vendor.operasional@mitra.com', role: 'Vendor Mitra' },

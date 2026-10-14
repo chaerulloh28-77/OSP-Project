@@ -6,7 +6,7 @@ interface SendEmailPayload {
   cc?: string[] | string;
   subject: string;
   body: string;
-  dispatchType?: 'pengajuan-material' | 'pengajuan-boq' | 'pengajuan-material-and-boq';
+  dispatchType?: 'pengajuan-material' | 'pengajuan-boq' | 'pengajuan-material-and-boq' | 'closing-project';
   pmoId?: string;
   projectId?: string;
   projectDescription?: string;

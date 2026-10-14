@@ -25,7 +25,8 @@ import {
   PieChart as PieIcon,
   ChevronRight,
   Search,
-  Filter
+  Filter,
+  Mail
 } from 'lucide-react';
 import { ProjectData, TabKey } from '../types/project';
 import { 
@@ -38,6 +39,7 @@ import { STATUS_PENGAJUAN_CLOSING_OPTIONS } from '../data/dropdownOptions';
 import { CLOSING_PROJECT_COLUMNS } from '../data/tabColumns';
 import { TableView } from './TableView';
 import { TabVisualIcon } from './TabVisualIcon';
+import { SendProjectDocumentEmailModal } from './SendProjectDocumentEmailModal';
 
 interface ClosingProjectPageViewProps {
   projects: ProjectData[];
@@ -70,6 +72,9 @@ export const ClosingProjectPageView: React.FC<ClosingProjectPageViewProps> = ({
 
   // Lightbox preview for uploaded files
   const [previewFile, setPreviewFile] = useState<UploadedFileMeta | null>(null);
+
+  // Email dispatch modal state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState<boolean>(false);
 
   // Hidden file input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -708,6 +713,15 @@ export const ClosingProjectPageView: React.FC<ClosingProjectPageViewProps> = ({
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                   <button
                     type="button"
+                    onClick={() => setIsEmailModalOpen(true)}
+                    className="px-2.5 py-1.5 rounded-md text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1.5 cursor-pointer transition-all shadow-xs shadow-teal-600/30"
+                    title="Kirim Berkas Closing Project via Email & CC ke berbagai alamat"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Kirim Email Closing</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => onViewDetail(selectedProject)}
                     className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors border border-slate-700"
                   >
@@ -763,6 +777,42 @@ export const ClosingProjectPageView: React.FC<ClosingProjectPageViewProps> = ({
                       <span>•</span>
                       <span className="text-slate-400">Vendor: <strong className="text-emerald-400">{selectedProject.namaVendor || '-'}</strong></span>
                     </div>
+                  </div>
+
+                  {/* Banner Pengiriman Email Closing Project */}
+                  <div className="p-3 bg-gradient-to-r from-teal-950/60 via-slate-900/80 to-slate-900 border border-teal-500/30 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-teal-600/30 text-teal-400 border border-teal-500/40 flex items-center justify-center shrink-0">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h5 className="text-xs font-bold text-white">
+                            Kirim Berkas Closing Project via Email & CC Multi-Penerima
+                          </h5>
+                          {selectedProject.lastEmailDispatch?.dispatchType === 'closing-project' ? (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-semibold">
+                              Terkirim ke {selectedProject.lastEmailDispatch.to} ({new Date(selectedProject.lastEmailDispatch.sentAt).toLocaleDateString('id-ID')})
+                            </span>
+                          ) : (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium border border-slate-700">
+                              Siap Dikirim via Serverless SMTP / Gmail / Mail Client
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Kirim data penutupan proyek, No. PO, Praject Date, BA Opname, ABD, dan Foto ke PIC Govrel, Waspang DSB, Tim Finance, & Mitra dengan tembusan (CC) berbagai alamat email.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsEmailModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1.5 cursor-pointer transition-all shadow-sm shadow-teal-600/30"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Kirim Email Closing Project</span>
+                    </button>
                   </div>
 
                   {/* Form Inputs: Praject Date, No. PO, Status Pengajuan, Remarks */}
@@ -1175,6 +1225,20 @@ export const ClosingProjectPageView: React.FC<ClosingProjectPageViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal Kirim Berkas Closing Project via Email */}
+      <SendProjectDocumentEmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        project={selectedProject}
+        initialDispatchType="closing-project"
+        onEmailSent={(updatedProj) => {
+          onUpdateProject(updatedProj);
+          showToast(`Email Closing Project untuk ${updatedProj.pmoId} berhasil diproses!`);
+        }}
+        showToast={showToast}
+        isNeonMode={isNeonMode}
+      />
     </div>
   );
 };

@@ -11,6 +11,7 @@ import {
   Package, 
   HardHat, 
   Layers, 
+  ShieldCheck,
   UserCheck, 
   Plus, 
   Trash2, 
@@ -26,6 +27,7 @@ import {
   PENGAJUAN_MATERIAL_SLOTS,
   PENGAJUAN_BOQ_LABOUR_SLOTS,
   PENGAJUAN_CE_BOQ_SLOTS,
+  CLOSING_PROJECT_SLOTS,
   DEFAULT_EMAIL_CONTACT_SUGGESTIONS,
   UploadedFileMeta
 } from '../types/document';
@@ -54,11 +56,19 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
   // Selected dispatch type
   const [dispatchType, setDispatchType] = useState<DocumentEmailDispatchType>(initialDispatchType);
   
+  // Keep dispatchType synced when initialDispatchType prop changes or modal opens
+  useEffect(() => {
+    if (initialDispatchType) {
+      setDispatchType(initialDispatchType);
+    }
+  }, [initialDispatchType, isOpen]);
+
   // Recipients
   const [toEmail, setToEmail] = useState<string>('chaerulloh28@gmail.com');
   const [ccList, setCcList] = useState<string[]>([
     'pic.govrel@linknet.co.id',
     'waspang.dsb@linknet.co.id',
+    'finance.closing@linknet.co.id',
     'procurement.relokasi@linknet.co.id',
   ]);
   const [ccInput, setCcInput] = useState<string>('');
@@ -75,13 +85,61 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
     message?: string;
   }>({ type: 'idle' });
 
-  // Get uploaded docs by category
+  // Get uploaded docs by category (Material, BOQ, CE/BOQ, and Closing Project)
   const uploadedDocs = useMemo(() => {
     const dp = project.documentProject || {};
+    
+    // Fallback closing documents from project root fields if not yet in closingProject.documents
+    const rawClosingDocs = project.closingProject?.documents || {};
+    const closingDocs: Record<string, UploadedFileMeta | undefined> = { ...rawClosingDocs };
+    const defaultDate = project.prajectDate || project.projectCreateDate || new Date().toISOString().split('T')[0];
+
+    if (!closingDocs['baOpnameMaterial'] && project.baOpnameMaterial) {
+      closingDocs['baOpnameMaterial'] = {
+        name: project.baOpnameMaterial,
+        size: 1420000,
+        type: 'application/pdf',
+        uploadedAt: defaultDate,
+      };
+    }
+    if (!closingDocs['baOpnameLabour'] && project.baOpnameLabour) {
+      closingDocs['baOpnameLabour'] = {
+        name: project.baOpnameLabour,
+        size: 980000,
+        type: 'application/pdf',
+        uploadedAt: defaultDate,
+      };
+    }
+    if (!closingDocs['abdRelokasi'] && project.closingAbdRelokasi) {
+      closingDocs['abdRelokasi'] = {
+        name: project.closingAbdRelokasi,
+        size: 3200000,
+        type: 'application/octet-stream',
+        uploadedAt: defaultDate,
+      };
+    }
+    if (!closingDocs['abdInternal'] && project.closingAbdInternal) {
+      closingDocs['abdInternal'] = {
+        name: project.closingAbdInternal,
+        size: 2100000,
+        type: 'application/pdf',
+        uploadedAt: defaultDate,
+      };
+    }
+    if (!closingDocs['fotoDokumentasi'] && project.fotoDokumentasi) {
+      closingDocs['fotoDokumentasi'] = {
+        name: project.fotoDokumentasi,
+        size: 3800000,
+        type: 'image/jpeg',
+        uploadedAt: defaultDate,
+      };
+    }
+
     return {
       material: dp.pengajuanMaterial?.documents || {},
       boq: dp.pengajuanBoqLabour?.documents || {},
       ceBoq: dp.pengajuanCeAndBoqLabour?.documents || {},
+      closing: closingDocs,
     };
   }, [project]);
 
@@ -94,6 +152,8 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
         return PENGAJUAN_BOQ_LABOUR_SLOTS;
       case 'pengajuan-material-and-boq':
         return PENGAJUAN_CE_BOQ_SLOTS;
+      case 'closing-project':
+        return CLOSING_PROJECT_SLOTS;
       default:
         return PENGAJUAN_MATERIAL_SLOTS;
     }
@@ -106,6 +166,8 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
       docsMap = uploadedDocs.material;
     } else if (dispatchType === 'pengajuan-boq') {
       docsMap = uploadedDocs.boq;
+    } else if (dispatchType === 'closing-project') {
+      docsMap = uploadedDocs.closing;
     } else {
       docsMap = {
         ...uploadedDocs.material,
@@ -140,15 +202,15 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
         ? 'Pengajuan Material'
         : dispatchType === 'pengajuan-boq'
         ? 'Pengajuan BOQ Labour'
+        : dispatchType === 'closing-project'
+        ? 'Closing Project'
         : 'Pengajuan Material & BOQ Labour';
 
     const pmoIdStr = project.pmoId || 'DSB-ID';
     const projIdStr = project.projectId || '-';
     const segmenStr = project.projectDescription || 'Relokasi FO Segmen';
-    const newSubject = `[${typeLabel}] - ${pmoIdStr} (${projIdStr}) - ${segmenStr}`;
-    setSubject(newSubject);
 
-    // Build formal body template
+    // Build uploaded & pending file list
     const uploadedFileList = availableDocs
       .filter(({ isUploaded, slot }) => isUploaded && selectedDocKeys[slot.key] !== false)
       .map(({ slot, doc }, idx) => `  ${idx + 1}. ${slot.label}: ${doc?.name || 'File terunggah'}`)
@@ -159,15 +221,65 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
       .map(({ slot }) => `  - ${slot.label} (Belum diunggah)`)
       .join('\n');
 
-    const bodyText = `Yth. Tim Terkait / Management,
+    if (dispatchType === 'closing-project') {
+      const poStr = project.closingProject?.poNumber || project.poNumber || `PO-45000${(pmoIdStr.replace(/[^0-9]/g, '') || '0001').slice(-4).padStart(4, '0')}`;
+      const prajectDateStr = project.closingProject?.projectDate || project.prajectDate || new Date().toISOString().split('T')[0];
+      const statusClosingStr = project.closingProject?.statusPengajuan || project.statusPengajuanClosing || 'Submit';
+      const remarksClosingStr = project.closingProject?.remarks || project.closingRemarks || 'Dokumen penutupan proyek lengkap dan siap diproses.';
+
+      const newSubject = `[CLOSING PROJECT] - ${pmoIdStr} (${projIdStr}) - ${segmenStr} - PO: ${poStr}`;
+      setSubject(newSubject);
+
+      const bodyText = `Yth. Tim Terkait / Management, Tim Finance & Invoicing,
+
+Dengan hormat,
+Melalui email ini kami menyampaikan berkas CLOSING PROJECT (Penutupan Proyek Relokasi FO) untuk proyek berikut:
+
+RINGKASAN PENUTUPAN PROYEK:
+- DSB - ID                 : ${pmoIdStr}
+- Project ID               : ${projIdStr}
+- Segment Relokasi         : ${segmenStr}
+- Area / Kota              : ${project.areaKota || '-'}
+- Kategori Proyek          : ${project.projectCategory || '-'}
+- No. PO (Purchase Order)  : ${poStr}
+- Praject Date (Tgl Closing): ${prajectDateStr}
+- Status Pengajuan Closing : ${statusClosingStr}
+- Vendor Pelaksana         : ${project.namaVendor || '-'}
+- Waspang Internal DSB     : ${project.waspangDsb || '-'}
+- PIC Govrel               : ${project.picSectionHead || '-'}
+- Catatan Remarks Closing  : ${remarksClosingStr}
+- Tanggal Pengiriman Email : ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+
+DAFTAR BERKAS DOKUMEN CLOSING TERLAMPIR (${availableDocs.filter(d => selectedDocKeys[d.slot.key]).length} Berkas):
+${uploadedFileList || '  (Tidak ada berkas yang dipilih)'}
+
+${pendingFileList ? `STATUS BERKAS BELUM LENGKAP:\n${pendingFileList}\n` : ''}
+PERMOHONAN TINDAK LANJUT:
+Seluruh berkas administrasi dan fisik penutupan proyek di atas telah kami verifikasi secara internal. Mohon kiranya dapat ditindaklanjuti untuk proses validasi approval (Approval BALAP / Approval BAST / TECO Done) serta penerbitan tagihan (Invoice) sesuai prosedur yang berlaku.
+
+Apabila terdapat verifikasi teknis atau berkas pendukung tambahan yang dibutuhkan, mohon untuk menghubungi kami.
+
+Demikian permohonan Closing Project ini kami sampaikan. Atas perhatian, arahan, dan kerjasamanya kami ucapkan terima kasih.
+
+Hormat kami,
+Tim PMO & Engineering Relokasi FO
+PT. Link Net Tbk / Proyek DSB GOV
+Kontak: ${project.picSectionHead || 'Govrel Support'}`;
+
+      setMessageBody(bodyText);
+    } else {
+      const newSubject = `[${typeLabel}] - ${pmoIdStr} (${projIdStr}) - ${segmenStr}`;
+      setSubject(newSubject);
+
+      const bodyText = `Yth. Tim Terkait / Management,
 
 Dengan hormat,
 Melalui email ini kami menyampaikan berkas ${typeLabel.toUpperCase()} untuk proyek relokasi fiber optic berikut:
 
 RINGKASAN INFORMASI PROYEK:
-- DSB - ID              : ${project.pmoId || '-'}
-- Project ID            : ${project.projectId || '-'}
-- Segment Relokasi      : ${project.projectDescription || '-'}
+- DSB - ID              : ${pmoIdStr}
+- Project ID            : ${projIdStr}
+- Segment Relokasi      : ${segmenStr}
 - Area / Kota           : ${project.areaKota || '-'}
 - Kategori Proyek       : ${project.projectCategory || '-'}
 - Vendor Pelaksana      : ${project.namaVendor || '-'}
@@ -176,7 +288,7 @@ RINGKASAN INFORMASI PROYEK:
 - Status Proyek         : ${project.projectStatus || '-'}
 - Tanggal Pengajuan     : ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
 
-DAFTAR BERKAS DOKUMEN PENDUKUNG TERLAMPIR:
+DAFTAR BERKAS DOKUMEN PENDUKUNG TERLAMPIR (${availableDocs.filter(d => selectedDocKeys[d.slot.key]).length} Berkas):
 ${uploadedFileList || '  (Tidak ada berkas yang dipilih)'}
 
 ${pendingFileList ? `STATUS BERKAS MENUNGGU / BELUM LENGKAP:\n${pendingFileList}\n` : ''}
@@ -192,7 +304,8 @@ Tim PMO & Engineering Relokasi FO
 PT. Link Net Tbk / Proyek DSB GOV
 Kontak: ${project.picSectionHead || 'Govrel Support'}`;
 
-    setMessageBody(bodyText);
+      setMessageBody(bodyText);
+    }
   }, [dispatchType, project, availableDocs, selectedDocKeys]);
 
   // CC tag management
@@ -249,6 +362,8 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
         ? 'Pengajuan Material'
         : dispatchType === 'pengajuan-boq'
         ? 'Pengajuan BOQ Labour'
+        : dispatchType === 'closing-project'
+        ? 'Closing Project'
         : 'Pengajuan Material & BOQ Labour';
 
     const attachedKeys = Object.entries(selectedDocKeys)
@@ -336,8 +451,8 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
         setSendStatus({
           type: 'success',
           message: data.simulated
-            ? 'Email pengajuan tervalidasi dan siap terkirim via serverless Vercel (Mode Simulasi aktif tanpa SMTP).'
-            : 'Email pengajuan berhasil dikirimkan via SMTP Serverless ke seluruh penerima & CC!',
+            ? 'Email berkas closing/pengajuan tervalidasi dan siap terkirim via serverless Vercel (Mode Simulasi aktif tanpa SMTP).'
+            : 'Email berkas closing/pengajuan berhasil dikirimkan via SMTP Serverless ke seluruh penerima & CC!',
         });
         showToast(`Email ${dispatchType} berhasil dikirim ke ${toEmail}!`);
         setTimeout(() => {
@@ -391,20 +506,20 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
           isNeonMode ? 'bg-[#0f1b3b] border-slate-800' : 'bg-gradient-to-r from-sky-50 via-indigo-50/50 to-white border-slate-200'
         }`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-600 via-indigo-600 to-teal-600 text-white flex items-center justify-center shadow-md">
               <Mail className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                  Kirim Dokumen Project via Email
+                  Kirim Dokumen & Closing Project via Email
                 </h3>
                 <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 font-bold border border-sky-200">
                   {project.pmoId}
                 </span>
               </div>
               <p className="text-xs text-slate-600 font-medium">
-                Pilih opsi pengajuan (Material, BOQ Labour, atau Gabungan) dan tentukan alamat CC penerima
+                Pilih opsi pengajuan (Material, BOQ Labour, Gabungan, atau Closing Project) dan tentukan alamat CC penerima
               </p>
             </div>
           </div>
@@ -437,7 +552,7 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
             <label className="block text-xs font-bold text-slate-800">
               Pilih Kategori Dokumen yang Ingin Dikirimkan:
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               {/* Option 1: Pengajuan Material */}
               <button
                 type="button"
@@ -505,13 +620,39 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
                     <Layers className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Paket Lengkap
+                    Paket Gabungan
                   </span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-xs">Pengajuan Material & BOQ Labour</h4>
+                  <h4 className="font-bold text-slate-900 text-xs">Material & BOQ Labour</h4>
                   <p className="text-[11px] text-slate-600 font-medium mt-0.5 leading-tight">
-                    Paket gabungan pengajuan Material Requisition sekaligus BOQ Labour
+                    Paket gabungan pengajuan Material sekaligus BOQ Labour
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 4: Closing Project (BA Opname, ABD, Foto Dokumentasi, No. PO) */}
+              <button
+                type="button"
+                onClick={() => setDispatchType('closing-project')}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  dispatchType === 'closing-project'
+                    ? 'bg-teal-50/90 border-teal-500 ring-2 ring-teal-500/20 shadow-xs'
+                    : 'bg-white hover:bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`p-1.5 rounded-lg ${dispatchType === 'closing-project' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-200">
+                    {Object.values(uploadedDocs.closing).filter(Boolean).length} / 5 Berkas
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-xs">Closing Project</h4>
+                  <p className="text-[11px] text-slate-600 font-medium mt-0.5 leading-tight">
+                    BA Opname Mat/Lab, ABD Relokasi/Internal, Foto, PO & Status
                   </p>
                 </div>
               </button>

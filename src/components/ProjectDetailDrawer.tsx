@@ -20,6 +20,7 @@ import { ProjectData, TabKey } from '../types/project';
 import { TabVisualIcon } from './TabVisualIcon';
 import { PriorityBadge } from './PriorityBadge';
 import { SendProjectDocumentEmailModal } from './SendProjectDocumentEmailModal';
+import { DocumentEmailDispatchType } from '../types/document';
 
 interface ProjectDetailDrawerProps {
   project: ProjectData | null;
@@ -41,6 +42,7 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
   isNeonMode = true,
 }) => {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailDispatchType, setEmailDispatchType] = useState<DocumentEmailDispatchType>('pengajuan-material');
 
   if (!isOpen || !project) return null;
 
@@ -642,7 +644,10 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsEmailModalOpen(true)}
+                  onClick={() => {
+                    setEmailDispatchType('pengajuan-material');
+                    setIsEmailModalOpen(true);
+                  }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white transition-colors cursor-pointer shadow-xs"
                 >
                   <Mail className="w-3.5 h-3.5" />
@@ -779,7 +784,18 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                 </div>
               )}
 
-              <div className="mt-3 pt-2 border-t border-teal-100 flex justify-end">
+              <div className="mt-3 pt-2 border-t border-teal-100 flex items-center justify-between flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmailDispatchType('closing-project');
+                    setIsEmailModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Kirim Email Closing Project</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -815,7 +831,7 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
         project={project}
-        initialDispatchType="pengajuan-material"
+        initialDispatchType={emailDispatchType}
         onEmailSent={(updated) => {
           if (onUpdateProject) {
             onUpdateProject(updated);

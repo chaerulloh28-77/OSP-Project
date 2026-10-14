@@ -61,16 +61,27 @@ Pada menu **Settings > Environment Variables** di Vercel dashboard, tambahkan va
 > 3. Buat App Password baru dengan nama `PMO System`.
 > 4. Salin 16 digit password tersebut ke variabel `SMTP_PASS`.
 
+### Apakah Perlu Perubahan Environment untuk Alamat Penerima (To) & CC yang Diisi Manual?
+
+**Jawabannya: TIDAK PERLU SAMA SEKALI.**
+
+Berikut alasannya:
+1. **Fungsi Environment Variables**: Variabel di Vercel (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`) **hanya** berfungsi untuk otentikasi akun server pengirim (*mail server sender*).
+2. **Alamat Dinamis dari Form Modal**: Alamat penerima (`To`) dan tembusan (`CC`) adalah parameter dinamis yang dikirim langsung dari input form modal di browser ke API `/api/send-email` (`req.body.to` dan `req.body.cc`).
+3. **Fleksibilitas Penuh**: Anda bebas mengetik alamat email penerima apa pun, menempelkan (*paste*) daftar email banyak sekaligus dipisahkan koma/titik koma/spasi, maupun mengosongkan/menghapus CC, baik untuk **Document Project (Material & BOQ)** maupun **Closing Project (BA Opname, ABD, Foto)**.
+4. **Metode Client (Outlook / Gmail Web)**: Untuk tombol *Kirim via Mail Client (Outlook)* dan *Gmail Web*, alamat `To` dan `CC` langsung dimasukkan ke parameter `mailto:?to=...&cc=...` di browser Anda secara instan tanpa melalui server backend.
+
 ---
 
-## 4. Fitur Pengiriman Email Dokumen Project
+## 4. Fitur Pengiriman Email Dokumen Project & Closing Project
 
-Aplikasi menyediakan modal interaktif **"Kirim Dokumen Project via Email"** yang dapat diakses langsung dari:
+Aplikasi menyediakan modal interaktif **"Kirim Dokumen & Closing Project via Email"** yang dapat diakses langsung dari:
 1. **Sheet 5: Document Project Hub** (tombol *Kirim via Email* di header proyek terpilih).
-2. **Manajer Berkas Dokumen** (tombol *Kirim via Email* di samping tab kategori pengajuan).
-3. **Detail Drawer Proyek** (pada panel *Sheet 5: Document Project*).
+2. **Sheet 7: Closing Project Management** (tombol *Kirim Email Closing* di selector bar dan banner kartu proyek).
+3. **Manajer Berkas Dokumen** (tombol *Kirim via Email* di samping tab kategori pengajuan).
+4. **Detail Drawer Proyek** (pada panel *Sheet 5: Document Project* dan *Sheet 7: Closing Project*).
 
-### 3 Pilihan Kategori Pengiriman:
+### 4 Pilihan Kategori Pengiriman:
 1. **Hanya Pengajuan Material**:
    - Melampirkan/menghubungkan berkas perizinan, Surat Dinas, Rekomtek, APD Relokasi, KMZ, dan Form CE Material.
    - Subjek email otomatis: `[Pengajuan Material] - {DSB-ID} ({Project ID}) - {Segment Relokasi}`.
@@ -80,9 +91,14 @@ Aplikasi menyediakan modal interaktif **"Kirim Dokumen Project via Email"** yang
 3. **Pengajuan Material & BOQ Labour (Lengkap)**:
    - Paket pengajuan lengkap mencakup Material Requisition sekaligus BOQ Labour (11 Dokumen).
    - Subjek email otomatis: `[Pengajuan Material & BOQ Labour] - {DSB-ID} ({Project ID}) - {Segment Relokasi}`.
+4. **Closing Project (BA Opname, ABD, Foto, PO & Tanggal)**:
+   - Berkas penutupan proyek: BA Opname Material, BA Opname Labour, ABD Relokasi, ABD Internal, dan Foto Dokumentasi (5 Dokumen), lengkap dengan ringkasan No. PO, Praject Date, Status Pengajuan Closing (Submit / Approval BALAP / Approval BAST / Teco Done / Invoice), dan Catatan Remarks.
+   - Subjek email otomatis: `[CLOSING PROJECT] - {DSB-ID} ({Project ID}) - {Segment Relokasi} - PO: {No. PO}`.
 
 ### Dukungan Tembusan (CC ke Berbagai Alamat Email):
-- Mendukung banyak alamat email sekaligus (dipisahkan koma atau tombol Enter).
+- Mendukung banyak alamat email sekaligus (bisa diketik manual dipisah koma/Enter, atau di-*paste* langsung).
+- Tombol **"Kosongkan Semua CC"** untuk mengosongkan default dan mengisi 100% manual.
+- Tombol **"Kosongkan"** pada kolom To untuk mengetik manual dari awal.
 - Terdapat tombol chip saran kontak cepat:
   - `pic.govrel@linknet.co.id`
   - `waspang.dsb@linknet.co.id`
@@ -90,6 +106,16 @@ Aplikasi menyediakan modal interaktif **"Kirim Dokumen Project via Email"** yang
   - `planning.fiber@linknet.co.id`
   - `vendor.operasional@mitra.com`
   - `pmo.relokasi@linknet.co.id`
+
+### Fitur Catatan (Teks Area) & Tanda Tangan Resmi:
+- **Catatan (Teks Area)**: Disediakan area teks khusus (*textarea*) pada modal kirim email untuk memasukkan catatan kustom secara cepat. Nilai dari kolom ini akan otomatis masuk ke dalam draf email pada bagian **`CATATAN:`**.
+- **Tanda Tangan Pengirim Resmi**:
+  ```text
+  Hormat kami,
+  Tim PMO & Engineering Relokasi FO
+  PT. Link Net Tbk / Proyek DSB GOV
+  Kontak: DSB Management
+  ```
 
 ### 3 Opsi Pengiriman Fleksibel:
 1. **Kirim via Serverless API / SMTP**:

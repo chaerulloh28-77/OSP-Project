@@ -78,6 +78,32 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
   const [messageBody, setMessageBody] = useState<string>('');
   const [selectedDocKeys, setSelectedDocKeys] = useState<Record<string, boolean>>({});
 
+  // Catatan Khusus (Teks Area) state
+  const [catatan, setCatatan] = useState<string>(() => {
+    if (initialDispatchType === 'closing-project') {
+      return 'Seluruh berkas administrasi dan fisik penutupan proyek di atas telah kami verifikasi secara internal. Mohon kiranya dapat ditindaklanjuti untuk proses validasi approval (Approval BALAP / Approval BAST / TECO Done) serta penerbitan tagihan (Invoice) sesuai prosedur yang berlaku.';
+    }
+    return 'Mohon kiranya berkas pengajuan ini dapat ditinjau dan diproses lebih lanjut untuk approval serta penerbitan dokumen kerja (MR/PO/SPK).';
+  });
+
+  // Nama Kontak Pengirim di Tanda Tangan Email
+  const [kontakPengirim, setKontakPengirim] = useState<string>('DSB Management');
+
+  // Sync default catatan when dispatchType switches
+  useEffect(() => {
+    if (dispatchType === 'closing-project') {
+      setCatatan('Seluruh berkas administrasi dan fisik penutupan proyek di atas telah kami verifikasi secara internal. Mohon kiranya dapat ditindaklanjuti untuk proses validasi approval (Approval BALAP / Approval BAST / TECO Done) serta penerbitan tagihan (Invoice) sesuai prosedur yang berlaku.');
+    } else {
+      const typeLabel = 
+        dispatchType === 'pengajuan-material'
+          ? 'Pengajuan Material'
+          : dispatchType === 'pengajuan-boq'
+          ? 'Pengajuan BOQ Labour'
+          : 'Pengajuan Material & BOQ Labour';
+      setCatatan(`Mohon kiranya berkas ${typeLabel} ini dapat ditinjau dan diproses lebih lanjut untuk approval serta penerbitan dokumen kerja (MR/PO/SPK).`);
+    }
+  }, [dispatchType]);
+
   // Loading & status states
   const [isSending, setIsSending] = useState<boolean>(false);
   const [sendStatus, setSendStatus] = useState<{
@@ -254,8 +280,8 @@ DAFTAR BERKAS DOKUMEN CLOSING TERLAMPIR (${availableDocs.filter(d => selectedDoc
 ${uploadedFileList || '  (Tidak ada berkas yang dipilih)'}
 
 ${pendingFileList ? `STATUS BERKAS BELUM LENGKAP:\n${pendingFileList}\n` : ''}
-PERMOHONAN TINDAK LANJUT:
-Seluruh berkas administrasi dan fisik penutupan proyek di atas telah kami verifikasi secara internal. Mohon kiranya dapat ditindaklanjuti untuk proses validasi approval (Approval BALAP / Approval BAST / TECO Done) serta penerbitan tagihan (Invoice) sesuai prosedur yang berlaku.
+CATATAN:
+${catatan || 'Seluruh berkas administrasi dan fisik penutupan proyek di atas telah kami verifikasi secara internal. Mohon kiranya dapat ditindaklanjuti untuk proses validasi approval (Approval BALAP / Approval BAST / TECO Done) serta penerbitan tagihan (Invoice) sesuai prosedur yang berlaku.'}
 
 Apabila terdapat verifikasi teknis atau berkas pendukung tambahan yang dibutuhkan, mohon untuk menghubungi kami.
 
@@ -264,7 +290,7 @@ Demikian permohonan Closing Project ini kami sampaikan. Atas perhatian, arahan, 
 Hormat kami,
 Tim PMO & Engineering Relokasi FO
 PT. Link Net Tbk / Proyek DSB GOV
-Kontak: ${project.picSectionHead || 'Govrel Support'}`;
+Kontak: ${kontakPengirim || 'DSB Management'}`;
 
       setMessageBody(bodyText);
     } else {
@@ -292,8 +318,8 @@ DAFTAR BERKAS DOKUMEN PENDUKUNG TERLAMPIR (${availableDocs.filter(d => selectedD
 ${uploadedFileList || '  (Tidak ada berkas yang dipilih)'}
 
 ${pendingFileList ? `STATUS BERKAS MENUNGGU / BELUM LENGKAP:\n${pendingFileList}\n` : ''}
-CATATAN TAMBAHAN:
-Mohon kiranya berkas ${typeLabel} ini dapat ditinjau dan diproses lebih lanjut untuk approval serta penerbitan dokumen kerja (MR/PO/SPK).
+CATATAN:
+${catatan || `Mohon kiranya berkas ${typeLabel} ini dapat ditinjau dan diproses lebih lanjut untuk approval serta penerbitan dokumen kerja (MR/PO/SPK).`}
 
 Apabila terdapat pertanyaan atau data pendukung tambahan yang dibutuhkan, mohon untuk menghubungi kami.
 
@@ -302,24 +328,34 @@ Demikian permohonan pengajuan ini kami sampaikan. Atas perhatian dan kerjasamany
 Hormat kami,
 Tim PMO & Engineering Relokasi FO
 PT. Link Net Tbk / Proyek DSB GOV
-Kontak: ${project.picSectionHead || 'Govrel Support'}`;
+Kontak: ${kontakPengirim || 'DSB Management'}`;
 
       setMessageBody(bodyText);
     }
-  }, [dispatchType, project, availableDocs, selectedDocKeys]);
+  }, [dispatchType, project, availableDocs, selectedDocKeys, catatan, kontakPengirim]);
 
-  // CC tag management
+  // CC tag management - supports single or multiple emails pasted/typed manually
   const handleAddCc = (emailToAdd: string) => {
-    const trimmed = emailToAdd.trim().toLowerCase();
-    if (!trimmed) return;
-    if (!ccList.includes(trimmed)) {
-      setCcList([...ccList, trimmed]);
+    if (!emailToAdd.trim()) return;
+    // Support parsing multiple emails separated by comma, semicolon, space, or newline
+    const tokens = emailToAdd
+      .split(/[,;\s\n\r]+/)
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length > 0);
+
+    const validNew = tokens.filter((t) => !ccList.includes(t));
+    if (validNew.length > 0) {
+      setCcList([...ccList, ...validNew]);
     }
     setCcInput('');
   };
 
   const handleRemoveCc = (indexToRemove: number) => {
     setCcList(ccList.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleClearAllCc = () => {
+    setCcList([]);
   };
 
   const handleCcKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -667,15 +703,36 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
                 <label className="block text-xs font-bold text-slate-800">
                   Kepada / Alamat Penerima (To): <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[10px] text-slate-500 font-medium">
-                  Email PIC / Verifikator / Mitra
-                </span>
+                <div className="flex items-center gap-2">
+                  {toEmail ? (
+                    <button
+                      type="button"
+                      onClick={() => setToEmail('')}
+                      className="text-[10px] text-slate-500 hover:text-rose-600 underline font-medium cursor-pointer"
+                      title="Kosongkan untuk input manual"
+                    >
+                      Kosongkan (Input Manual)
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setToEmail('chaerulloh28@gmail.com')}
+                      className="text-[10px] text-sky-600 hover:text-sky-700 underline font-medium cursor-pointer"
+                    >
+                      Isi Email Default
+                    </button>
+                  )}
+                  <span className="text-[10px] text-slate-400">•</span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    Bebas diisi manual
+                  </span>
+                </div>
               </div>
               <input
-                type="email"
+                type="text"
                 value={toEmail}
                 onChange={(e) => setToEmail(e.target.value)}
-                placeholder="misal: chaerulloh28@gmail.com atau pic.govrel@linknet.co.id"
+                placeholder="misal: pic.govrel@linknet.co.id atau vendor@mitra.com"
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs"
               />
             </div>
@@ -686,9 +743,21 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
                 <label className="block text-xs font-bold text-slate-800">
                   Tembusan / CC ke Berbagai Alamat Email:
                 </label>
-                <span className="text-[10px] text-slate-500 font-medium">
-                  {ccList.length} Alamat Email di-CC
-                </span>
+                <div className="flex items-center gap-2">
+                  {ccList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAllCc}
+                      className="text-[10px] text-slate-500 hover:text-rose-600 underline font-medium cursor-pointer"
+                      title="Kosongkan semua CC agar dapat diisi manual"
+                    >
+                      Kosongkan Semua CC
+                    </button>
+                  )}
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {ccList.length} Alamat Email di-CC
+                  </span>
+                </div>
               </div>
 
               {/* CC Tags Container */}
@@ -710,17 +779,24 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
                   </span>
                 ))}
                 <input
-                  type="email"
+                  type="text"
                   value={ccInput}
                   onChange={(e) => setCcInput(e.target.value)}
                   onKeyDown={handleCcKeyDown}
+                  onPaste={(e) => {
+                    const pasteData = e.clipboardData.getData('text');
+                    if (pasteData && (pasteData.includes(',') || pasteData.includes(';') || pasteData.includes('\n') || pasteData.includes(' '))) {
+                      e.preventDefault();
+                      handleAddCc(pasteData);
+                    }
+                  }}
                   onBlur={() => {
                     if (ccInput.trim()) {
                       handleAddCc(ccInput);
                     }
                   }}
-                  placeholder="Ketik email lalu tekan Enter atau koma..."
-                  className="flex-1 min-w-[200px] px-2 py-1 text-xs text-slate-900 font-medium focus:outline-none bg-transparent"
+                  placeholder="Ketik email lalu tekan Enter / koma, atau paste daftar email..."
+                  className="flex-1 min-w-[220px] px-2 py-1 text-xs text-slate-900 font-medium focus:outline-none bg-transparent"
                 />
               </div>
 
@@ -838,16 +914,63 @@ Kontak: ${project.picSectionHead || 'Govrel Support'}`;
             </div>
           </div>
 
-          {/* 4. Isi Pesan / Message Body (Editable) */}
+          {/* 4. Catatan & Kontak Pengirim */}
+          <div className="space-y-3 bg-amber-50/60 p-3.5 rounded-xl border border-amber-200/80">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Catatan:</span>
+                </label>
+                <span className="text-[10px] text-amber-800 font-semibold">
+                  Otomatis dimasukkan ke bagian "CATATAN:" di draft email
+                </span>
+              </div>
+              <textarea
+                rows={3}
+                value={catatan}
+                onChange={(e) => setCatatan(e.target.value)}
+                placeholder="Ketik catatan khusus proyek di sini..."
+                className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs resize-y"
+              />
+            </div>
+
+            {/* Nama Kontak Pengirim Tanda Tangan */}
+            <div className="pt-2 border-t border-amber-200/60 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  Kontak / Nama Pengirim (Tanda Tangan Email):
+                </label>
+                <input
+                  type="text"
+                  value={kontakPengirim}
+                  onChange={(e) => setKontakPengirim(e.target.value)}
+                  placeholder="DSB Management"
+                  className="w-full px-3 py-1.5 text-xs bg-white border border-amber-300 rounded-lg text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setKontakPengirim('DSB Management')}
+                  className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-600 text-white border border-amber-600 cursor-pointer"
+                >
+                  DSB Management
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Pratinjau & Edit Lengkap Isi Pesan Email */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-800">
-                Isi Pesan Email (Dapat Diedit Sesuai Kebutuhan):
+                Pratinjau Isi Pesan Email Lengkap (Dapat Diedit Sesuai Kebutuhan):
               </label>
               <span className="text-[10px] text-slate-500 font-medium">Format Resmi Indonesia</span>
             </div>
             <textarea
-              rows={8}
+              rows={7}
               value={messageBody}
               onChange={(e) => setMessageBody(e.target.value)}
               className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 leading-relaxed font-mono shadow-2xs"

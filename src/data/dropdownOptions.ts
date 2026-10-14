@@ -110,14 +110,22 @@ export function getProjectStatusOptions(_category?: string): readonly string[] {
   return PROJECT_STATUS_OPTIONS;
 }
 
-// Status Pengajuan PO / MR: Approved, N/A, Not Yet, Release, Released, Submit
-export const STATUS_PENGAJUAN_PO_OPTIONS = [
-  'Approved',
-  'N/A',
+// Status PO: Not Yet, Cancel, Release
+export const STATUS_PO_OPTIONS = [
   'Not Yet',
+  'Cancel',
   'Release',
+] as const;
+
+// Status Pengajuan PO / MR (Combined legacy list with full options)
+export const STATUS_PENGAJUAN_PO_OPTIONS = [
+  'Not Yet',
+  'Cancel',
+  'Release',
+  'Approved',
   'Released',
   'Submit',
+  'N/A',
 ] as const;
 
 // Status Pengajuan Project: Not Yet, Project Cancel, Release, Submit

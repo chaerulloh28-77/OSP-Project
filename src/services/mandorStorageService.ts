@@ -170,6 +170,14 @@ export const mandorStorageService = {
     return current;
   },
 
+  // Delete a mandor dynamically
+  deleteMandor(mandorName: string): string[] {
+    const current = this.getMandors();
+    const updated = current.filter((m) => m !== mandorName);
+    this.saveMandors(updated);
+    return updated;
+  },
+
   // Get daily reports
   getReports(): DailyMandorReport[] {
     if (typeof window === 'undefined') return INITIAL_DAILY_REPORTS;

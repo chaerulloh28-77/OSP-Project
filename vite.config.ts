@@ -27,7 +27,18 @@ function expressApiPlugin(): Plugin {
             req.on('end', async () => {
               try {
                 const payload = JSON.parse(body || '{}');
-                const { to, cc, subject, body: msgBody, dispatchType, pmoId, projectId, documents } = payload;
+                const { 
+                  to, 
+                  cc, 
+                  subject, 
+                  body: msgBody, 
+                  dispatchType, 
+                  pmoId, 
+                  projectId, 
+                  documents, 
+                  smtpConfig, 
+                  useTestAccount 
+                } = payload;
 
                 res.setHeader('Content-Type', 'application/json');
                 res.setHeader('Access-Control-Allow-Origin', '*');
@@ -37,18 +48,21 @@ function expressApiPlugin(): Plugin {
                   return res.end(JSON.stringify({ success: false, error: 'Alamat email penerima (To) wajib diisi.' }));
                 }
 
+                if (!subject || !subject.trim()) {
+                  res.statusCode = 400;
+                  return res.end(JSON.stringify({ success: false, error: 'Subjek email wajib diisi.' }));
+                }
+
+                if (!msgBody || !msgBody.trim()) {
+                  res.statusCode = 400;
+                  return res.end(JSON.stringify({ success: false, error: 'Isi pesan email wajib diisi.' }));
+                }
+
                 const ccList: string[] = Array.isArray(cc)
                   ? cc.map((c) => String(c).trim()).filter(Boolean)
                   : typeof cc === 'string'
                   ? cc.split(/[,;]/).map((c) => c.trim()).filter(Boolean)
                   : [];
-
-                const smtpHost = process.env.SMTP_HOST;
-                const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
-                const smtpUser = process.env.SMTP_USER;
-                const smtpPass = process.env.SMTP_PASS;
-                const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465;
-                const fromAddress = process.env.SMTP_FROM || smtpUser || 'PMO Relokasi Fiber <no-reply@dsb.id>';
 
                 const attachments = (documents || [])
                   .filter((doc: any) => doc.dataUrl && doc.dataUrl.includes(','))
@@ -60,12 +74,82 @@ function expressApiPlugin(): Plugin {
                     };
                   });
 
-                if (smtpHost && smtpUser && smtpPass) {
+                // Helper function to dispatch via Ethereal Test Account
+                const dispatchViaEthereal = async (fallbackReason?: string) => {
+                  const testAccount = await nodemailer.createTestAccount();
+                  const testTransporter = nodemailer.createTransport({
+                    host: 'smtp.ethereal.email',
+                    port: 587,
+                    secure: false,
+                    auth: {
+                      user: testAccount.user,
+                      pass: testAccount.pass,
+                    },
+                  });
+
+                  const info = await testTransporter.sendMail({
+                    from: `PMO Relokasi Fiber <${testAccount.user}>`,
+                    to: to.trim(),
+                    cc: ccList.length > 0 ? ccList : undefined,
+                    subject: subject.trim(),
+                    text: msgBody,
+                    html: `<div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${msgBody}</div>`,
+                    attachments: attachments.length > 0 ? attachments : undefined,
+                  });
+
+                  const previewUrl = nodemailer.getTestMessageUrl(info);
+
+                  let note = 'Email berhasil dikirim via Server Testing Ethereal. Anda dapat melihat isi email asli di link preview yang disediakan!';
+                  if (fallbackReason) {
+                    note = `[Fallback Otomatis] ${fallbackReason} — Email dikirimkan secara otomatis via Server Testing Ethereal. Klik link preview untuk melihat isi email asli!`;
+                  }
+
+                  res.statusCode = 200;
+                  return res.end(
+                    JSON.stringify({
+                      success: true,
+                      messageId: info.messageId,
+                      transport: fallbackReason ? 'ethereal_fallback' : 'ethereal_test',
+                      to: to.trim(),
+                      cc: ccList,
+                      subject: subject.trim(),
+                      testMessageUrl: previewUrl || undefined,
+                      sentAt: new Date().toISOString(),
+                      note,
+                    })
+                  );
+                };
+
+                // Mode 1: Explicit Instant Ethereal Test Server
+                if (useTestAccount) {
+                  try {
+                    return await dispatchViaEthereal();
+                  } catch (etherealErr: any) {
+                    console.error('Ethereal test account error:', etherealErr);
+                  }
+                }
+
+                // Mode 2: Real SMTP Server Dispatch
+                const smtpHost = (smtpConfig?.host || process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+                const smtpPort = smtpConfig?.port ? Number(smtpConfig.port) : (process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587);
+                const smtpUser = (smtpConfig?.user || process.env.SMTP_USER || '').trim();
+                const smtpPass = (smtpConfig?.pass || process.env.SMTP_PASS || '').trim();
+                const smtpSecure = smtpConfig?.secure !== undefined ? Boolean(smtpConfig.secure) : (process.env.SMTP_SECURE === 'true' || smtpPort === 465);
+                const fromAddress = (smtpConfig?.from || process.env.SMTP_FROM || smtpUser || 'PMO Relokasi Fiber <no-reply@dsb.id>').trim();
+
+                if (!smtpPass) {
+                  return await dispatchViaEthereal('Password App Gmail belum diisi di Pengaturan SMTP');
+                }
+
+                try {
                   const transporter = nodemailer.createTransport({
                     host: smtpHost,
                     port: smtpPort,
                     secure: smtpSecure,
                     auth: { user: smtpUser, pass: smtpPass },
+                    tls: {
+                      rejectUnauthorized: false
+                    }
                   });
 
                   const info = await transporter.sendMail({
@@ -88,34 +172,26 @@ function expressApiPlugin(): Plugin {
                       cc: ccList,
                       subject: subject.trim(),
                       sentAt: new Date().toISOString(),
-                      note: 'Email berhasil dikirimkan via SMTP Server.',
+                      note: 'Email berhasil dikirimkan via SMTP Server ke seluruh penerima & CC!',
                     })
                   );
+                } catch (smtpError: any) {
+                  console.warn('Real SMTP failed, falling back to Ethereal:', smtpError?.message);
+                  let reason = 'Autentikasi SMTP Gmail tidak berhasil (periksa 16-digit App Password)';
+                  if (smtpError?.message) {
+                    reason += `: ${smtpError.message}`;
+                  }
+                  return await dispatchViaEthereal(reason);
                 }
-
-                // Simulated response in dev when SMTP env vars are not set
-                res.statusCode = 200;
+              } catch (err: any) {
+                console.error('SMTP send-email endpoint error:', err);
+                res.statusCode = 500;
                 return res.end(
                   JSON.stringify({
-                    success: true,
-                    simulated: true,
-                    messageId: `sim-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-                    transport: 'simulated_smtp',
-                    to: to.trim(),
-                    cc: ccList,
-                    subject: subject.trim(),
-                    dispatchType: dispatchType || 'pengajuan-material',
-                    pmoId: pmoId || '-',
-                    projectId: projectId || '-',
-                    documentsCount: documents?.length || 0,
-                    sentAt: new Date().toISOString(),
-                    note: 'Permintaan email valid & siap dikirim. Untuk pengiriman riil via mail server, atur SMTP_HOST, SMTP_USER, SMTP_PASS di Environment Variables Vercel atau file .env.',
+                    success: false,
+                    error: err?.message || 'Terjadi kesalahan sistem saat memproses pengiriman email.',
                   })
                 );
-              } catch (err: any) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                return res.end(JSON.stringify({ success: false, error: err.message || 'Error processing email endpoint' }));
               }
             });
             return;

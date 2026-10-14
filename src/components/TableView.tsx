@@ -48,6 +48,7 @@ import {
   PROJECT_STATUS_OPTIONS,
   PROJECT_CATEGORY_OPTIONS,
   getProjectStatusOptions,
+  STATUS_PO_OPTIONS,
   STATUS_PENGAJUAN_PO_OPTIONS,
   APD_RELOKASI_OPTIONS,
   KMZ_RELOKASI_OPTIONS,
@@ -256,6 +257,7 @@ export const TableView: React.FC<TableViewProps> = ({
       case 'Drafting':
         return 'text-amber-700 bg-amber-50 border border-amber-200/60 font-medium';
       case 'Cancelled':
+      case 'Cancel':
       case 'Project Cancel':
       case 'No need MR':
       case 'No Need MR':
@@ -911,7 +913,25 @@ export const TableView: React.FC<TableViewProps> = ({
                                 <option key={opt} value={opt}>{opt}</option>
                               ))}
                             </select>
-                          ) : col.key === 'statusPengajuanPo' || col.key === 'statusPengajuanMr' ? (
+                          ) : col.key === 'statusPengajuanPo' ? (
+                            <select
+                              autoFocus
+                              value={cellTempText}
+                              onChange={(e) => {
+                                setCellTempText(e.target.value);
+                                if (onQuickUpdateCell) {
+                                  onQuickUpdateCell(row.id, col.key, e.target.value);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onBlur={() => commitCellEdit(row.id, col.key)}
+                              className="w-full px-1 py-0.5 text-xs border border-sky-500 rounded bg-white focus:outline-none shadow-xs font-bold cursor-pointer"
+                            >
+                              {STATUS_PO_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : col.key === 'statusPengajuanMr' ? (
                             <select
                               autoFocus
                               value={cellTempText}

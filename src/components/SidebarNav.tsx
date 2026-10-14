@@ -19,6 +19,7 @@ interface SidebarNavProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   totalProjects: number;
+  isNeonMode?: boolean;
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({
@@ -27,6 +28,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   isCollapsed,
   onToggleCollapse,
   totalProjects,
+  isNeonMode = true,
 }) => {
   const getTabNumberBadge = (id: TabKey) => {
     switch (id) {
@@ -46,22 +48,30 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
   return (
     <aside
-      className={`bg-[#060815] border-r border-cyan-500/20 shadow-[5px_0_20px_rgba(6,182,212,0.03)] text-slate-200 transition-all duration-200 flex flex-col shrink-0 select-none z-20 ${
-        isCollapsed ? 'w-16' : 'w-64'
-      }`}
+      className={`border-r transition-all duration-200 flex flex-col shrink-0 select-none z-20 ${
+        isNeonMode
+          ? 'bg-[#060815] border-cyan-500/20 shadow-[5px_0_20px_rgba(6,182,212,0.03)] text-slate-200'
+          : 'bg-white border-slate-300/90 shadow-sm text-slate-900 font-semibold'
+      } ${isCollapsed ? 'w-16' : 'w-64'}`}
     >
       {/* Sidebar Header Brand (When collapsed/expanded) */}
-      <div className="h-16 px-4 border-b border-slate-800/80 flex items-center justify-between">
+      <div className={`h-16 px-4 border-b flex items-center justify-between ${
+        isNeonMode ? 'border-slate-800/80' : 'border-slate-200 bg-slate-50/50'
+      }`}>
         {!isCollapsed ? (
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white shrink-0 shadow-sm ring-1 ring-white/10">
               <Building2 className="w-4 h-4" />
             </div>
             <div className="truncate">
-              <span className="font-extrabold text-xs tracking-tight text-white block truncate" title="Monitoring GOV FMI_DSB">
+              <span className={`font-extrabold text-xs tracking-tight block truncate ${
+                isNeonMode ? 'text-white' : 'text-slate-900'
+              }`} title="Monitoring GOV FMI_DSB">
                 Monitoring GOV
               </span>
-              <span className="text-[10px] font-semibold text-sky-400 block truncate" title="FMI_DSB">
+              <span className={`text-[10px] font-bold block truncate ${
+                isNeonMode ? 'text-sky-400' : 'text-sky-700'
+              }`} title="FMI_DSB">
                 FMI_DSB
               </span>
             </div>
@@ -77,9 +87,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <button
           onClick={onToggleCollapse}
           title={isCollapsed ? 'Perlebar Menu Samping' : 'Ciutkan Menu Samping'}
-          className={`p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer ${
-            isCollapsed ? 'hidden' : 'block'
-          }`}
+          className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+            isNeonMode 
+              ? 'text-slate-400 hover:text-white hover:bg-slate-800' 
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+          } ${isCollapsed ? 'hidden' : 'block'}`}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -88,7 +100,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       {/* Navigation Group */}
       <div className="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-1">
         {!isCollapsed && (
-          <div className="px-3 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <div className={`px-3 pt-2 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider ${
+            isNeonMode ? 'text-slate-400' : 'text-slate-900'
+          }`}>
             Daftar Sheet
           </div>
         )}
@@ -104,24 +118,30 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               title={tab.label}
-              className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer relative ${
+              className={`w-full group flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer relative ${
                 isActive
-                  ? isPieChart
-                    ? 'bg-[#181a40] text-indigo-300 border border-indigo-500/50 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
-                    : isPipeline
-                    ? 'bg-[#25133d] text-purple-300 border border-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.3)]'
-                    : 'bg-[#0d223f] text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900/60 border border-transparent'
+                  ? isNeonMode
+                    ? isPieChart
+                      ? 'bg-[#181a40] text-indigo-300 border border-indigo-500/50 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+                      : isPipeline
+                      ? 'bg-[#25133d] text-purple-300 border border-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.3)]'
+                      : 'bg-[#0d223f] text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                    : 'bg-slate-900 text-white font-extrabold shadow-sm border border-slate-900'
+                  : isNeonMode
+                  ? 'text-slate-400 hover:text-white hover:bg-slate-900/60 border border-transparent'
+                  : 'text-slate-900 hover:text-black hover:bg-slate-100 border border-slate-200/60 font-extrabold'
               } ${isCollapsed ? 'justify-center px-0' : ''}`}
             >
               {/* Active Indicator Bar on Left */}
               {isActive && (
                 <span className={`absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r ${
-                  isPieChart
-                    ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.8)]'
-                    : isPipeline
-                    ? 'bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]'
-                    : 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]'
+                  isNeonMode
+                    ? isPieChart
+                      ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.8)]'
+                      : isPipeline
+                      ? 'bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]'
+                      : 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]'
+                    : 'bg-sky-600'
                 }`} />
               )}
 
@@ -137,16 +157,28 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               {!isCollapsed && (
                 <div className="flex-1 text-left truncate">
                   <div className="flex items-center justify-between gap-1">
-                    <span className={`truncate text-xs ${isActive ? 'font-bold text-white' : 'font-medium text-slate-200'}`}>
+                    <span className={`truncate text-xs ${
+                      isActive 
+                        ? 'font-extrabold text-white' 
+                        : isNeonMode 
+                        ? 'font-medium text-slate-200' 
+                        : 'font-extrabold text-slate-900'
+                    }`}>
                       {tab.label}
                     </span>
-                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded shrink-0 ${
-                      isActive ? 'bg-white/20 text-white font-bold' : 'bg-slate-800 text-slate-400'
+                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded shrink-0 font-extrabold ${
+                      isActive 
+                        ? 'bg-white/20 text-white' 
+                        : isNeonMode 
+                        ? 'bg-slate-800 text-slate-400' 
+                        : 'bg-slate-200 text-slate-900'
                     }`}>
                       {tabNum}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                  <p className={`text-[10px] truncate mt-0.5 ${
+                    isNeonMode ? 'text-slate-400' : 'text-slate-700 font-bold'
+                  }`}>
                     {tab.id === 'dashboard-overview' && 'Ringkasan KPI & Analitik Pie Chart'}
                     {tab.id === 'project-list' && 'Tabel master data & CRUD'}
                     {tab.id === 'construction-plan' && 'Perencanaan teknis & vendor'}
@@ -164,22 +196,32 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       </div>
 
       {/* Bottom Footer Info */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <div className={`p-3 border-t ${
+        isNeonMode ? 'border-slate-800/80 bg-slate-950/40' : 'border-slate-200 bg-slate-50'
+      }`}>
         {!isCollapsed ? (
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <div className={`flex items-center justify-between text-[11px] ${
+              isNeonMode ? 'text-slate-400' : 'text-slate-900 font-bold'
+            }`}>
               <span className="flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-emerald-400" />
+                <Database className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Total Terdata</span>
               </span>
-              <span className="font-mono font-bold text-slate-200 tabular-nums">
+              <span className={`font-mono font-bold tabular-nums ${
+                isNeonMode ? 'text-slate-200' : 'text-slate-900'
+              }`}>
                 {totalProjects} Project
               </span>
             </div>
-            <div className="p-2 rounded bg-slate-800/60 border border-slate-700/60 text-[10px] text-slate-400">
-              <span className="text-emerald-400 font-semibold">● Auto-Save Aktif</span>
-              <p className="mt-0.5 text-slate-400 line-clamp-1">Data 7 halaman saling terhubung</p>
-              <p className="mt-1 pt-1 border-t border-slate-700/50 text-[10px] text-slate-400 font-medium tracking-wide">
+            <div className={`p-2 rounded border text-[10px] ${
+              isNeonMode 
+                ? 'bg-slate-800/60 border-slate-700/60 text-slate-400' 
+                : 'bg-white border-slate-300 text-slate-900 font-bold shadow-3xs'
+            }`}>
+              <span className="text-emerald-700 font-bold">● Auto-Save Aktif</span>
+              <p className="mt-0.5 line-clamp-1">Data 7 halaman saling terhubung</p>
+              <p className="mt-1 pt-1 border-t border-slate-200 text-[10px] text-slate-900 font-extrabold tracking-wide">
                 © PAUL
               </p>
             </div>
@@ -188,7 +230,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           <button
             onClick={onToggleCollapse}
             title="Buka Menu Samping"
-            className="w-full flex items-center justify-center p-2 rounded text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+            className={`w-full flex items-center justify-center p-2 rounded cursor-pointer ${
+              isNeonMode 
+                ? 'text-slate-400 hover:text-white hover:bg-slate-800' 
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200'
+            }`}
           >
             <ChevronRight className="w-4 h-4" />
           </button>

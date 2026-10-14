@@ -46,6 +46,7 @@ import { AREA_KOTA_OPTIONS, VENDOR_OPTIONS } from '../data/dropdownOptions';
 interface DailyMandorViewProps {
   projects: ProjectData[];
   onShowToast?: (message: string) => void;
+  isNeonMode?: boolean;
 }
 
 // Helper to extract numeric team number from team string
@@ -58,6 +59,7 @@ function parseTeamNumber(teamStr: string): number {
 export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
   projects,
   onShowToast,
+  isNeonMode = true,
 }) => {
   // Master Mandor List & Daily Reports State
   const [mandors, setMandors] = useState<string[]>([]);
@@ -77,6 +79,7 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
   const [newMandorInput, setNewMandorInput] = useState<string>('');
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [mandorToDelete, setMandorToDelete] = useState<string | null>(null);
 
   // Form Fields State for Modal
   const [formData, setFormData] = useState<{
@@ -143,7 +146,17 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
     setSelectedMandor(newMandorInput.trim());
     if (onShowToast) onShowToast(`Mandor '${newMandorInput.trim()}' berhasil ditambahkan!`);
     setNewMandorInput('');
-    setIsAddMandorModalOpen(false);
+  };
+
+  // Handle Delete Mandor
+  const handleDeleteMandor = (targetMandorName: string) => {
+    const updated = mandorStorageService.deleteMandor(targetMandorName);
+    setMandors(updated);
+    if (selectedMandor === targetMandorName) {
+      setSelectedMandor('ALL');
+    }
+    setMandorToDelete(null);
+    if (onShowToast) onShowToast(`Mandor Pelaksana '${targetMandorName}' telah berhasil dihapus.`);
   };
 
   // Open Form Modal for Create (Input)
@@ -356,16 +369,20 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-12 text-white">
+    <div className={`space-y-6 pb-12 transition-all ${isNeonMode ? 'text-white' : 'text-slate-900 font-extrabold'}`}>
       {/* 1. Header & Live Status Banner (Symmetrical & High Aesthetics) */}
-      <div className="bg-gradient-to-r from-[#0b132b] via-[#0f172a] to-[#111c38] p-6 rounded-2xl border-2 border-cyan-400/80 shadow-[0_0_30px_rgba(6,182,212,0.25)] flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+      <div className={`p-6 rounded-2xl border-2 flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden transition-all ${
+        isNeonMode
+          ? 'bg-gradient-to-r from-[#0b132b] via-[#0f172a] to-[#111c38] border-cyan-400/80 shadow-[0_0_30px_rgba(6,182,212,0.25)] text-white'
+          : 'bg-white border-slate-300 shadow-sm text-slate-900'
+      }`}>
         <div className="flex items-center gap-4 relative z-10">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-slate-950 flex items-center justify-center font-black shadow-xl ring-4 ring-cyan-400/30 shrink-0">
             <HardHat className="w-7 h-7 text-slate-950 animate-bounce" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-black text-white tracking-tight drop-shadow">
+              <h1 className={`text-2xl font-black tracking-tight ${isNeonMode ? 'text-white drop-shadow' : 'text-slate-900'}`}>
                 Daily Mandor & Operational Field Report
               </h1>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-400 text-slate-950 shadow-md border-2 border-white">
@@ -373,7 +390,7 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
                 Real-Time Online
               </span>
             </div>
-            <p className="text-xs text-slate-200 font-extrabold mt-1">
+            <p className={`text-xs font-extrabold mt-1 ${isNeonMode ? 'text-slate-200' : 'text-slate-800'}`}>
               Sistem Pengendalian Laporan Mandor, Personil, Install HH/HS/HG (Unit) & Progress Jalur Akses Real-Time
             </p>
           </div>
@@ -456,32 +473,48 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
           const isSelected = selectedMandor === m;
 
           return (
-            <button
+            <div
               key={m}
               onClick={() => setSelectedMandor(m)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 shadow-sm ${
+              className={`px-3.5 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 shadow-sm ${
                 isSelected
                   ? 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.6)] ring-2 ring-white scale-105'
                   : 'bg-[#1e293b] text-white hover:bg-slate-700 border-2 border-slate-500'
               }`}
             >
               <HardHat className={`w-4 h-4 ${isSelected ? 'text-slate-950' : 'text-amber-400'}`} />
-              {m}
+              <span>{m}</span>
               <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
                 isSelected ? 'bg-slate-950 text-white' : 'bg-slate-800 text-white'
               }`}>
                 {count}
               </span>
-            </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMandorToDelete(m);
+                }}
+                className={`ml-0.5 p-1 rounded-md transition-colors ${
+                  isSelected 
+                    ? 'hover:bg-rose-600 hover:text-white text-slate-900/80' 
+                    : 'hover:bg-rose-600 hover:text-white text-slate-400'
+                }`}
+                title={`Hapus ${m}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           );
         })}
 
         <button
+          type="button"
           onClick={() => setIsAddMandorModalOpen(true)}
           className="px-4 py-2.5 rounded-xl text-xs font-black text-white hover:text-cyan-200 bg-sky-950 border-2 border-dashed border-sky-400 transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 ml-auto shadow"
         >
           <Plus className="w-4 h-4 text-sky-400" />
-          ( tambah Mandor )
+          ( Kelola / Tambah Mandor )
         </button>
       </div>
 
@@ -1222,58 +1255,103 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
         </div>
       )}
 
-      {/* MODAL 2: + Tambah Mandor Modal */}
+      {/* MODAL 2: Kelola & Tambah Mandor Modal */}
       {isAddMandorModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] border-2 border-sky-400 rounded-3xl max-w-md w-full shadow-[0_0_50px_rgba(56,189,248,0.5)] p-6 space-y-4">
+          <div className="bg-[#0f172a] border-2 border-sky-400 rounded-3xl max-w-lg w-full shadow-[0_0_50px_rgba(56,189,248,0.5)] p-6 space-y-5">
             <div className="flex items-center justify-between border-b-2 border-slate-600 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-sky-400 text-slate-950 flex items-center justify-center font-black">
                   <UserPlus className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-black text-white">Tambah Mandor Baru</h3>
+                <div>
+                  <h3 className="text-base font-black text-white">Kelola & Tambah Mandor</h3>
+                  <p className="text-xs text-slate-300">Tambah mandor baru atau hapus mandor pelaksana dari sistem</p>
+                </div>
               </div>
               <button
+                type="button"
                 onClick={() => setIsAddMandorModalOpen(false)}
-                className="text-white hover:text-rose-400 p-1 rounded-lg border border-slate-600"
+                className="text-white hover:text-rose-400 p-1.5 rounded-xl border border-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddMandorSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-black text-white mb-1.5 uppercase tracking-wider">
-                  Nama Mandor Baru <span className="text-rose-400">*</span>
-                </label>
+            {/* Form Tambah Mandor Baru */}
+            <form onSubmit={handleAddMandorSubmit} className="space-y-3 bg-[#1e293b] p-4 rounded-2xl border border-slate-600">
+              <label className="block text-xs font-black text-white uppercase tracking-wider">
+                Tambah Mandor Pelaksana Baru <span className="text-rose-400">*</span>
+              </label>
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   style={whiteInputStyle}
                   value={newMandorInput}
                   onChange={(e) => setNewMandorInput(e.target.value)}
                   placeholder="misal: Mandor Budi, Mandor Rian..."
-                  className="w-full bg-[#1e293b] border-2 border-slate-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-black placeholder-slate-300 focus:border-sky-400 focus:outline-none shadow-inner"
-                  autoFocus
+                  className="flex-1 bg-[#0f172a] border-2 border-slate-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-black placeholder-slate-300 focus:border-sky-400 focus:outline-none shadow-inner"
                   required
                 />
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t-2 border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setIsAddMandorModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-white text-xs font-black hover:bg-slate-700 border border-slate-500"
-                >
-                  Batal
-                </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-black shadow-lg border-2 border-white"
+                  className="px-4 py-2.5 rounded-xl bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-black shadow-lg border-2 border-white transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
                 >
-                  Simpan Mandor
+                  <Plus className="w-4 h-4" />
+                  Tambah
                 </button>
               </div>
             </form>
+
+            {/* Daftar Mandor Pelaksana Aktif */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-black text-slate-200">
+                <span>Daftar Mandor Pelaksana ({mandors.length})</span>
+                <span className="text-[11px] text-slate-400 font-normal">Klik tombol hapus untuk mengeluarkan mandor</span>
+              </div>
+              <div className="max-h-52 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                {mandors.map((m) => {
+                  const count = reports.filter((r) => r.mandorName === m).length;
+                  return (
+                    <div
+                      key={m}
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#1e293b] border border-slate-700 hover:border-slate-500 transition-all"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-amber-400/20 border border-amber-400/40 text-amber-300 flex items-center justify-center font-bold">
+                          <HardHat className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-black text-white block">{m}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">{count} Laporan Harian Terkait</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMandorToDelete(m);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer"
+                        title={`Hapus ${m}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Hapus</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end pt-3 border-t-2 border-slate-700">
+              <button
+                type="button"
+                onClick={() => setIsAddMandorModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl bg-slate-800 text-white text-xs font-black hover:bg-slate-700 border border-slate-500 cursor-pointer"
+              >
+                Selesai / Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1301,6 +1379,57 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
                 className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-lg border-2 border-white"
               >
                 Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {mandorToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] border-2 border-rose-500 rounded-3xl max-w-md w-full shadow-[0_0_50px_rgba(244,63,94,0.5)] p-6 space-y-4">
+            <div className="flex items-center justify-between border-b-2 border-slate-700 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center font-black shadow-md">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Hapus Mandor Pelaksana</h3>
+                  <p className="text-xs text-rose-300 font-bold">{mandorToDelete}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMandorToDelete(null)}
+                className="text-white hover:text-rose-400 p-1.5 rounded-xl border border-slate-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs text-slate-200 font-semibold leading-relaxed">
+                Apakah Anda yakin ingin menghapus Mandor Pelaksana <strong className="text-amber-400">{mandorToDelete}</strong> dari daftar?
+              </p>
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-200 font-medium">
+                ⚠️ Catatan: Mandor tidak akan muncul lagi di opsi filter tab atau form laporan baru. Laporan harian historis yang sudah dibuat sebelumnya tetap aman tersimpan.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t-2 border-slate-700">
+              <button
+                type="button"
+                onClick={() => setMandorToDelete(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 text-white text-xs font-black hover:bg-slate-700 border border-slate-500 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteMandor(mandorToDelete)}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-lg border-2 border-rose-300 cursor-pointer flex items-center gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                Ya, Hapus Mandor
               </button>
             </div>
           </div>

@@ -341,7 +341,7 @@ export const DocumentProjectPageView: React.FC<DocumentProjectPageViewProps> = (
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2.5">
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Project - ID</span>
                     <span className="font-mono font-bold text-slate-800">{selectedProject.projectId || '-'}</span>
@@ -353,6 +353,31 @@ export const DocumentProjectPageView: React.FC<DocumentProjectPageViewProps> = (
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Status Pengajuan</span>
                     <span className="font-semibold text-indigo-700">{selectedProject.statusPengajuanProject || 'Normal'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold mb-0.5">Status PO</span>
+                    <select
+                      value={selectedProject.statusPengajuanPo || 'Not Yet'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        onUpdateProject({
+                          ...selectedProject,
+                          statusPengajuanPo: val,
+                        });
+                        showToast(`Status PO diperbarui ke ${val}`);
+                      }}
+                      className={`px-2 py-0.5 text-xs rounded border font-bold cursor-pointer transition-all ${
+                        (selectedProject.statusPengajuanPo === 'Release' || selectedProject.statusPengajuanPo === 'Released')
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                          : selectedProject.statusPengajuanPo === 'Cancel'
+                          ? 'bg-rose-50 text-rose-800 border-rose-300'
+                          : 'bg-amber-50 text-amber-800 border-amber-300'
+                      }`}
+                    >
+                      <option value="Not Yet">Not Yet</option>
+                      <option value="Cancel">Cancel</option>
+                      <option value="Release">Release</option>
+                    </select>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Kelengkapan Total</span>

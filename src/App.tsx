@@ -662,6 +662,7 @@ export default function App() {
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
           totalProjects={projects.length}
+          isNeonMode={isNeonMode}
         />
 
         {/* Scrollable Main Content Area */}
@@ -686,13 +687,13 @@ export default function App() {
             <div className={`mb-4 p-1.5 rounded-xl border flex items-center overflow-x-auto gap-1.5 custom-scrollbar transition-all duration-300 ${
               isNeonMode 
                 ? 'bg-slate-950/80 border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]' 
-                : 'bg-slate-200/90 border-slate-300/80 shadow-xs'
+                : 'bg-white border-slate-300 shadow-sm'
             }`}>
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className={`hidden md:flex items-center gap-1 text-[11px] font-bold uppercase px-2 font-mono border-r shrink-0 ${
-                  isNeonMode ? 'text-slate-400 border-slate-800' : 'text-slate-500 border-slate-300'
+                <span className={`hidden md:flex items-center gap-1 text-[11px] font-extrabold uppercase px-2 font-mono border-r shrink-0 ${
+                  isNeonMode ? 'text-slate-400 border-slate-800' : 'text-slate-900 border-slate-300'
                 }`}>
-                  <FileSpreadsheet className={`w-3.5 h-3.5 ${isNeonMode ? 'text-cyan-400' : 'text-slate-400'}`} />
+                  <FileSpreadsheet className={`w-3.5 h-3.5 ${isNeonMode ? 'text-cyan-400' : 'text-slate-900'}`} />
                   WORKBOOK SHEETS
                 </span>
                 {TAB_CONFIG.map((tab, idx) => {
@@ -704,20 +705,20 @@ export default function App() {
                         setActiveTab(tab.id);
                         showToast(`Buka Sheet: ${tab.label}`);
                       }}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         isActive
                           ? isNeonMode
                             ? 'bg-[#0e162e] text-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.4)] border border-cyan-400/50 scale-102 font-extrabold'
-                            : 'bg-slate-900 text-sky-400 shadow-sm border border-slate-800 scale-102 font-extrabold ring-2 ring-sky-400/20'
+                            : 'bg-slate-900 text-white shadow-md border border-slate-900 scale-102 font-extrabold ring-2 ring-slate-900/10'
                           : isNeonMode
-                          ? 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/80 hover:text-white border border-slate-800/60 shadow-3xs'
-                          : 'bg-white/60 text-slate-600 hover:bg-white hover:text-slate-900 border border-slate-200 shadow-3xs'
+                          ? 'bg-slate-900/40 text-slate-400 hover:bg-slate-900/80 hover:text-white border border-slate-800/60 shadow-3xs font-bold'
+                          : 'bg-slate-100 text-slate-900 hover:bg-slate-200 hover:text-black border border-slate-300 shadow-3xs font-extrabold'
                       }`}
                     >
-                      <span className={`font-mono text-[9px] px-1.5 py-0.2 rounded font-extrabold shrink-0 ${
+                      <span className={`font-mono text-[9px] px-1.5 py-0.2 rounded shrink-0 font-black ${
                         isActive 
                           ? isNeonMode ? 'bg-cyan-950 text-cyan-400' : 'bg-slate-800 text-sky-300' 
-                          : isNeonMode ? 'bg-slate-900 text-slate-500' : 'bg-slate-100 text-slate-400'
+                          : isNeonMode ? 'bg-slate-900 text-slate-500' : 'bg-slate-200 text-slate-900'
                       }`}>
                         {idx + 1}
                       </span>
@@ -733,21 +734,21 @@ export default function App() {
             <div className={`mb-3.5 p-3.5 sm:p-4 rounded-xl border transition-all duration-300 space-y-3 ${
               isNeonMode 
                 ? 'bg-[#0a0f1d]/90 border-cyan-500/20 text-slate-100 shadow-[0_0_15px_rgba(6,182,212,0.1)]' 
-                : 'bg-white border-slate-200/90 shadow-2xs'
+                : 'bg-white border-slate-300 text-slate-900 shadow-xs'
             }`}>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <TabVisualIcon tabKey={activeTab} isActive={true} size="lg" variant="solid" />
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className={`text-base font-bold tracking-tight ${isNeonMode ? 'text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.3)]' : 'text-slate-900'}`}>{currentTabMeta.label}</h2>
-                      <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border ${
-                        isNeonMode ? 'bg-cyan-950/40 text-cyan-400 border-cyan-500/30' : 'bg-sky-50 text-sky-700 border-sky-200'
+                      <h2 className={`text-base font-black tracking-tight ${isNeonMode ? 'text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.3)]' : 'text-slate-900'}`}>{currentTabMeta.label}</h2>
+                      <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md border ${
+                        isNeonMode ? 'bg-cyan-950/40 text-cyan-400 border-cyan-500/30' : 'bg-sky-100 text-sky-900 border-sky-300 font-extrabold'
                       }`}>
                         {filteredProjects.length} data proyek
                       </span>
                     </div>
-                    <p className={`text-xs mt-0.5 ${isNeonMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className={`text-xs mt-0.5 ${isNeonMode ? 'text-slate-400' : 'text-slate-800 font-bold'}`}>
                       {currentTabMeta.description}
                     </p>
                   </div>
@@ -1104,7 +1105,7 @@ export default function App() {
                 <div className={`p-4 sm:p-5 rounded-2xl border space-y-3.5 transition-all relative overflow-hidden ${
                   isNeonMode 
                     ? 'bg-[#090e23]/95 border-cyan-500/30 text-slate-200 shadow-[0_0_25px_rgba(6,182,212,0.15)] backdrop-blur-xl' 
-                    : 'bg-white border-slate-200 shadow-sm'
+                    : 'bg-white border-slate-300 shadow-sm text-slate-900 font-bold'
                 }`}>
                   {/* Futuristic Multi-Colour Neon Light Ribbon */}
                   {isNeonMode && (
@@ -1114,12 +1115,12 @@ export default function App() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className={`text-[10px] font-black uppercase font-mono px-2 py-0.5 rounded tracking-widest ${
-                        isNeonMode ? 'bg-cyan-950 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-slate-100 text-slate-700'
+                        isNeonMode ? 'bg-cyan-950 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-slate-900 text-white'
                       }`}>
                         WORKBOOK NAVIGATION
                       </span>
-                      <h4 className={`text-xs font-bold uppercase tracking-wider ${
-                        isNeonMode ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'text-slate-700'
+                      <h4 className={`text-xs font-extrabold uppercase tracking-wider ${
+                        isNeonMode ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'text-slate-900'
                       }`}>
                         Akses Cepat Antar Halaman Terintegrasi (8 Sheet)
                       </h4>
@@ -1134,14 +1135,14 @@ export default function App() {
                         <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#06b6d4]" title="Blue" />
                         <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_6px_#ffffff]" title="White" />
                       </div>
-                      <span className={`text-[11px] font-mono font-semibold ${isNeonMode ? 'text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]' : 'text-cyan-700'}`}>
+                      <span className={`text-[11px] font-mono font-bold ${isNeonMode ? 'text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]' : 'text-sky-800'}`}>
                         Multi-Colour Connected
                       </span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-                    {/* Sheet 2: Project List (Blue / Cyan Neon) */}
+                    {/* Sheet 2: Project List (Blue / Cyan) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1151,26 +1152,28 @@ export default function App() {
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
                           ? 'bg-[#071329]/80 hover:bg-[#0b1b3d] border-cyan-500/40 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.45)]'
-                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-sky-500/50'
+                          : 'bg-white hover:bg-sky-50/80 border-2 border-slate-300 hover:border-sky-600 shadow-3xs'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                        <span className={`font-mono text-[10px] font-black px-1.5 py-0.2 rounded border ${
                           isNeonMode 
                             ? 'bg-cyan-950 text-cyan-300 border-cyan-500/60 shadow-[0_0_6px_rgba(6,182,212,0.4)]' 
-                            : 'bg-sky-950 text-sky-400 border-sky-800'
+                            : 'bg-sky-100 text-sky-900 border-sky-300'
                         }`}>
                           Halaman 2
                         </span>
                         <TabVisualIcon tabKey="project-list" size="sm" variant="badge" />
                       </div>
-                      <h5 className={`text-xs font-bold transition-colors ${
-                        isNeonMode ? 'text-white group-hover:text-cyan-300 group-hover:drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]' : 'text-white group-hover:text-sky-300'
+                      <h5 className={`text-xs font-black transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-sky-700'
                       }`}>Project List</h5>
-                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Master data, filter, search & CRUD</p>
+                      <p className={`text-[10px] line-clamp-1 mt-0.5 ${
+                        isNeonMode ? 'text-slate-400' : 'text-slate-700 font-bold'
+                      }`}>Master data, filter, search & CRUD</p>
                     </button>
 
-                    {/* Sheet 3: Plan Implimentasi (Violet Neon) */}
+                    {/* Sheet 3: Plan Implimentasi (Violet) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1180,26 +1183,28 @@ export default function App() {
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
                           ? 'bg-[#170e2d]/80 hover:bg-[#221345] border-violet-500/40 hover:border-violet-400 hover:shadow-[0_0_20px_rgba(139,92,246,0.45)]'
-                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-blue-500/50'
+                          : 'bg-white hover:bg-purple-50/80 border-2 border-slate-300 hover:border-purple-600 shadow-3xs'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                        <span className={`font-mono text-[10px] font-black px-1.5 py-0.2 rounded border ${
                           isNeonMode 
                             ? 'bg-violet-950 text-violet-300 border-violet-500/60 shadow-[0_0_6px_rgba(139,92,246,0.4)]' 
-                            : 'bg-blue-950 text-blue-400 border-blue-800'
+                            : 'bg-purple-100 text-purple-900 border-purple-300'
                         }`}>
                           Halaman 3
                         </span>
                         <TabVisualIcon tabKey="construction-plan" size="sm" variant="badge" />
                       </div>
-                      <h5 className={`text-xs font-bold transition-colors ${
-                        isNeonMode ? 'text-white group-hover:text-violet-300 group-hover:drop-shadow-[0_0_6px_rgba(139,92,246,0.6)]' : 'text-white group-hover:text-blue-300'
+                      <h5 className={`text-xs font-black transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-violet-300' : 'text-slate-900 group-hover:text-purple-700'
                       }`}>Plan Implimentasi</h5>
-                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Perencanaan teknis & vendor pelaksana</p>
+                      <p className={`text-[10px] line-clamp-1 mt-0.5 ${
+                        isNeonMode ? 'text-slate-400' : 'text-slate-700 font-bold'
+                      }`}>Perencanaan teknis & vendor pelaksana</p>
                     </button>
 
-                    {/* Sheet 4: Status Construction (Green Neon) */}
+                    {/* Sheet 4: Status Construction (Green) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1209,26 +1214,28 @@ export default function App() {
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
                           ? 'bg-[#071d15]/80 hover:bg-[#0d2e22] border-emerald-500/40 hover:border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.45)]'
-                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-emerald-500/50'
+                          : 'bg-white hover:bg-emerald-50/80 border-2 border-slate-300 hover:border-emerald-600 shadow-3xs'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                        <span className={`font-mono text-[10px] font-black px-1.5 py-0.2 rounded border ${
                           isNeonMode 
                             ? 'bg-emerald-950 text-emerald-300 border-emerald-500/60 shadow-[0_0_6px_rgba(16,185,129,0.4)]' 
-                            : 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                            : 'bg-emerald-100 text-emerald-900 border-emerald-300'
                         }`}>
                           Halaman 4
                         </span>
                         <TabVisualIcon tabKey="status-construction" size="sm" variant="badge" />
                       </div>
-                      <h5 className={`text-xs font-bold transition-colors ${
-                        isNeonMode ? 'text-white group-hover:text-emerald-300 group-hover:drop-shadow-[0_0_6px_rgba(16,185,129,0.6)]' : 'text-white group-hover:text-emerald-300'
+                      <h5 className={`text-xs font-black transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-emerald-300' : 'text-slate-900 group-hover:text-emerald-700'
                       }`}>Status Construction</h5>
-                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Pulling FO multi-cable & closing SAP</p>
+                      <p className={`text-[10px] line-clamp-1 mt-0.5 ${
+                        isNeonMode ? 'text-slate-400' : 'text-slate-700 font-bold'
+                      }`}>Pulling FO multi-cable & closing SAP</p>
                     </button>
 
-                    {/* Sheet 5: Daily Mandor (Amber / Orange Neon) */}
+                    {/* Sheet 5: Daily Mandor (Amber) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1238,26 +1245,28 @@ export default function App() {
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
                           ? 'bg-[#291b08]/80 hover:bg-[#3d270b] border-amber-500/40 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(245,158,11,0.45)]'
-                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-amber-500/50'
+                          : 'bg-white hover:bg-amber-50/80 border-2 border-slate-300 hover:border-amber-600 shadow-3xs'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                        <span className={`font-mono text-[10px] font-black px-1.5 py-0.2 rounded border ${
                           isNeonMode 
                             ? 'bg-amber-950 text-amber-300 border-amber-500/60 shadow-[0_0_6px_rgba(245,158,11,0.4)]' 
-                            : 'bg-amber-950 text-amber-400 border-amber-800'
+                            : 'bg-amber-100 text-amber-900 border-amber-300'
                         }`}>
                           Halaman 5
                         </span>
                         <TabVisualIcon tabKey="daily-mandor" size="sm" variant="badge" />
                       </div>
-                      <h5 className={`text-xs font-bold transition-colors ${
-                        isNeonMode ? 'text-white group-hover:text-amber-300 group-hover:drop-shadow-[0_0_6px_rgba(245,158,11,0.6)]' : 'text-white group-hover:text-amber-300'
+                      <h5 className={`text-xs font-black transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-amber-300' : 'text-slate-900 group-hover:text-amber-700'
                       }`}>Daily Mandor</h5>
-                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Laporan Mandor, HH/HS/HG & Jalur Akses</p>
+                      <p className={`text-[10px] line-clamp-1 mt-0.5 ${
+                        isNeonMode ? 'text-slate-400' : 'text-slate-700 font-bold'
+                      }`}>Laporan Mandor, HH/HS/HG & Jalur Akses</p>
                     </button>
 
-                    {/* Sheet 6: Document Project (Orange Neon) */}
+                    {/* Sheet 6: Document Project (Orange) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1267,26 +1276,28 @@ export default function App() {
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
                           ? 'bg-[#211108]/80 hover:bg-[#331b0c] border-orange-500/40 hover:border-orange-400 hover:shadow-[0_0_20px_rgba(249,115,22,0.45)]'
-                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-amber-500/50'
+                          : 'bg-white hover:bg-orange-50/80 border-2 border-slate-300 hover:border-orange-600 shadow-3xs'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                        <span className={`font-mono text-[10px] font-black px-1.5 py-0.2 rounded border ${
                           isNeonMode 
                             ? 'bg-amber-950 text-orange-300 border-orange-500/60 shadow-[0_0_6px_rgba(249,115,22,0.4)]' 
-                            : 'bg-amber-950 text-amber-400 border-amber-800'
+                            : 'bg-orange-100 text-orange-900 border-orange-300'
                         }`}>
                           Halaman 6
                         </span>
                         <TabVisualIcon tabKey="status-project" size="sm" variant="badge" />
                       </div>
-                      <h5 className={`text-xs font-bold transition-colors ${
-                        isNeonMode ? 'text-white group-hover:text-orange-300 group-hover:drop-shadow-[0_0_6px_rgba(249,115,22,0.6)]' : 'text-white group-hover:text-amber-300'
+                      <h5 className={`text-xs font-black transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-orange-300' : 'text-slate-900 group-hover:text-orange-700'
                       }`}>Document Project</h5>
-                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">3 Pengajuan berkas (Material, BOQ, CE)</p>
+                      <p className={`text-[10px] line-clamp-1 mt-0.5 ${
+                        isNeonMode ? 'text-slate-400' : 'text-slate-700 font-bold'
+                      }`}>3 Pengajuan berkas (Material, BOQ, CE)</p>
                     </button>
 
-                    {/* Sheet 7: Project Tracking Pipeline (Purple Neon) */}
+                    {/* Sheet 7: Project Tracking Pipeline (Purple) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1296,26 +1307,28 @@ export default function App() {
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
                           ? 'bg-[#21092a]/80 hover:bg-[#330f40] border-purple-500/40 hover:border-purple-400 hover:shadow-[0_0_20px_rgba(192,38,211,0.45)]'
-                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-purple-500/50'
+                          : 'bg-white hover:bg-purple-50/80 border-2 border-slate-300 hover:border-purple-600 shadow-3xs'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                        <span className={`font-mono text-[10px] font-black px-1.5 py-0.2 rounded border ${
                           isNeonMode 
                             ? 'bg-purple-950 text-purple-300 border-purple-500/60 shadow-[0_0_6px_rgba(192,38,211,0.4)]' 
-                            : 'bg-purple-950 text-purple-400 border-purple-800'
+                            : 'bg-purple-100 text-purple-900 border-purple-300'
                         }`}>
                           Halaman 7
                         </span>
                         <TabVisualIcon tabKey="project-tracking-pipeline" size="sm" variant="badge" />
                       </div>
-                      <h5 className={`text-xs font-bold transition-colors ${
-                        isNeonMode ? 'text-white group-hover:text-purple-300 group-hover:drop-shadow-[0_0_6px_rgba(192,38,211,0.6)]' : 'text-white group-hover:text-purple-300'
+                      <h5 className={`text-xs font-black transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-purple-300' : 'text-slate-900 group-hover:text-purple-700'
                       }`}>Tracing Pipeline</h5>
-                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Alur tahapan terpadu & Kanban board</p>
+                      <p className={`text-[10px] line-clamp-1 mt-0.5 ${
+                        isNeonMode ? 'text-slate-400' : 'text-slate-700 font-bold'
+                      }`}>Alur tahapan terpadu & Kanban board</p>
                     </button>
 
-                    {/* Sheet 8: Closing Project (Red / Rose Neon) */}
+                    {/* Sheet 8: Closing Project (Red / Teal) */}
                     <button
                       type="button"
                       onClick={() => {
@@ -1325,23 +1338,25 @@ export default function App() {
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
                           ? 'bg-[#280913]/80 hover:bg-[#3d0e1d] border-rose-500/40 hover:border-rose-400 hover:shadow-[0_0_20px_rgba(244,63,94,0.45)]'
-                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-teal-500/50'
+                          : 'bg-white hover:bg-teal-50/80 border-2 border-slate-300 hover:border-teal-600 shadow-3xs'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                        <span className={`font-mono text-[10px] font-black px-1.5 py-0.2 rounded border ${
                           isNeonMode 
                             ? 'bg-rose-950 text-rose-300 border-rose-500/60 shadow-[0_0_6px_rgba(244,63,94,0.4)]' 
-                            : 'bg-teal-950 text-teal-400 border-teal-800'
+                            : 'bg-teal-100 text-teal-900 border-teal-300'
                         }`}>
                           Halaman 8
                         </span>
                         <TabVisualIcon tabKey="closing-project" size="sm" variant="badge" />
                       </div>
-                      <h5 className={`text-xs font-bold transition-colors ${
-                        isNeonMode ? 'text-white group-hover:text-rose-300 group-hover:drop-shadow-[0_0_6px_rgba(244,63,94,0.6)]' : 'text-white group-hover:text-teal-300'
+                      <h5 className={`text-xs font-black transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-rose-300' : 'text-slate-900 group-hover:text-teal-700'
                       }`}>Closing Project</h5>
-                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Praject Date, PO, BA, ABD & Foto</p>
+                      <p className={`text-[10px] line-clamp-1 mt-0.5 ${
+                        isNeonMode ? 'text-slate-400' : 'text-slate-700 font-bold'
+                      }`}>Praject Date, PO, BA, ABD & Foto</p>
                     </button>
                   </div>
                 </div>
@@ -1411,6 +1426,7 @@ export default function App() {
               <DailyMandorView
                 projects={projects}
                 onShowToast={showToast}
+                isNeonMode={isNeonMode}
               />
             ) : activeTab === 'project-tracking-pipeline' && pipelineViewMode === 'board' ? (
               <PipelineBoard

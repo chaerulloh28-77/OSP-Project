@@ -300,7 +300,30 @@ export const DocumentProjectManager: React.FC<DocumentProjectManagerProps> = ({
             {activeCategory === 'pengajuan-ce-boq' && 'Dokumen Berkas untuk Pengajuan FORM CE Material & BOQ Labour (11 Dokumen)'}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border border-slate-200 shadow-2xs">
+            <span className="text-[11px] font-bold text-slate-600">Status PO:</span>
+            <select
+              value={project.statusPengajuanPo || 'Not Yet'}
+              onChange={(e) => {
+                onUpdateProject({
+                  ...project,
+                  statusPengajuanPo: e.target.value,
+                });
+              }}
+              className={`px-2 py-0.5 text-xs rounded border font-bold cursor-pointer transition-all ${
+                (project.statusPengajuanPo === 'Release' || project.statusPengajuanPo === 'Released')
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : project.statusPengajuanPo === 'Cancel'
+                  ? 'bg-rose-50 text-rose-800 border-rose-300'
+                  : 'bg-amber-50 text-amber-800 border-amber-300'
+              }`}
+            >
+              <option value="Not Yet">Not Yet</option>
+              <option value="Cancel">Cancel</option>
+              <option value="Release">Release</option>
+            </select>
+          </div>
           <button
             type="button"
             onClick={() => setIsEmailModalOpen(true)}

@@ -91,6 +91,7 @@ import {
   STATUS_SURVEY_OPTIONS,
   BA_SURVEY_OPTIONS,
   SPH_BOQ_OPTIONS,
+  STATUS_PO_OPTIONS,
   STATUS_PENGAJUAN_PROJECT_OPTIONS,
   STATUS_PENGAJUAN_CLOSING_OPTIONS,
   PLAN_PENGAMBILAN_MATERIAL_OPTIONS,
@@ -2536,7 +2537,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 Pengelolaan & Pengungahan Dokumen Proyek (Sheet 5: Document Project - Pengajuan Material, BOQ Labour & CE/BOQ).
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Status Pengajuan Project</label>
                   <select
@@ -2545,6 +2546,19 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                     className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
                   >
                     {STATUS_PENGAJUAN_PROJECT_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Status PO</label>
+                  <select
+                    value={formData.statusPengajuanPo || 'Not Yet'}
+                    onChange={(e) => handleChange('statusPengajuanPo', e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer font-bold text-slate-800"
+                  >
+                    {STATUS_PO_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>

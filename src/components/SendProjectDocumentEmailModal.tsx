@@ -18,7 +18,10 @@ import {
   Check, 
   Sparkles,
   Paperclip,
-  Share2
+  Share2,
+  Settings,
+  Key,
+  Globe
 } from 'lucide-react';
 import { ProjectData } from '../types/project';
 import { 
@@ -72,6 +75,44 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
   const [subject, setSubject] = useState<string>('');
   const [messageBody, setMessageBody] = useState<string>('');
   const [selectedDocKeys, setSelectedDocKeys] = useState<Record<string, boolean>>({});
+
+  // SMTP Server Configuration State (Saved in LocalStorage)
+  const [smtpConfig, setSmtpConfig] = useState<{
+    host: string;
+    port: number;
+    user: string;
+    pass: string;
+    from: string;
+    secure: boolean;
+  }>(() => {
+    try {
+      const saved = localStorage.getItem('OSP_SMTP_CONFIG_V1');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error loading SMTP config:', e);
+    }
+    return {
+      host: 'smtp.gmail.com',
+      port: 587,
+      user: 'chaerulloh28@gmail.com',
+      pass: '',
+      from: 'PMO Relokasi FO <chaerulloh28@gmail.com>',
+      secure: false,
+    };
+  });
+
+  const [showSmtpSettings, setShowSmtpSettings] = useState<boolean>(false);
+  const [useTestServer, setUseTestServer] = useState<boolean>(false);
+  const [testMessageUrl, setTestMessageUrl] = useState<string | null>(null);
+
+  const handleSaveSmtpConfig = (newCfg: typeof smtpConfig) => {
+    setSmtpConfig(newCfg);
+    try {
+      localStorage.setItem('OSP_SMTP_CONFIG_V1', JSON.stringify(newCfg));
+    } catch (e) {
+      console.error('Error saving SMTP config:', e);
+    }
+  };
 
   // Catatan Khusus (Teks Area) state
   const [catatan, setCatatan] = useState<string>(() => {
@@ -305,6 +346,7 @@ RINGKASAN INFORMASI PROYEK:
 - PIC Govrel            : ${project.picSectionHead || '-'}
 - Waspang Internal DSB  : ${project.waspangDsb || '-'}
 - Status Proyek         : ${project.projectStatus || '-'}
+- Status PO             : ${project.statusPengajuanPo || 'Not Yet'}
 - Tanggal Pengajuan     : ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
 
 DAFTAR BERKAS DOKUMEN PENDUKUNG TERLAMPIR (${availableDocs.filter(d => selectedDocKeys[d.slot.key]).length} Berkas):
@@ -443,6 +485,7 @@ DSB Management`;
 
     setIsSending(true);
     setSendStatus({ type: 'idle' });
+    setTestMessageUrl(null);
 
     try {
       const selectedAttachments = availableDocs
@@ -468,34 +511,33 @@ DSB Management`;
           projectId: project.projectId,
           projectDescription: project.projectDescription,
           documents: selectedAttachments,
+          smtpConfig: !useTestServer ? smtpConfig : undefined,
+          useTestAccount: useTestServer,
         }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        recordDispatch('smtp_api', 'sent');
+        recordDispatch(useTestServer ? 'gmail_web' : 'smtp_api', 'sent');
+        if (data.testMessageUrl) {
+          setTestMessageUrl(data.testMessageUrl);
+        }
         setSendStatus({
           type: 'success',
-          message: data.simulated
-            ? 'Email berkas closing/pengajuan tervalidasi dan siap terkirim via serverless Vercel (Mode Simulasi aktif tanpa SMTP).'
-            : 'Email berkas closing/pengajuan berhasil dikirimkan via SMTP Serverless ke seluruh penerima & CC!',
+          message: data.note || 'Email berkas closing/pengajuan berhasil dikirimkan ke seluruh penerima & CC!',
         });
         showToast(`Email ${dispatchType} berhasil dikirim ke ${toEmail}!`);
-        setTimeout(() => {
-          onClose();
-        }, 1500);
       } else {
         throw new Error(data.error || 'Gagal mengirim email.');
       }
     } catch (err: any) {
-      console.warn('Fallback: Serverless API error or offline mode, falling back to client mailto', err);
-      // Fallback: offer client mailto
+      console.warn('API error sending email:', err);
       setSendStatus({
         type: 'error',
-        message: err.message || 'Koneksi ke endpoint /api/send-email belum aktif. Anda dapat menggunakan tombol "Kirim via Client Mail (Outlook / Gmail)" di bawah ini.',
+        message: err.message || 'Gagal mengirim email via API. Silakan periksa password SMTP atau gunakan opsi "Buka di Gmail Web".',
       });
-      showToast('Gagal mengirim via API. Gunakan opsi Kirim via Client / Gmail.');
+      showToast('Gagal mengirim via API. Periksa pengaturan SMTP atau gunakan Gmail Web.');
     } finally {
       setIsSending(false);
     }
@@ -562,17 +604,160 @@ DSB Management`;
         <div className="p-5 overflow-y-auto space-y-4 text-xs">
           {/* Status Message Alert */}
           {sendStatus.type === 'success' && (
-            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-2 text-emerald-900 font-semibold shadow-xs">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{sendStatus.message}</span>
+            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex flex-col gap-2 text-emerald-900 font-semibold shadow-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{sendStatus.message}</span>
+              </div>
+              {testMessageUrl && (
+                <a
+                  href={testMessageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-xs w-fit"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>🔗 Klik di sini untuk Lihat Email Terkirim di Ethereal Mail Viewer</span>
+                </a>
+              )}
             </div>
           )}
+
           {sendStatus.type === 'error' && (
-            <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2 text-amber-900 font-medium shadow-xs">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>{sendStatus.message}</span>
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl flex flex-col gap-2 text-amber-900 font-medium shadow-xs">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="font-bold">{sendStatus.message}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-200 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setShowSmtpSettings(true)}
+                  className="px-2.5 py-1 rounded bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>Atur Password / App Password Gmail</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendViaGmail}
+                  className="px-2.5 py-1 rounded bg-rose-200 hover:bg-rose-300 text-rose-950 font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-rose-700" />
+                  <span>Atau Buka Langsung di Gmail Web Compose</span>
+                </button>
+              </div>
             </div>
           )}
+
+          {/* ⚡ Server SMTP & Mode Configuration Bar */}
+          <div className="bg-slate-50 rounded-xl border border-slate-200 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded bg-sky-100 text-sky-700">
+                  <Settings className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-bold text-slate-800 text-xs">Metode & Server Pengiriman Email</span>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    {useTestServer 
+                      ? '⚡ Mode Testing Ethereal Mail Aktif (Tanpa Password, Ada Link Preview Web)' 
+                      : `SMTP Real Server: ${smtpConfig.host} (${smtpConfig.user})`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSmtpSettings(!showSmtpSettings)}
+                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-[11px] font-bold text-slate-700 flex items-center gap-1 cursor-pointer"
+                >
+                  <Key className="w-3.5 h-3.5 text-sky-600" />
+                  <span>{showSmtpSettings ? 'Sembunyikan Pengaturan SMTP' : '⚙️ Pengaturan SMTP'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Test Mode Checkbox */}
+            <label className="flex items-center gap-2 pt-1 text-[11px] font-bold text-indigo-900 bg-indigo-50/80 p-2 rounded-lg border border-indigo-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useTestServer}
+                onChange={(e) => setUseTestServer(e.target.checked)}
+                className="rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              />
+              <span>Gunakan Server Testing Instan (Ethereal Mail) - Email dikirim ke inbox virtual & langsung dapat link preview web</span>
+            </label>
+
+            {/* Expanded SMTP Settings Form */}
+            {showSmtpSettings && (
+              <div className="p-3 bg-white rounded-lg border border-slate-300 space-y-2.5 text-slate-800 animate-in fade-in duration-150">
+                <div className="font-bold text-xs text-sky-900 flex items-center justify-between">
+                  <span>Konfigurasi Server SMTP Email (Disimpan di Local Storage):</span>
+                  <a
+                    href="https://myaccount.google.com/apppasswords"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-sky-600 hover:underline flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Cara Buat Gmail App Password 16-Digit</span>
+                  </a>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">SMTP Host</label>
+                    <input
+                      type="text"
+                      value={smtpConfig.host}
+                      onChange={(e) => handleSaveSmtpConfig({ ...smtpConfig, host: e.target.value })}
+                      placeholder="smtp.gmail.com"
+                      className="w-full px-2.5 py-1 text-xs bg-slate-50 border border-slate-300 rounded font-mono text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">SMTP Port</label>
+                    <input
+                      type="number"
+                      value={smtpConfig.port}
+                      onChange={(e) => handleSaveSmtpConfig({ ...smtpConfig, port: Number(e.target.value) || 587 })}
+                      placeholder="587"
+                      className="w-full px-2.5 py-1 text-xs bg-slate-50 border border-slate-300 rounded font-mono text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Username / Email Pengirim</label>
+                    <input
+                      type="text"
+                      value={smtpConfig.user}
+                      onChange={(e) => handleSaveSmtpConfig({ ...smtpConfig, user: e.target.value })}
+                      placeholder="email.anda@gmail.com"
+                      className="w-full px-2.5 py-1 text-xs bg-slate-50 border border-slate-300 rounded font-mono text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Password / App Password (16-Digit)</label>
+                    <input
+                      type="password"
+                      value={smtpConfig.pass}
+                      onChange={(e) => handleSaveSmtpConfig({ ...smtpConfig, pass: e.target.value })}
+                      placeholder="xxxx xxxx xxxx xxxx"
+                      className="w-full px-2.5 py-1 text-xs bg-slate-50 border border-slate-300 rounded font-mono text-slate-900 font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-slate-500 italic bg-amber-50 p-2 rounded border border-amber-200 text-amber-900">
+                  📌 <strong>Catatan Gmail:</strong> Jika menggunakan Gmail, Google mewajibkan penggunaan 16-digit <strong>Sandi Aplikasi (App Password)</strong>. Password akun biasa tidak diterima Google karena kebijakan keamanan 2FA.
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* 1. Tipe Pengiriman (Pilihan Sesuai Permintaan User) */}
           <div className="space-y-1.5">

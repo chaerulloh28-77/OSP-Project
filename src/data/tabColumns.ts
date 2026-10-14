@@ -73,6 +73,7 @@ export const STATUS_PROJECT_COLUMNS: ColumnDefinition[] = [
   { key: 'statusPengajuanProject', label: 'Status Pengajuan Project', width: '180px', align: 'left', badgeType: 'status' },
   { key: 'projectCreateDate', label: 'Project Create Date', width: '160px', align: 'center' },
   { key: 'mrNumber', label: 'MR Number', width: '130px', align: 'left' },
+  { key: 'statusPengajuanPo', label: 'Status PO', width: '130px', align: 'left', badgeType: 'status' },
   { key: 'pengajuanProjectRemarks', label: 'Pengajuan Project Remarks', width: '220px', align: 'left' },
   { key: 'statusMaterialReturn', label: 'Status Material Return', width: '170px', align: 'left' },
   { key: 'tanggalPlanReturn', label: 'Tanggal Plan Return', width: '160px', align: 'center' },

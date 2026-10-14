@@ -188,9 +188,6 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
             <h3 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
               Pipeline Tahapan & Milestone Project
             </h3>
-            <p className="text-xs text-slate-300">
-              Visualisasi alur terpadu dari pengajuan dinas hingga penarikan kabel dan serah terima dokumen
-            </p>
           </div>
         </div>
 

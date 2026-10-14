@@ -161,11 +161,12 @@ export const CLOSING_PROJECT_COLUMNS: ColumnDefinition[] = [
 ];
 
 export const TAB_CONFIG = [
-  { id: 'dashboard-overview' as TabKey, label: '1. Dashboard Overview', description: 'Ringkasan metrik dashboard, statistik performa proyek, dan grafik pie chart interaktif 5 dimensi' },
-  { id: 'project-list' as TabKey, label: '2. Project List (Master Data)', description: 'Tabel master project, filter lengkap, CRUD, input data baru, edit, simpan, hapus, kembali & detail proyek' },
-  { id: 'construction-plan' as TabKey, label: '3. Plan Implimentasi Project', description: 'Perencanaan teknis lapangan, segment relokasi, nama vendor pelaksana, estimasi pemutusan & timeline' },
-  { id: 'status-construction' as TabKey, label: '4. Status Construction', description: 'Progress fisik, galian, pulling FO (12/24/48/96/144/288 Core), plan & lokasi material, dan closing SAP' },
-  { id: 'status-project' as TabKey, label: '5. Document Project', description: 'Pengelompokan & upload dokumen pengajuan Material (11), BOQ Labour (11), dan FORM CE Material & BOQ Labour (11)' },
-  { id: 'project-tracking-pipeline' as TabKey, label: '6. Project Tracing Pipeline', description: 'Pelacakan menyeluruh pipeline, tahapan & progres terintegrasi lintas sheet (Board & Table view)' },
-  { id: 'closing-project' as TabKey, label: '7. Closing Project', description: 'Closing Project: Project Date, No. PO, BA Opname Material/Labour, ABD, Foto Dokumentasi, Analitik Grafik & Matriks Status' },
+  { id: 'dashboard-overview' as TabKey, label: '1. Dashboard Overview', description: '' },
+  { id: 'project-list' as TabKey, label: '2. Project List (Master Data)', description: '' },
+  { id: 'construction-plan' as TabKey, label: '3. Plan Implimentasi Project', description: '' },
+  { id: 'status-construction' as TabKey, label: '4. Status Construction', description: '' },
+  { id: 'daily-mandor' as TabKey, label: '5. Daily Mandor', description: '' },
+  { id: 'status-project' as TabKey, label: '6. Document Project', description: '' },
+  { id: 'project-tracking-pipeline' as TabKey, label: '7. Project Tracing Pipeline', description: '' },
+  { id: 'closing-project' as TabKey, label: '8. Closing Project', description: '' },
 ];

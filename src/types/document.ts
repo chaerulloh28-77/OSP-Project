@@ -373,14 +373,14 @@ export interface EmailDispatchContactSuggestion {
 }
 
 export const DEFAULT_EMAIL_CONTACT_SUGGESTIONS: EmailDispatchContactSuggestion[] = [
-  { name: 'PIC Govrel (Gov Relation)', email: 'pic.govrel@linknet.co.id', role: 'PIC Govrel' },
-  { name: 'Waspang Internal DSB', email: 'waspang.dsb@linknet.co.id', role: 'Pengawas DSB' },
-  { name: 'Tim Finance & Invoicing', email: 'finance.closing@linknet.co.id', role: 'Finance / Invoice' },
-  { name: 'Tim BAST & BALAP Approval', email: 'bast.approval@linknet.co.id', role: 'Approval BAST' },
-  { name: 'Tim Procurement & Material', email: 'procurement.relokasi@linknet.co.id', role: 'Procurement' },
-  { name: 'Tim Engineering & Planning', email: 'planning.fiber@linknet.co.id', role: 'Engineering' },
+  { name: 'PIC Govrel (Gov Relation)', email: 'pic.govrel@dsb.id', role: 'PIC Govrel' },
+  { name: 'Waspang Internal DSB', email: 'waspang.dsb@dsb.id', role: 'Pengawas DSB' },
+  { name: 'Tim Finance & Invoicing', email: 'finance.closing@dsb.id', role: 'Finance / Invoice' },
+  { name: 'Tim BAST & BALAP Approval', email: 'bast.approval@dsb.id', role: 'Approval BAST' },
+  { name: 'Tim Procurement & Material', email: 'procurement.relokasi@dsb.id', role: 'Procurement' },
+  { name: 'Tim Engineering & Planning', email: 'planning.fiber@dsb.id', role: 'Engineering' },
   { name: 'Mitra Vendor Pelaksana', email: 'vendor.operasional@mitra.com', role: 'Vendor Mitra' },
-  { name: 'PMO Master Control', email: 'pmo.relokasi@linknet.co.id', role: 'PMO Lead' },
+  { name: 'PMO Master Control', email: 'pmo.relokasi@dsb.id', role: 'PMO Lead' },
 ];
 
 

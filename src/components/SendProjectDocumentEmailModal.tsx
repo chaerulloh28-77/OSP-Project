@@ -65,12 +65,7 @@ export const SendProjectDocumentEmailModal: React.FC<SendProjectDocumentEmailMod
 
   // Recipients
   const [toEmail, setToEmail] = useState<string>('chaerulloh28@gmail.com');
-  const [ccList, setCcList] = useState<string[]>([
-    'pic.govrel@linknet.co.id',
-    'waspang.dsb@linknet.co.id',
-    'finance.closing@linknet.co.id',
-    'procurement.relokasi@linknet.co.id',
-  ]);
+  const [ccList, setCcList] = useState<string[]>([]);
   const [ccInput, setCcInput] = useState<string>('');
 
   // Email subject & body
@@ -288,9 +283,7 @@ Apabila terdapat verifikasi teknis atau berkas pendukung tambahan yang dibutuhka
 Demikian permohonan Closing Project ini kami sampaikan. Atas perhatian, arahan, dan kerjasamanya kami ucapkan terima kasih.
 
 Hormat kami,
-Tim PMO & Engineering Relokasi FO
-PT. Link Net Tbk / Proyek DSB GOV
-Kontak: ${kontakPengirim || 'DSB Management'}`;
+DSB Management`;
 
       setMessageBody(bodyText);
     } else {
@@ -326,9 +319,7 @@ Apabila terdapat pertanyaan atau data pendukung tambahan yang dibutuhkan, mohon 
 Demikian permohonan pengajuan ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.
 
 Hormat kami,
-Tim PMO & Engineering Relokasi FO
-PT. Link Net Tbk / Proyek DSB GOV
-Kontak: ${kontakPengirim || 'DSB Management'}`;
+DSB Management`;
 
       setMessageBody(bodyText);
     }
@@ -376,19 +367,19 @@ Kontak: ${kontakPengirim || 'DSB Management'}`;
   // Generate mailto link
   const generateMailtoUrl = () => {
     const toStr = encodeURIComponent(toEmail.trim());
-    const ccStr = encodeURIComponent(ccList.join(', '));
+    const ccParam = ccList.length > 0 ? `&cc=${encodeURIComponent(ccList.join(', '))}` : '';
     const subjectStr = encodeURIComponent(subject.trim());
     const bodyStr = encodeURIComponent(messageBody.trim());
-    return `mailto:${toStr}?cc=${ccStr}&subject=${subjectStr}&body=${bodyStr}`;
+    return `mailto:${toStr}?subject=${subjectStr}&body=${bodyStr}${ccParam}`;
   };
 
   // Generate web Gmail compose link
   const generateGmailUrl = () => {
     const toStr = encodeURIComponent(toEmail.trim());
-    const ccStr = encodeURIComponent(ccList.join(', '));
+    const ccParam = ccList.length > 0 ? `&cc=${encodeURIComponent(ccList.join(', '))}` : '';
     const subjectStr = encodeURIComponent(subject.trim());
     const bodyStr = encodeURIComponent(messageBody.trim());
-    return `https://mail.google.com/mail/?view=cm&fs=1&to=${toStr}&cc=${ccStr}&su=${subjectStr}&body=${bodyStr}`;
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${toStr}${ccParam}&su=${subjectStr}&body=${bodyStr}`;
   };
 
   // Record dispatch in project
@@ -732,7 +723,7 @@ Kontak: ${kontakPengirim || 'DSB Management'}`;
                 type="text"
                 value={toEmail}
                 onChange={(e) => setToEmail(e.target.value)}
-                placeholder="misal: pic.govrel@linknet.co.id atau vendor@mitra.com"
+                placeholder="misal: pic.govrel@dsb.id atau vendor@mitra.com"
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs"
               />
             </div>
@@ -914,51 +905,24 @@ Kontak: ${kontakPengirim || 'DSB Management'}`;
             </div>
           </div>
 
-          {/* 4. Catatan & Kontak Pengirim */}
-          <div className="space-y-3 bg-amber-50/60 p-3.5 rounded-xl border border-amber-200/80">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Catatan:</span>
-                </label>
-                <span className="text-[10px] text-amber-800 font-semibold">
-                  Otomatis dimasukkan ke bagian "CATATAN:" di draft email
-                </span>
-              </div>
-              <textarea
-                rows={3}
-                value={catatan}
-                onChange={(e) => setCatatan(e.target.value)}
-                placeholder="Ketik catatan khusus proyek di sini..."
-                className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs resize-y"
-              />
+          {/* 4. Catatan */}
+          <div className="space-y-1 bg-amber-50/60 p-3 rounded-xl border border-amber-200/80">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-amber-600" />
+                <span>Catatan:</span>
+              </label>
+              <span className="text-[10px] text-amber-800 font-semibold">
+                Otomatis dimasukkan ke bagian "CATATAN:" di draft email
+              </span>
             </div>
-
-            {/* Nama Kontak Pengirim Tanda Tangan */}
-            <div className="pt-2 border-t border-amber-200/60 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-xs font-bold text-slate-800 mb-1">
-                  Kontak / Nama Pengirim (Tanda Tangan Email):
-                </label>
-                <input
-                  type="text"
-                  value={kontakPengirim}
-                  onChange={(e) => setKontakPengirim(e.target.value)}
-                  placeholder="DSB Management"
-                  className="w-full px-3 py-1.5 text-xs bg-white border border-amber-300 rounded-lg text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
-                />
-              </div>
-              <div className="flex items-center gap-1.5 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setKontakPengirim('DSB Management')}
-                  className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-600 text-white border border-amber-600 cursor-pointer"
-                >
-                  DSB Management
-                </button>
-              </div>
-            </div>
+            <textarea
+              rows={3}
+              value={catatan}
+              onChange={(e) => setCatatan(e.target.value)}
+              placeholder="Ketik catatan khusus proyek di sini..."
+              className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs resize-y"
+            />
           </div>
 
           {/* 5. Pratinjau & Edit Lengkap Isi Pesan Email */}

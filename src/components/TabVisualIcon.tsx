@@ -72,11 +72,22 @@ export const TabVisualIcon: React.FC<TabVisualIconProps> = ({
           lightBg: 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200',
           pulseColor: 'bg-emerald-400',
         };
+      case 'daily-mandor':
+        return {
+          icon: HardHat,
+          name: 'Daily Mandor',
+          num: '5',
+          solidColor: 'from-amber-500 via-orange-500 to-amber-600 text-white shadow-amber-500/30',
+          activeBg: 'bg-gradient-to-br from-amber-500/25 to-orange-600/25 text-amber-300 ring-1 ring-amber-400/40',
+          inactiveBg: 'bg-slate-800 text-amber-400 group-hover:bg-slate-700/80 group-hover:text-amber-300 ring-1 ring-slate-700/60',
+          lightBg: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
+          pulseColor: 'bg-amber-400',
+        };
       case 'status-project':
         return {
           icon: FileCheck2,
           name: 'Document Project',
-          num: '5',
+          num: '6',
           solidColor: 'from-amber-500 to-orange-600 text-white shadow-amber-500/30',
           activeBg: 'bg-gradient-to-br from-amber-500/25 to-orange-600/25 text-amber-300 ring-1 ring-amber-400/40',
           inactiveBg: 'bg-slate-800 text-amber-400 group-hover:bg-slate-700/80 group-hover:text-amber-300 ring-1 ring-slate-700/60',
@@ -87,7 +98,7 @@ export const TabVisualIcon: React.FC<TabVisualIconProps> = ({
         return {
           icon: Workflow,
           name: 'Project Tracing Pipeline',
-          num: '6',
+          num: '7',
           solidColor: 'from-purple-500 via-fuchsia-600 to-pink-600 text-white shadow-purple-500/30',
           activeBg: 'bg-gradient-to-br from-purple-500/25 to-fuchsia-600/25 text-purple-300 ring-1 ring-purple-400/40',
           inactiveBg: 'bg-slate-800 text-purple-400 group-hover:bg-slate-700/80 group-hover:text-purple-300 ring-1 ring-slate-700/60',
@@ -98,7 +109,7 @@ export const TabVisualIcon: React.FC<TabVisualIconProps> = ({
         return {
           icon: ShieldCheck,
           name: 'Closing Project',
-          num: '7',
+          num: '8',
           solidColor: 'from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-emerald-500/30',
           activeBg: 'bg-gradient-to-br from-emerald-500/25 to-teal-600/25 text-emerald-300 ring-1 ring-emerald-400/40',
           inactiveBg: 'bg-slate-800 text-teal-400 group-hover:bg-slate-700/80 group-hover:text-teal-300 ring-1 ring-slate-700/60',

@@ -48,7 +48,7 @@ function expressApiPlugin(): Plugin {
                 const smtpUser = process.env.SMTP_USER;
                 const smtpPass = process.env.SMTP_PASS;
                 const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465;
-                const fromAddress = process.env.SMTP_FROM || smtpUser || 'PMO Relokasi Fiber <no-reply@linknet.co.id>';
+                const fromAddress = process.env.SMTP_FROM || smtpUser || 'PMO Relokasi Fiber <no-reply@dsb.id>';
 
                 const attachments = (documents || [])
                   .filter((doc: any) => doc.dataUrl && doc.dataUrl.includes(','))

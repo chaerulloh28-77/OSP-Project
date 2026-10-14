@@ -134,18 +134,12 @@ export const DocumentProjectPageView: React.FC<DocumentProjectPageViewProps> = (
               <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold font-mono border ${
                 isNeonMode ? 'bg-amber-950/60 text-amber-400 border-amber-500/40' : 'bg-amber-50 text-amber-800 border-amber-300'
               }`}>
-                Halaman 5
+                Halaman 6
               </span>
               <h3 className={`text-base font-extrabold tracking-tight ${isNeonMode ? 'text-amber-400' : 'text-slate-900'}`}>
                 Document Project Hub
               </h3>
-              <span className="text-xs text-slate-400 font-medium">
-                • 3 Kategori Pengajuan Berkas (11 Dokumen per Kategori)
-              </span>
             </div>
-            <p className={`text-xs mt-1 max-w-3xl leading-relaxed ${isNeonMode ? 'text-slate-300' : 'text-slate-600'}`}>
-              Pengelolaan & pengunggahan berkas: <strong>1. Pengajuan Material</strong> (11 Dokumen), <strong>2. Pengajuan BOQ Labour</strong> (11 Dokumen), dan <strong>3. Pengajuan FORM CE Material & BOQ Labour</strong> (11 Dokumen). Mendukung semua jenis file (*.*).
-            </p>
           </div>
 
           {/* View Mode Toggle: Interactive Manager vs Sheet Table */}

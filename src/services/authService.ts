@@ -2,7 +2,7 @@
  * Authentication service for Monitoring GOV FMI_DSB
  * Credentials:
  *   Email: Alamat email pengguna
- *   Password: gov123
+ *   Password: dsb2026
  */
 
 export interface AuthUser {
@@ -12,7 +12,7 @@ export interface AuthUser {
 }
 
 const AUTH_STORAGE_KEY = 'PMO_AUTH_SESSION_V1';
-const VALID_PASSWORD = 'gov123';
+const VALID_PASSWORD = 'dsb2026';
 
 export const authService = {
   // Check if current user is logged in

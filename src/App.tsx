@@ -55,6 +55,7 @@ import { UploadDocumentView } from './components/UploadDocumentView';
 import { DocumentProjectPageView } from './components/DocumentProjectPageView';
 import { ClosingProjectPageView } from './components/ClosingProjectPageView';
 import { PieChartAnalyticsView } from './components/PieChartAnalyticsView';
+import { DailyMandorView } from './components/DailyMandorView';
 import { LoginPage } from './components/LoginPage';
 import { PriorityTierBar } from './components/PriorityTierBar';
 import { authService, AuthUser } from './services/authService';
@@ -618,19 +619,19 @@ export default function App() {
         }}
         projects={projects}
         onExportExcel={() => {
-          const res = storageService.exportToExcel(projects);
+          const res = storageService.exportPageToExcel(filteredProjects, activeTab);
           if (res.success) {
-            showToast(`File Excel berhasil diunduh (${res.count} proyek).`);
+            showToast(`File Excel ${res.filename} berhasil diunduh (${res.count} data).`);
           } else {
-            showToast('Tidak ada data proyek untuk diekspor.');
+            showToast('Tidak ada data untuk diekspor.');
           }
         }}
         onExportCsv={() => {
-          const res = storageService.exportToCsv(projects);
+          const res = storageService.exportPageToCsv(filteredProjects, activeTab);
           if (res.success) {
-            showToast(`File CSV berhasil diunduh (${res.count} proyek).`);
+            showToast(`File CSV ${res.filename} berhasil diunduh (${res.count} data).`);
           } else {
-            showToast('Tidak ada data proyek untuk diekspor.');
+            showToast('Tidak ada data untuk diekspor.');
           }
         }}
         lastSavedTime={lastSavedTime}
@@ -1054,6 +1055,22 @@ export default function App() {
                 selectedWaspang={selectedWaspang}
                 onWaspangChange={setSelectedWaspang}
                 onResetFilters={handleResetFilters}
+                onExportExcel={() => {
+                  const res = storageService.exportPageToExcel(filteredProjects, activeTab);
+                  if (res.success) {
+                    showToast(`File Excel ${res.filename} berhasil diunduh (${res.count} data).`);
+                  } else {
+                    showToast('Tidak ada data untuk diekspor.');
+                  }
+                }}
+                onExportCsv={() => {
+                  const res = storageService.exportPageToCsv(filteredProjects, activeTab);
+                  if (res.success) {
+                    showToast(`File CSV ${res.filename} berhasil diunduh (${res.count} data).`);
+                  } else {
+                    showToast('Tidak ada data untuk diekspor.');
+                  }
+                }}
                 totalResults={filteredProjects.length}
                 allProjects={projects}
               />
@@ -1104,7 +1121,7 @@ export default function App() {
                       <h4 className={`text-xs font-bold uppercase tracking-wider ${
                         isNeonMode ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'text-slate-700'
                       }`}>
-                        Akses Cepat Antar Halaman Terintegrasi (7 Sheet)
+                        Akses Cepat Antar Halaman Terintegrasi (8 Sheet)
                       </h4>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1211,12 +1228,41 @@ export default function App() {
                       <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Pulling FO multi-cable & closing SAP</p>
                     </button>
 
-                    {/* Sheet 5: Document Project (Orange Neon) */}
+                    {/* Sheet 5: Daily Mandor (Amber / Orange Neon) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('daily-mandor');
+                        showToast('Membuka Halaman 5: Daily Mandor & Operational Report');
+                      }}
+                      className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
+                        isNeonMode
+                          ? 'bg-[#291b08]/80 hover:bg-[#3d270b] border-amber-500/40 hover:border-amber-400 hover:shadow-[0_0_20px_rgba(245,158,11,0.45)]'
+                          : 'bg-slate-900/40 hover:bg-slate-800/80 border-slate-800 hover:border-amber-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className={`font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${
+                          isNeonMode 
+                            ? 'bg-amber-950 text-amber-300 border-amber-500/60 shadow-[0_0_6px_rgba(245,158,11,0.4)]' 
+                            : 'bg-amber-950 text-amber-400 border-amber-800'
+                        }`}>
+                          Halaman 5
+                        </span>
+                        <TabVisualIcon tabKey="daily-mandor" size="sm" variant="badge" />
+                      </div>
+                      <h5 className={`text-xs font-bold transition-colors ${
+                        isNeonMode ? 'text-white group-hover:text-amber-300 group-hover:drop-shadow-[0_0_6px_rgba(245,158,11,0.6)]' : 'text-white group-hover:text-amber-300'
+                      }`}>Daily Mandor</h5>
+                      <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Laporan Mandor, HH/HS/HG & Jalur Akses</p>
+                    </button>
+
+                    {/* Sheet 6: Document Project (Orange Neon) */}
                     <button
                       type="button"
                       onClick={() => {
                         setActiveTab('status-project');
-                        showToast('Membuka Halaman 5: Document Project');
+                        showToast('Membuka Halaman 6: Document Project');
                       }}
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
@@ -1230,7 +1276,7 @@ export default function App() {
                             ? 'bg-amber-950 text-orange-300 border-orange-500/60 shadow-[0_0_6px_rgba(249,115,22,0.4)]' 
                             : 'bg-amber-950 text-amber-400 border-amber-800'
                         }`}>
-                          Halaman 5
+                          Halaman 6
                         </span>
                         <TabVisualIcon tabKey="status-project" size="sm" variant="badge" />
                       </div>
@@ -1240,12 +1286,12 @@ export default function App() {
                       <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">3 Pengajuan berkas (Material, BOQ, CE)</p>
                     </button>
 
-                    {/* Sheet 6: Project Tracking Pipeline (Purple Neon) */}
+                    {/* Sheet 7: Project Tracking Pipeline (Purple Neon) */}
                     <button
                       type="button"
                       onClick={() => {
                         setActiveTab('project-tracking-pipeline');
-                        showToast('Membuka Halaman 6: Project Tracing Pipeline');
+                        showToast('Membuka Halaman 7: Project Tracing Pipeline');
                       }}
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
@@ -1259,7 +1305,7 @@ export default function App() {
                             ? 'bg-purple-950 text-purple-300 border-purple-500/60 shadow-[0_0_6px_rgba(192,38,211,0.4)]' 
                             : 'bg-purple-950 text-purple-400 border-purple-800'
                         }`}>
-                          Halaman 6
+                          Halaman 7
                         </span>
                         <TabVisualIcon tabKey="project-tracking-pipeline" size="sm" variant="badge" />
                       </div>
@@ -1269,12 +1315,12 @@ export default function App() {
                       <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">Alur tahapan terpadu & Kanban board</p>
                     </button>
 
-                    {/* Sheet 7: Closing Project (Red / Rose Neon) */}
+                    {/* Sheet 8: Closing Project (Red / Rose Neon) */}
                     <button
                       type="button"
                       onClick={() => {
                         setActiveTab('closing-project');
-                        showToast('Membuka Halaman 7: Closing Project');
+                        showToast('Membuka Halaman 8: Closing Project');
                       }}
                       className={`p-3 rounded-xl border transition-all text-left group cursor-pointer ${
                         isNeonMode
@@ -1288,7 +1334,7 @@ export default function App() {
                             ? 'bg-rose-950 text-rose-300 border-rose-500/60 shadow-[0_0_6px_rgba(244,63,94,0.4)]' 
                             : 'bg-teal-950 text-teal-400 border-teal-800'
                         }`}>
-                          Halaman 7
+                          Halaman 8
                         </span>
                         <TabVisualIcon tabKey="closing-project" size="sm" variant="badge" />
                       </div>
@@ -1360,6 +1406,11 @@ export default function App() {
                 onJumpToTab={handleJumpToTab}
                 showToast={showToast}
                 isNeonMode={isNeonMode}
+              />
+            ) : activeTab === 'daily-mandor' ? (
+              <DailyMandorView
+                projects={projects}
+                onShowToast={showToast}
               />
             ) : activeTab === 'project-tracking-pipeline' && pipelineViewMode === 'board' ? (
               <PipelineBoard

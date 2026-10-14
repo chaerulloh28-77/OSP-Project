@@ -120,17 +120,22 @@
   animation: pulse-ring 2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
-/* Universal option visibility fix for native HTML select controls across all browsers & themes */
-select {
-  color: #0f172a;
+/* Select controls styling */
+select.text-white,
+input.text-white,
+textarea.text-white,
+.text-white input,
+.text-white select,
+.text-white textarea {
+  color: #ffffff !important;
 }
 
 select option {
-  background-color: #ffffff !important;
-  color: #0f172a !important; /* High contrast dark text */
+  background-color: #0f172a !important;
+  color: #ffffff !important;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
   font-size: 12px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   padding: 6px 12px !important;
 }
 
@@ -142,64 +147,48 @@ select option:checked {
   color: #ffffff !important;
 }
 
-select option:disabled {
-  color: #94a3b8 !important; /* slate-400 */
-  background-color: #f8fafc !important;
-}
-
-/* ==========================================================================
-   GLOBAL INPUT & TEXTAREA CONTRAST CONSTITUTION
-   Requirement: Text values and placeholders in "Segment Relokasi", "Remarks", 
-   and all form inputs must be crisp, assertive dark (text-slate-900 font-semibold)
-   on light/white backgrounds with zero washed-out grays or low opacities.
-   ========================================================================== */
-
-/* Universal assertive dark text for inputs and textareas on light/white surfaces */
-input:not([class*="text-white"]):not([class*="text-slate-100"]):not([class*="text-slate-200"]):not([class*="text-cyan-"]):not([class*="text-emerald-"]),
-textarea:not([class*="text-white"]):not([class*="text-slate-100"]):not([class*="text-slate-200"]):not([class*="text-cyan-"]):not([class*="text-emerald-"]) {
-  color: #0f172a;
-  font-weight: 600;
-}
-
-/* Ensure inputs on white/light backgrounds in forms and tables are text-slate-900 font-semibold */
+/* Light background inputs get dark text */
 input.bg-white,
 textarea.bg-white,
+select.bg-white,
 input.bg-slate-50,
 textarea.bg-slate-50,
-input.bg-slate-50\/90,
-textarea.bg-slate-50\/90,
-form input,
-form textarea,
-dialog input,
-dialog textarea {
+select.bg-slate-50 {
   color: #0f172a !important;
   font-weight: 600 !important;
 }
 
-/* High contrast, bold placeholders for all inputs and textareas on light backgrounds */
-input:not([class*="text-white"]):not([class*="bg-slate-900"]):not([class*="bg-slate-950"]):not([class*="bg-[#"])::placeholder,
-textarea:not([class*="text-white"]):not([class*="bg-slate-900"]):not([class*="bg-slate-950"]):not([class*="bg-[#"])::placeholder {
-  color: #0f172a !important;
-  opacity: 0.82 !important;
-  font-weight: 600 !important;
-}
-
-/* Dark mode inputs retain crisp readability */
-input.text-white::placeholder,
-textarea.text-white::placeholder,
-input[class*="bg-slate-900"]::placeholder,
-textarea[class*="bg-slate-900"]::placeholder,
-input[class*="bg-slate-950"]::placeholder,
-textarea[class*="bg-slate-950"]::placeholder {
-  color: #94a3b8 !important;
-  opacity: 0.95 !important;
-  font-weight: 600 !important;
-}
-
-/* Form labels on light backgrounds */
-form label,
-.form-label-contrast {
-  color: #1e293b !important;
+/* Dark background inputs get bright white text */
+input.text-white,
+textarea.text-white,
+select.text-white,
+input[class*="bg-slate-800"],
+textarea[class*="bg-slate-800"],
+select[class*="bg-slate-800"],
+input[class*="bg-slate-900"],
+textarea[class*="bg-slate-900"],
+select[class*="bg-slate-900"],
+input[class*="bg-[#1e293b]"],
+textarea[class*="bg-[#1e293b]"],
+select[class*="bg-[#1e293b]"],
+input[class*="bg-[#0f172a]"],
+textarea[class*="bg-[#0f172a]"],
+select[class*="bg-[#0f172a]"] {
+  color: #ffffff !important;
   font-weight: 700 !important;
+}
+
+/* Placeholders */
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+input.text-white::placeholder,
+textarea.text-white::placeholder {
+  color: #cbd5e1 !important;
+  opacity: 0.9 !important;
 }
 

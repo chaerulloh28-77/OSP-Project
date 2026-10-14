@@ -228,10 +228,11 @@ export type TabKey =
   | 'dashboard-overview'
   | 'project-list' 
   | 'construction-plan' 
-  | 'status-project' 
   | 'status-construction' 
+  | 'status-project' 
   | 'project-tracking-pipeline'
   | 'closing-project'
+  | 'daily-mandor'
   | 'upload-document'
   | 'pie-chart-analytics';
 

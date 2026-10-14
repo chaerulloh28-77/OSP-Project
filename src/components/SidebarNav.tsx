@@ -34,11 +34,12 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       case 'project-list': return '2';
       case 'construction-plan': return '3';
       case 'status-construction': return '4';
-      case 'status-project': return '5';
-      case 'project-tracking-pipeline': return '6';
-      case 'closing-project': return '7';
-      case 'upload-document': return '8';
-      case 'pie-chart-analytics': return '8';
+      case 'daily-mandor': return '5';
+      case 'status-project': return '6';
+      case 'project-tracking-pipeline': return '7';
+      case 'closing-project': return '8';
+      case 'upload-document': return '9';
+      case 'pie-chart-analytics': return '9';
       default: return '•';
     }
   };
@@ -153,6 +154,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                     {tab.id === 'status-project' && 'Pengajuan Material, BOQ Labour & CE/BOQ'}
                     {tab.id === 'project-tracking-pipeline' && 'Pelacakan menyeluruh pipeline'}
                     {tab.id === 'closing-project' && 'No. PO, BA Opname, ABD, Foto & Analitik'}
+                    {tab.id === 'daily-mandor' && 'Monitoring harian Mandor, Team, HH & Jalur Akses'}
                   </p>
                 </div>
               )}

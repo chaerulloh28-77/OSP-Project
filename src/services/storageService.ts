@@ -1,4 +1,4 @@
-import { ProjectData } from '../types/project';
+import { ProjectData, TabKey } from '../types/project';
 import { INITIAL_PROJECTS } from '../data/initialData';
 import { calculatePullingFoPercentage, calculatePullingPercentage } from '../data/dropdownOptions';
 import { compareProjectsByPmoId } from '../utils/pmoIdHelpers';
@@ -9,8 +9,11 @@ import {
   STATUS_PROJECT_COLUMNS, 
   DOCUMENT_PROJECT_COLUMNS,
   STATUS_CONSTRUCTION_COLUMNS,
+  CLOSING_PROJECT_COLUMNS,
   PROJECT_TRACKING_PIPELINE_COLUMNS 
 } from '../data/tabColumns';
+import { mandorStorageService } from './mandorStorageService';
+import { DailyMandorReport } from '../types/mandor';
 
 const STORAGE_KEY = 'OSP_PROJECTS_DATA_V7';
 const LEGACY_STORAGE_KEYS = ['OSP_PROJECTS_DATA_V6', 'OSP_PROJECTS_DATA_V5', 'OSP_PROJECTS_DATA_V4'];
@@ -215,10 +218,25 @@ function writeToStorage(data: ProjectData[]): void {
       console.error('Error notifying storage listener:', e);
     }
   });
+
+  // Broadcast to other tabs & windows via BroadcastChannel
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent('osp-projects-updated', { detail: memoryCache }));
+      if ('BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('osp_projects_realtime_channel');
+        bc.postMessage({ type: 'PROJECTS_UPDATED', payload: memoryCache });
+        bc.close();
+      }
+    } catch (err) {
+      // Ignore broadcast channel errors
+    }
+  }
 }
 
-// Setup storage event listener for cross-tab synchronization
+// Setup real-time listeners for cross-tab and cross-window synchronization
 if (typeof window !== 'undefined') {
+  // 1. Native localStorage storage event listener
   window.addEventListener('storage', (e) => {
     if (e.key === STORAGE_KEY && e.newValue) {
       try {
@@ -232,6 +250,29 @@ if (typeof window !== 'undefined') {
       }
     }
   });
+
+  // 2. BroadcastChannel listener for instant zero-latency cross-tab communication
+  if ('BroadcastChannel' in window) {
+    try {
+      const realtimeBc = new BroadcastChannel('osp_projects_realtime_channel');
+      realtimeBc.onmessage = (event) => {
+        if (event.data && event.data.type === 'PROJECTS_UPDATED' && Array.isArray(event.data.payload)) {
+          memoryCache = event.data.payload.map(normalizeProject);
+          listeners.forEach((listener) => listener([...memoryCache!]));
+        }
+      };
+    } catch (err) {
+      console.warn('BroadcastChannel setup error:', err);
+    }
+  }
+
+  // 3. CustomEvent listener for intra-tab components
+  window.addEventListener('osp-projects-updated', ((e: CustomEvent) => {
+    if (e.detail && Array.isArray(e.detail)) {
+      memoryCache = e.detail.map(normalizeProject);
+      listeners.forEach((listener) => listener([...memoryCache!]));
+    }
+  }) as EventListener);
 }
 
 export const storageService = {
@@ -468,6 +509,347 @@ export const storageService = {
 
     const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
     const filename = `Monitoring_GOV_FMI_DSB_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    return { success: true, count: projects.length, filename };
+  },
+
+  /**
+   * Export Daily Mandor reports to Excel (.xlsx).
+   */
+  exportMandorToExcel(reports: DailyMandorReport[]): { success: boolean; count: number; filename: string } {
+    if (!reports || reports.length === 0) {
+      return { success: false, count: 0, filename: '' };
+    }
+
+    const headers = [
+      'No.',
+      'Tanggal Laporan',
+      'Nama Mandor',
+      'Segment Relokasi',
+      'Area / Kota',
+      'Status Project',
+      'Tim Mandor',
+      'Man Power (Person)',
+      'Nama Vendor',
+      'Rincian Install HH/HS/HG',
+      'Total HH Installed (Unit)',
+      'Plan HH (Unit)',
+      'Target Meter Jalur Akses (m)',
+      'Meter Selesai (m)',
+      'Meter Belum Selesai (m)',
+      'Catatan / Remarks'
+    ];
+
+    const dataRows = reports.map((r, idx) => {
+      const hhItems = r.hhInstallItems || [];
+      const hhSummaryText = hhItems.length > 0 
+        ? hhItems.map(i => `${i.itemType} (${i.specSize || 'Std'}): ${i.installedQty}/${i.planQty} Unit`).join(' | ')
+        : 'HH/HS/HG: 0 Unit';
+      
+      const totalInstalled = hhItems.reduce((acc, curr) => acc + (Number(curr.installedQty) || 0), 0);
+      const totalPlan = hhItems.reduce((acc, curr) => acc + (Number(curr.planQty) || 0), 0);
+      const targetM = Number(r.targetMeter) || 0;
+      const selesaiM = Number(r.meterSelesai) || 0;
+      const sisaM = Math.max(0, targetM - selesaiM);
+
+      return [
+        idx + 1,
+        r.date || '',
+        r.mandorName || '',
+        r.segmentRelokasi || '',
+        r.areaKota || '',
+        r.statusProject || '',
+        r.teamName || '',
+        r.manPowerCount || 0,
+        r.vendorName || '',
+        hhSummaryText,
+        totalInstalled,
+        totalPlan,
+        targetM,
+        selesaiM,
+        sisaM,
+        r.remarks || ''
+      ];
+    });
+
+    const wb = XLSX.utils.book_new();
+    const wsData = [headers, ...dataRows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    ws['!cols'] = [
+      { wch: 6 },   // No
+      { wch: 14 },  // Tanggal
+      { wch: 20 },  // Mandor
+      { wch: 38 },  // Segment
+      { wch: 16 },  // Area
+      { wch: 14 },  // Status
+      { wch: 20 },  // Team
+      { wch: 18 },  // Manpower
+      { wch: 18 },  // Vendor
+      { wch: 42 },  // HH Details
+      { wch: 22 },  // Total Installed
+      { wch: 14 },  // Plan
+      { wch: 24 },  // Target Meter
+      { wch: 18 },  // Meter Selesai
+      { wch: 22 },  // Sisa Meter
+      { wch: 40 },  // Remarks
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Daily Mandor');
+
+    const filename = `Daily_Mandor_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+    wb.Props = {
+      Title: 'Laporan Daily Mandor Field Operational',
+      Subject: `Daily Mandor (${reports.length} Laporan)`,
+      Author: 'PAUL',
+      Company: 'PMO System © PAUL',
+      CreatedDate: new Date(),
+    };
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    return { success: true, count: reports.length, filename };
+  },
+
+  /**
+   * Export Daily Mandor reports to CSV (.csv).
+   */
+  exportMandorToCsv(reports: DailyMandorReport[]): { success: boolean; count: number; filename: string } {
+    if (!reports || reports.length === 0) {
+      return { success: false, count: 0, filename: '' };
+    }
+
+    const headers = [
+      'No.',
+      'Tanggal Laporan',
+      'Nama Mandor',
+      'Segment Relokasi',
+      'Area / Kota',
+      'Status Project',
+      'Tim Mandor',
+      'Man Power (Person)',
+      'Nama Vendor',
+      'Rincian Install HH/HS/HG',
+      'Total HH Installed (Unit)',
+      'Plan HH (Unit)',
+      'Target Meter Jalur Akses (m)',
+      'Meter Selesai (m)',
+      'Meter Belum Selesai (m)',
+      'Catatan / Remarks'
+    ];
+
+    const escapeCsv = (val: unknown): string => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = reports.map((r, idx) => {
+      const hhItems = r.hhInstallItems || [];
+      const hhSummaryText = hhItems.length > 0 
+        ? hhItems.map(i => `${i.itemType} (${i.specSize || 'Std'}): ${i.installedQty}/${i.planQty} Unit`).join(' | ')
+        : 'HH/HS/HG: 0 Unit';
+      
+      const totalInstalled = hhItems.reduce((acc, curr) => acc + (Number(curr.installedQty) || 0), 0);
+      const totalPlan = hhItems.reduce((acc, curr) => acc + (Number(curr.planQty) || 0), 0);
+      const targetM = Number(r.targetMeter) || 0;
+      const selesaiM = Number(r.meterSelesai) || 0;
+      const sisaM = Math.max(0, targetM - selesaiM);
+
+      return [
+        idx + 1,
+        r.date || '',
+        r.mandorName || '',
+        r.segmentRelokasi || '',
+        r.areaKota || '',
+        r.statusProject || '',
+        r.teamName || '',
+        r.manPowerCount || 0,
+        r.vendorName || '',
+        hhSummaryText,
+        totalInstalled,
+        totalPlan,
+        targetM,
+        selesaiM,
+        sisaM,
+        r.remarks || ''
+      ].map(escapeCsv).join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+    const filename = `Daily_Mandor_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    return { success: true, count: reports.length, filename };
+  },
+
+  /**
+   * Export single page table to Excel (.xlsx) matching specific page columns.
+   */
+  exportPageToExcel(projects: ProjectData[], activeTab: TabKey | string): { success: boolean; count: number; filename: string } {
+    if (activeTab === 'daily-mandor') {
+      const reports = mandorStorageService.getReports();
+      return this.exportMandorToExcel(reports);
+    }
+
+    let columns: { key: keyof ProjectData; label: string }[] = PROJECT_LIST_COLUMNS;
+    let pageName = 'Project List';
+    let filePrefix = 'Project_List_Master_Data';
+
+    if (activeTab === 'construction-plan') {
+      columns = CONSTRUCTION_PLAN_COLUMNS;
+      pageName = 'Plan Implimentasi Project';
+      filePrefix = 'Plan_Implimentasi_Project';
+    } else if (activeTab === 'status-construction') {
+      columns = STATUS_CONSTRUCTION_COLUMNS;
+      pageName = 'Status Construction';
+      filePrefix = 'Status_Construction';
+    } else if (activeTab === 'status-project' || activeTab === 'document-project') {
+      columns = DOCUMENT_PROJECT_COLUMNS;
+      pageName = 'Document Project';
+      filePrefix = 'Document_Project';
+    } else if (activeTab === 'project-tracking-pipeline') {
+      columns = PROJECT_TRACKING_PIPELINE_COLUMNS;
+      pageName = 'Project Tracing Pipeline';
+      filePrefix = 'Project_Tracing_Pipeline';
+    } else if (activeTab === 'closing-project') {
+      columns = CLOSING_PROJECT_COLUMNS;
+      pageName = 'Closing Project';
+      filePrefix = 'Closing_Project';
+    }
+
+    if (!projects || projects.length === 0) {
+      return { success: false, count: 0, filename: '' };
+    }
+
+    const wb = XLSX.utils.book_new();
+    const headers = columns.map(c => c.label);
+    const dataRows = projects.map((p, idx) => {
+      return columns.map(c => {
+        if (c.key === 'no') return p.no || idx + 1;
+        const val = p[c.key];
+        return val !== undefined && val !== null ? val : '';
+      });
+    });
+
+    const wsData = [headers, ...dataRows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    const colWidths = columns.map(c => {
+      const headerLen = c.label.length;
+      return { wch: Math.min(Math.max(headerLen + 4, 12), 40) };
+    });
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, pageName.slice(0, 30));
+
+    const filename = `${filePrefix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+    wb.Props = {
+      Title: `${pageName} Report`,
+      Subject: `${pageName} Data (${projects.length} Proyek)`,
+      Author: 'PAUL',
+      Company: 'PMO System © PAUL',
+      CreatedDate: new Date(),
+    };
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    return { success: true, count: projects.length, filename };
+  },
+
+  /**
+   * Export single page table to CSV (.csv) matching specific page columns.
+   */
+  exportPageToCsv(projects: ProjectData[], activeTab: TabKey | string): { success: boolean; count: number; filename: string } {
+    if (activeTab === 'daily-mandor') {
+      const reports = mandorStorageService.getReports();
+      return this.exportMandorToCsv(reports);
+    }
+
+    let columns: { key: keyof ProjectData; label: string }[] = PROJECT_LIST_COLUMNS;
+    let filePrefix = 'Project_List_Master_Data';
+
+    if (activeTab === 'construction-plan') {
+      columns = CONSTRUCTION_PLAN_COLUMNS;
+      filePrefix = 'Plan_Implimentasi_Project';
+    } else if (activeTab === 'status-construction') {
+      columns = STATUS_CONSTRUCTION_COLUMNS;
+      filePrefix = 'Status_Construction';
+    } else if (activeTab === 'status-project' || activeTab === 'document-project') {
+      columns = DOCUMENT_PROJECT_COLUMNS;
+      filePrefix = 'Document_Project';
+    } else if (activeTab === 'project-tracking-pipeline') {
+      columns = PROJECT_TRACKING_PIPELINE_COLUMNS;
+      filePrefix = 'Project_Tracing_Pipeline';
+    } else if (activeTab === 'closing-project') {
+      columns = CLOSING_PROJECT_COLUMNS;
+      filePrefix = 'Closing_Project';
+    }
+
+    if (!projects || projects.length === 0) {
+      return { success: false, count: 0, filename: '' };
+    }
+
+    const escapeCsv = (val: unknown): string => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const headers = columns.map(c => c.label);
+    const rows = projects.map((p, idx) => {
+      return columns.map(c => {
+        if (c.key === 'no') return p.no || idx + 1;
+        const val = p[c.key];
+        return val !== undefined && val !== null ? val : '';
+      }).map(escapeCsv).join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+    const filename = `${filePrefix}_${new Date().toISOString().slice(0, 10)}.csv`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

@@ -1035,9 +1035,6 @@ export const PieChartAnalyticsView: React.FC<PieChartAnalyticsViewProps> = ({
               </div>
               
               <div className="flex items-center justify-between flex-wrap gap-2 mt-1">
-                <p className={`text-xs ${isNeonMode ? 'text-slate-300' : 'text-slate-500'}`}>
-                  Visualisasi rasio, persentase, dan distribusi proyek multi-dimensi. Klik segmen grafik untuk filter data interaktif.
-                </p>
 
                 {/* Multi-Colour Neon Light Indicator Swatches */}
                 {isNeonMode && (

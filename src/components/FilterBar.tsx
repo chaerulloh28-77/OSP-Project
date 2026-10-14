@@ -13,7 +13,9 @@ import {
   Layers,
   SlidersHorizontal,
   CheckCircle2,
-  HardHat
+  HardHat,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { ProjectData, PRIORITY_OPTIONS, TabKey } from '../types/project';
 import { VENDOR_OPTIONS, PIC_GOVREL_OPTIONS, WASPANG_DSB_OPTIONS, AREA_KOTA_OPTIONS } from '../data/dropdownOptions';
@@ -42,6 +44,8 @@ interface FilterBarProps {
   selectedWaspang?: string;
   onWaspangChange?: (value: string) => void;
   onResetFilters: () => void;
+  onExportExcel?: () => void;
+  onExportCsv?: () => void;
   totalResults: number;
   allProjects: ProjectData[];
 }
@@ -69,6 +73,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   selectedWaspang = '',
   onWaspangChange,
   onResetFilters,
+  onExportExcel,
+  onExportCsv,
   totalResults,
   allProjects,
 }) => {
@@ -77,6 +83,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   const defaultCategories = ['GOV APJATEL', 'GOV IPPJU', 'GOV SJUT', 'GOV PUPR KOTA', 'GOV PUPR KAB', 'GOV SDA DBM'];
   const categoryOptions = Array.from(new Set([...defaultCategories, ...allProjects.map((p) => p.projectCategory).filter(Boolean)]));
   const quarterOptions = ['Q1-26', 'Q2-26', 'Q3-26', 'Q4-26'];
+
+  // Helper label for active page export
+  const getPageExportLabel = () => {
+    if (activeTab === 'project-list') return 'Project List';
+    if (activeTab === 'construction-plan') return 'Plan Implimentasi';
+    if (activeTab === 'status-construction') return 'Status Construction';
+    return 'Halaman Ini';
+  };
 
   const hasActiveFilters = Boolean(
     searchTerm || selectedZona || selectedArea || selectedVendor || selectedCategory || selectedStatus || selectedPriority || selectedQuarter || selectedPic || selectedWaspang
@@ -300,6 +314,34 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               ))}
             </select>
           </div>
+
+          {/* Export Excel (.xlsx) per page */}
+          {onExportExcel && (
+            <button
+              type="button"
+              onClick={onExportExcel}
+              disabled={totalResults === 0}
+              title={`Unduh data ${getPageExportLabel()} ke format Excel (.xlsx)`}
+              className="h-8.5 flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 shadow-2xs"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Export Excel ({getPageExportLabel()})</span>
+            </button>
+          )}
+
+          {/* Export CSV (.csv) per page */}
+          {onExportCsv && (
+            <button
+              type="button"
+              onClick={onExportCsv}
+              disabled={totalResults === 0}
+              title={`Unduh data ${getPageExportLabel()} ke format CSV (.csv)`}
+              className="h-8.5 flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0 shadow-2xs"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-600" />
+              <span>Export CSV ({getPageExportLabel()})</span>
+            </button>
+          )}
 
           {/* Reset Filters Button */}
           {hasActiveFilters && (

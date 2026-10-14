@@ -389,18 +389,12 @@ export const ClosingProjectPageView: React.FC<ClosingProjectPageViewProps> = ({
               <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold font-mono border ${
                 isNeonMode ? 'bg-teal-950/60 text-teal-400 border-teal-500/40' : 'bg-teal-50 text-teal-800 border-teal-300'
               }`}>
-                Halaman 7
+                Halaman 8
               </span>
               <h3 className={`text-base font-extrabold tracking-tight ${isNeonMode ? 'text-teal-400' : 'text-slate-900'}`}>
                 Closing Project Management
               </h3>
-              <span className="text-xs text-slate-400 font-medium">
-                • Praject Date, No. PO, BA Opname, ABD, Foto Dokumentasi & Analitik
-              </span>
             </div>
-            <p className={`text-xs mt-1 max-w-3xl leading-relaxed ${isNeonMode ? 'text-slate-300' : 'text-slate-600'}`}>
-              Pengendalian penutupan proyek: pembaruan <strong>Praject Date</strong>, input <strong>No. PO</strong>, monitoring <strong>Status Pengajuan</strong> (Not Yet, Submit, Approval BALAP, Approval BAST, Teco Done, Invoice), serta pengunggahan berkas <strong>BA Opname Material, BA Opname Labour, ABD Relokasi, ABD Internal, dan Foto Dokumentasi</strong> (mendukung semua jenis file *.*).
-            </p>
           </div>
 
           {/* View Mode Switcher */}
@@ -654,7 +648,7 @@ export const ClosingProjectPageView: React.FC<ClosingProjectPageViewProps> = ({
                       className="bg-purple-500 h-full rounded-full transition-all"
                     />
                   </div>
-                  <span className="text-[10px] text-slate-400">As-Built Drawing jaringan internal Linknet</span>
+                  <span className="text-[10px] text-slate-400">As-Built Drawing jaringan internal DSB</span>
                 </div>
 
                 {/* Foto Dokumentasi */}

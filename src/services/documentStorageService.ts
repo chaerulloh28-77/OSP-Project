@@ -16,6 +16,7 @@ import { ProjectData } from '../types/project';
 import * as XLSX from 'xlsx';
 
 const DOCS_STORAGE_KEY = 'PMO_PROJECT_DOCUMENTS_V2';
+const DOCS_INIT_FLAG_KEY = 'PMO_DOCS_DATA_INITIALIZED_V1';
 
 class DocumentStorageService {
   private cache: Map<string, ProjectDocumentRecord> = new Map();
@@ -53,14 +54,18 @@ class DocumentStorageService {
     try {
       if (typeof window === 'undefined') return this.cache;
       
+      const isInitialized = localStorage.getItem(DOCS_INIT_FLAG_KEY) === 'true';
       const raw = localStorage.getItem(DOCS_STORAGE_KEY);
-      if (raw) {
+      if (raw !== null) {
         const parsed: Record<string, ProjectDocumentRecord> = JSON.parse(raw);
         Object.entries(parsed).forEach(([key, record]) => {
           this.cache.set(key, record);
           if (record.pmoId) this.cache.set(record.pmoId, record);
           if (record.projectId) this.cache.set(record.projectId, record);
         });
+        if (!isInitialized) {
+          localStorage.setItem(DOCS_INIT_FLAG_KEY, 'true');
+        }
       }
       this.isLoaded = true;
     } catch (e) {
@@ -97,6 +102,7 @@ class DocumentStorageService {
       });
 
       localStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(serializable));
+      localStorage.setItem(DOCS_INIT_FLAG_KEY, 'true');
     } catch (e) {
       console.warn('Gagal menyimpan cache dokumen ke localStorage:', e);
     }

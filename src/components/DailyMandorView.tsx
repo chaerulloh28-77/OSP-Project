@@ -95,6 +95,12 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
     hhInstallItems: HhInstallItem[];
     targetMeter: number;
     meterSelesai: number;
+    galianAlur?: number;
+    jalurAkses?: number;
+    galianCrossingJalan?: number;
+    galianCrossingJembatan?: number;
+    galianCrossingSungai?: number;
+    galianCrossingTol?: number;
     remarks: string;
   }>({
     date: new Date().toISOString().split('T')[0],
@@ -112,6 +118,12 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
     ],
     targetMeter: 1000,
     meterSelesai: 500,
+    galianAlur: 0,
+    jalurAkses: 0,
+    galianCrossingJalan: 0,
+    galianCrossingJembatan: 0,
+    galianCrossingSungai: 0,
+    galianCrossingTol: 0,
     remarks: '',
   });
 
@@ -163,7 +175,7 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
 
   // Open Form Modal for Create (Input)
   const handleOpenCreateModal = () => {
-    const defaultMandor = selectedMandor !== 'ALL' ? selectedMandor : (mandors[0] || 'Mandor Danil');
+    const defaultMandor = selectedMandor !== 'ALL' ? selectedMandor : (mandors[0] || '');
     setEditingReport(null);
     setFormData({
       date: new Date().toISOString().split('T')[0],
@@ -181,6 +193,12 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
       ],
       targetMeter: 1000,
       meterSelesai: 500,
+      galianAlur: 0,
+      jalurAkses: 0,
+      galianCrossingJalan: 0,
+      galianCrossingJembatan: 0,
+      galianCrossingSungai: 0,
+      galianCrossingTol: 0,
       remarks: '',
     });
     setIsFormModalOpen(true);
@@ -205,6 +223,12 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
         : [{ id: `item-${Date.now()}`, itemType: 'HH', specSize: '80x80', installedQty: 0, planQty: 1 }],
       targetMeter: report.targetMeter,
       meterSelesai: report.meterSelesai,
+      galianAlur: report.galianAlur || 0,
+      jalurAkses: report.jalurAkses || 0,
+      galianCrossingJalan: report.galianCrossingJalan || 0,
+      galianCrossingJembatan: report.galianCrossingJembatan || 0,
+      galianCrossingSungai: report.galianCrossingSungai || 0,
+      galianCrossingTol: report.galianCrossingTol || 0,
       remarks: report.remarks,
     });
     setIsFormModalOpen(true);
@@ -823,6 +847,17 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
                             <span>Target: {jalurCalc.targetMeter.toLocaleString()} m</span>
                             <span className="font-black text-emerald-300">{jalurCalc.percentage}%</span>
                           </div>
+
+                          {(report.galianAlur || report.jalurAkses || report.galianCrossingJalan || report.galianCrossingJembatan || report.galianCrossingSungai || report.galianCrossingTol) ? (
+                            <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-700 text-[10px] font-mono">
+                              {Boolean(report.galianAlur) && <span className="bg-slate-900 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/40">Alur: {report.galianAlur}m</span>}
+                              {Boolean(report.jalurAkses) && <span className="bg-slate-900 text-sky-300 px-1.5 py-0.5 rounded border border-sky-500/40">Akses: {report.jalurAkses}m</span>}
+                              {Boolean(report.galianCrossingJalan) && <span className="bg-slate-900 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/40">C.Jalan: {report.galianCrossingJalan}m</span>}
+                              {Boolean(report.galianCrossingJembatan) && <span className="bg-slate-900 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/40">C.Jbt: {report.galianCrossingJembatan}m</span>}
+                              {Boolean(report.galianCrossingSungai) && <span className="bg-slate-900 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-500/40">C.Sg: {report.galianCrossingSungai}m</span>}
+                              {Boolean(report.galianCrossingTol) && <span className="bg-slate-900 text-rose-300 px-1.5 py-0.5 rounded border border-rose-500/40">C.Tol: {report.galianCrossingTol}m</span>}
+                            </div>
+                          ) : null}
                         </div>
                       </td>
 
@@ -1166,13 +1201,141 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
                 </div>
               </div>
 
-              {/* Section 5: Jalur Akses (Otomatis) */}
+              {/* Section 5: Jalur Akses & Rincian Progres Galian Harian */}
               <div className="bg-[#141e33] p-4.5 rounded-2xl border-2 border-emerald-500 space-y-3.5 shadow-lg">
                 <div className="flex items-center gap-2 border-b-2 border-emerald-500/50 pb-2.5">
                   <Ruler className="w-5 h-5 text-emerald-400" />
                   <h4 className="text-xs font-black text-white uppercase tracking-wider">
-                    5. Jalur Akses (Otomatis)
+                    5. Jalur Akses & Rincian Progres Galian Harian (Meter)
                   </h4>
+                </div>
+
+                {/* Sub-Kategori Progres Galian Harian */}
+                <div className="bg-[#0f172a] p-3 rounded-xl border border-emerald-500/70 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-300 uppercase tracking-wide">
+                      Rincian Sub-Kategori Progres Galian Harian (m)
+                    </span>
+                    <span className="text-[11px] font-mono font-black text-emerald-300 bg-slate-900 px-2 py-0.5 rounded border border-emerald-500/50">
+                      Total: {((formData.galianAlur || 0) + (formData.jalurAkses || 0) + (formData.galianCrossingJalan || 0) + (formData.galianCrossingJembatan || 0) + (formData.galianCrossingSungai || 0) + (formData.galianCrossingTol || 0))} m
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-xs">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                        Galian Alur (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        style={whiteInputStyle}
+                        value={formData.galianAlur || 0}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const newForm = { ...formData, galianAlur: val };
+                          const sumSub = val + (formData.jalurAkses || 0) + (formData.galianCrossingJalan || 0) + (formData.galianCrossingJembatan || 0) + (formData.galianCrossingSungai || 0) + (formData.galianCrossingTol || 0);
+                          setFormData({ ...newForm, meterSelesai: sumSub > 0 ? sumSub : formData.meterSelesai });
+                        }}
+                        className="w-full bg-[#1e293b] border border-slate-500 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:border-emerald-400 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                        Jalur Akses (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        style={whiteInputStyle}
+                        value={formData.jalurAkses || 0}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const newForm = { ...formData, jalurAkses: val };
+                          const sumSub = (formData.galianAlur || 0) + val + (formData.galianCrossingJalan || 0) + (formData.galianCrossingJembatan || 0) + (formData.galianCrossingSungai || 0) + (formData.galianCrossingTol || 0);
+                          setFormData({ ...newForm, meterSelesai: sumSub > 0 ? sumSub : formData.meterSelesai });
+                        }}
+                        className="w-full bg-[#1e293b] border border-slate-500 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:border-emerald-400 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                        Crossing Jalan (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        style={whiteInputStyle}
+                        value={formData.galianCrossingJalan || 0}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const newForm = { ...formData, galianCrossingJalan: val };
+                          const sumSub = (formData.galianAlur || 0) + (formData.jalurAkses || 0) + val + (formData.galianCrossingJembatan || 0) + (formData.galianCrossingSungai || 0) + (formData.galianCrossingTol || 0);
+                          setFormData({ ...newForm, meterSelesai: sumSub > 0 ? sumSub : formData.meterSelesai });
+                        }}
+                        className="w-full bg-[#1e293b] border border-slate-500 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:border-emerald-400 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                        Crossing Jembatan (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        style={whiteInputStyle}
+                        value={formData.galianCrossingJembatan || 0}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const newForm = { ...formData, galianCrossingJembatan: val };
+                          const sumSub = (formData.galianAlur || 0) + (formData.jalurAkses || 0) + (formData.galianCrossingJalan || 0) + val + (formData.galianCrossingSungai || 0) + (formData.galianCrossingTol || 0);
+                          setFormData({ ...newForm, meterSelesai: sumSub > 0 ? sumSub : formData.meterSelesai });
+                        }}
+                        className="w-full bg-[#1e293b] border border-slate-500 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:border-emerald-400 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                        Crossing Sungai (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        style={whiteInputStyle}
+                        value={formData.galianCrossingSungai || 0}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const newForm = { ...formData, galianCrossingSungai: val };
+                          const sumSub = (formData.galianAlur || 0) + (formData.jalurAkses || 0) + (formData.galianCrossingJalan || 0) + (formData.galianCrossingJembatan || 0) + val + (formData.galianCrossingTol || 0);
+                          setFormData({ ...newForm, meterSelesai: sumSub > 0 ? sumSub : formData.meterSelesai });
+                        }}
+                        className="w-full bg-[#1e293b] border border-slate-500 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:border-emerald-400 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                        Crossing Tol (m)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        style={whiteInputStyle}
+                        value={formData.galianCrossingTol || 0}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const newForm = { ...formData, galianCrossingTol: val };
+                          const sumSub = (formData.galianAlur || 0) + (formData.jalurAkses || 0) + (formData.galianCrossingJalan || 0) + (formData.galianCrossingJembatan || 0) + (formData.galianCrossingSungai || 0) + val;
+                          setFormData({ ...newForm, meterSelesai: sumSub > 0 ? sumSub : formData.meterSelesai });
+                        }}
+                        className="w-full bg-[#1e293b] border border-slate-500 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono font-bold focus:border-emerald-400 focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1192,7 +1355,7 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
 
                   <div>
                     <label className="block text-xs font-black text-white uppercase mb-1.5">
-                      Meter Selesai (m)
+                      Total Meter Selesai Hari Ini (m)
                     </label>
                     <input
                       type="number"
@@ -1200,7 +1363,7 @@ export const DailyMandorView: React.FC<DailyMandorViewProps> = ({
                       style={whiteInputStyle}
                       value={formData.meterSelesai}
                       onChange={(e) => setFormData({ ...formData, meterSelesai: Number(e.target.value) || 0 })}
-                      className="w-full bg-[#1e293b] border-2 border-slate-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-black focus:border-emerald-400 focus:outline-none"
+                      className="w-full bg-[#1e293b] border-2 border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-black focus:border-emerald-400 focus:outline-none"
                     />
                   </div>
                 </div>

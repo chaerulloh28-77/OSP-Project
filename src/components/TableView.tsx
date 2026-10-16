@@ -1277,9 +1277,9 @@ export const TableView: React.FC<TableViewProps> = ({
                               </span>
                             </div>
                           )
-                        ) : (col.key === 'panjangRelokasi' || col.key === 'pullingFoPanjangSelesai' || col.key === 'pullingFoPanjangTotal' || col.key === 'galianPanjangSelesai' || col.key === 'galianPanjangTotal' || col.key === 'pullingPanjangSelesai' || col.key === 'pullingPanjangTotal') ? (
+                        ) : (col.key === 'panjangRelokasi' || col.key === 'pullingFoPanjangSelesai' || col.key === 'pullingFoPanjangTotal' || col.key === 'galianPanjangSelesai' || col.key === 'galianPanjangTotal' || col.key === 'pullingPanjangSelesai' || col.key === 'pullingPanjangTotal' || col.key === 'galianAlur' || col.key === 'galianCrossingJalan' || col.key === 'galianCrossingJembatan' || col.key === 'galianCrossingSungai' || col.key === 'galianCrossingTol' || col.key === 'jalurAkses') ? (
                           <span className="font-mono">
-                            {valueStr !== undefined && valueStr !== '' && valueStr !== null && Number(valueStr) > 0 ? (
+                            {valueStr !== undefined && valueStr !== '' && valueStr !== null && !isNaN(Number(valueStr)) ? (
                               `${Number(valueStr).toLocaleString('id-ID')} m`
                             ) : (
                               <span className="text-slate-300">-</span>

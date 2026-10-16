@@ -477,6 +477,41 @@ export const ProjectDetailDrawer: React.FC<ProjectDetailDrawerProps> = ({
                   <span className="text-slate-400 block text-[11px]">Install HH / Pole</span>
                   <span className="font-medium text-slate-800">{project.installHhProgress || '-'} | {project.installPoleProgress || '-'}</span>
                 </div>
+                <div className="col-span-2 sm:col-span-3 bg-amber-50/70 border border-amber-200 rounded p-2.5 text-xs space-y-2">
+                  <div className="flex items-center justify-between pb-1 border-b border-amber-200">
+                    <span className="text-amber-950 font-bold block text-[11px]">Panjang Galian (m):</span>
+                    <span className="text-[10px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded font-mono border border-amber-300">
+                      Total: {(Number(project.galianPanjangTotal) || ((Number(project.jalurAkses) || 0) + (Number(project.galianAlur) || 0) + (Number(project.galianCrossingJalan) || 0) + (Number(project.galianCrossingJembatan) || 0) + (Number(project.galianCrossingSungai) || 0) + (Number(project.galianCrossingTol) || 0))).toLocaleString('id-ID')} m | Progres: {project.galianSipilProgress || '0%'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-[11px]">
+                    <div className="bg-white p-1.5 rounded border border-amber-200/80">
+                      <span className="text-slate-500 block text-[10px]">Galian Alur</span>
+                      <span className="font-mono font-bold text-slate-800">{project.galianAlur !== undefined && project.galianAlur !== '' ? `${Number(project.galianAlur).toLocaleString('id-ID')} m` : '-'}</span>
+                    </div>
+                    <div className="bg-white p-1.5 rounded border border-amber-200/80">
+                      <span className="text-slate-500 block text-[10px]">Jalur Akses</span>
+                      <span className="font-mono font-bold text-slate-800">{project.jalurAkses !== undefined && project.jalurAkses !== '' ? `${Number(project.jalurAkses).toLocaleString('id-ID')} m` : '-'}</span>
+                    </div>
+                    <div className="bg-white p-1.5 rounded border border-amber-200/80">
+                      <span className="text-slate-500 block text-[10px]">Crossing Jalan</span>
+                      <span className="font-mono font-bold text-slate-800">{project.galianCrossingJalan !== undefined && project.galianCrossingJalan !== '' ? `${Number(project.galianCrossingJalan).toLocaleString('id-ID')} m` : '-'}</span>
+                    </div>
+                    <div className="bg-white p-1.5 rounded border border-amber-200/80">
+                      <span className="text-slate-500 block text-[10px]">Crossing Jembatan</span>
+                      <span className="font-mono font-bold text-slate-800">{project.galianCrossingJembatan !== undefined && project.galianCrossingJembatan !== '' ? `${Number(project.galianCrossingJembatan).toLocaleString('id-ID')} m` : '-'}</span>
+                    </div>
+                    <div className="bg-white p-1.5 rounded border border-amber-200/80">
+                      <span className="text-slate-500 block text-[10px]">Crossing Sungai</span>
+                      <span className="font-mono font-bold text-slate-800">{project.galianCrossingSungai !== undefined && project.galianCrossingSungai !== '' ? `${Number(project.galianCrossingSungai).toLocaleString('id-ID')} m` : '-'}</span>
+                    </div>
+                    <div className="bg-white p-1.5 rounded border border-amber-200/80">
+                      <span className="text-slate-500 block text-[10px]">Crossing Tol</span>
+                      <span className="font-mono font-bold text-slate-800">{project.galianCrossingTol !== undefined && project.galianCrossingTol !== '' ? `${Number(project.galianCrossingTol).toLocaleString('id-ID')} m` : '-'}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="col-span-2 sm:col-span-3 bg-emerald-50/70 border border-emerald-200 rounded p-2.5 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-emerald-900 font-bold block text-[11px]">Spesifikasi Pulling Cable FO & Aksesoris:</span>

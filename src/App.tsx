@@ -440,6 +440,28 @@ export default function App() {
           );
         }
 
+        // Auto-sum sub-category galian meters into Meter Galian Selesai
+        if (
+          field === 'jalurAkses' ||
+          field === 'galianAlur' ||
+          field === 'galianCrossingJalan' ||
+          field === 'galianCrossingJembatan' ||
+          field === 'galianCrossingSungai' ||
+          field === 'galianCrossingTol'
+        ) {
+          const akses = Number(field === 'jalurAkses' ? value : item.jalurAkses) || 0;
+          const alur = Number(field === 'galianAlur' ? value : item.galianAlur) || 0;
+          const cJalan = Number(field === 'galianCrossingJalan' ? value : item.galianCrossingJalan) || 0;
+          const cJembatan = Number(field === 'galianCrossingJembatan' ? value : item.galianCrossingJembatan) || 0;
+          const cSungai = Number(field === 'galianCrossingSungai' ? value : item.galianCrossingSungai) || 0;
+          const cTol = Number(field === 'galianCrossingTol' ? value : item.galianCrossingTol) || 0;
+          const sumSubTotal = akses + alur + cJalan + cJembatan + cSungai + cTol;
+          item.galianPanjangSelesai = sumSubTotal;
+          if (!item.galianPanjangTotal || Number(item.galianPanjangTotal) === 0) {
+            item.galianPanjangTotal = item.panjangRelokasi || sumSubTotal;
+          }
+        }
+
         // Auto-recalculate Pulling Cable Progress if FO or status construction is updated
         if (
           field === 'statusPullingCableFo' ||
@@ -453,21 +475,29 @@ export default function App() {
           field === 'panjangRelokasi' ||
           field === 'galianPanjangTotal' ||
           field === 'galianPanjangSelesai' ||
-          field === 'galianSipilProgress'
+          field === 'galianSipilProgress' ||
+          field === 'jalurAkses' ||
+          field === 'galianAlur' ||
+          field === 'galianCrossingJalan' ||
+          field === 'galianCrossingJembatan' ||
+          field === 'galianCrossingSungai' ||
+          field === 'galianCrossingTol'
         ) {
-          // 1. Sync FO Relokasi with Target Meter FO
+          // 1. Sync FO Relokasi / Panjang Galian (m) with Target Meter Galian / Total Panjang Galian
           if (field === 'panjangRelokasi') {
             const num = Number(value) || 0;
             item.pullingFoPanjangTotal = num;
-            if (!item.galianPanjangTotal || Number(item.galianPanjangTotal) === 0) {
-              item.galianPanjangTotal = num;
-            }
+            item.galianPanjangTotal = num;
           }
           if (field === 'pullingFoPanjangTotal') {
-            item.panjangRelokasi = Number(value) || 0;
-            if (!item.galianPanjangTotal || Number(item.galianPanjangTotal) === 0) {
-              item.galianPanjangTotal = Number(value) || 0;
-            }
+            const num = Number(value) || 0;
+            item.panjangRelokasi = num;
+            item.galianPanjangTotal = num;
+          }
+          if (field === 'galianPanjangTotal') {
+            const num = Number(value) || 0;
+            item.panjangRelokasi = num;
+            item.pullingFoPanjangTotal = num;
           }
 
           // 3. Sync Galian Sipil Progress with Target Meter Galian & Meter Selesai

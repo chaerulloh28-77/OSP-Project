@@ -120,7 +120,13 @@ export function normalizeProject(p: ProjectData, idx: number): ProjectData {
     priority: defaultPriority,
     quarter: defaultQuarter,
     panjangRelokasi: defaultLength,
-    jalurAkses: p.jalurAkses || defaultLength,
+    galianPanjangTotal: p.galianPanjangTotal !== undefined && p.galianPanjangTotal !== '' ? Number(p.galianPanjangTotal) : defaultLength,
+    jalurAkses: (p.jalurAkses === 1250 || p.jalurAkses === defaultLength || p.jalurAkses === p.panjangRelokasi) ? 0 : (Number(p.jalurAkses) || 0),
+    galianAlur: (p.galianAlur === defaultLength || p.galianAlur === p.panjangRelokasi) ? 0 : (Number(p.galianAlur) || 0),
+    galianCrossingJalan: Number(p.galianCrossingJalan) || 0,
+    galianCrossingJembatan: Number(p.galianCrossingJembatan) || 0,
+    galianCrossingSungai: Number(p.galianCrossingSungai) || 0,
+    galianCrossingTol: Number(p.galianCrossingTol) || 0,
     projectStatus: p.projectStatus || 'Selesai Konstruksi',
     statusConstruction: p.statusConstruction || 'In Progress',
     statusMaterial: p.statusMaterial || 'Ready di Lokasi',
@@ -146,6 +152,8 @@ export function normalizeProject(p: ProjectData, idx: number): ProjectData {
   };
 }
 
+const PROJECT_INIT_FLAG_KEY = 'OSP_PROJECTS_DATA_INITIALIZED_V1';
+
 // In-memory cache for ultra-fast local state
 let memoryCache: ProjectData[] | null = null;
 
@@ -154,9 +162,24 @@ function readFromStorage(): ProjectData[] {
     return memoryCache || INITIAL_PROJECTS.map(normalizeProject);
   }
   try {
+    const isInitialized = localStorage.getItem(PROJECT_INIT_FLAG_KEY) === 'true';
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      // Check legacy storage keys and migrate with full normalization
+
+    // 1. If raw data exists in localStorage, parse and return it (even if empty array [])
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        memoryCache = parsed.map(normalizeProject);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCache));
+        if (!isInitialized) {
+          localStorage.setItem(PROJECT_INIT_FLAG_KEY, 'true');
+        }
+        return memoryCache;
+      }
+    }
+
+    // 2. Check legacy storage keys and migrate ONLY if not initialized yet
+    if (!isInitialized) {
       for (const legacyKey of LEGACY_STORAGE_KEYS) {
         const legacyRaw = localStorage.getItem(legacyKey);
         if (legacyRaw) {
@@ -166,6 +189,7 @@ function readFromStorage(): ProjectData[] {
               const cleaned = legacyParsed.map(normalizeProject);
               memoryCache = cleaned;
               localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+              localStorage.setItem(PROJECT_INIT_FLAG_KEY, 'true');
               return memoryCache;
             }
           } catch {
@@ -174,41 +198,35 @@ function readFromStorage(): ProjectData[] {
         }
       }
 
+      // First run ever on this browser: initialize with sample initial projects
       memoryCache = INITIAL_PROJECTS.map(normalizeProject);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCache));
+        localStorage.setItem(PROJECT_INIT_FLAG_KEY, 'true');
       } catch (e) {
         /* ignore */
       }
       return memoryCache;
     }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      memoryCache = parsed.map(normalizeProject);
-      return memoryCache;
-    }
+
+    // 3. If already initialized before and raw is null (or cleared), return empty array
+    memoryCache = [];
+    return memoryCache;
   } catch (err) {
     console.warn('Gagal membaca data dari localStorage, menggunakan memori:', err);
   }
-  memoryCache = INITIAL_PROJECTS.map(normalizeProject);
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCache));
-    } catch {
-      // ignore
-    }
-  }
-  return memoryCache;
+
+  return memoryCache || [];
 }
 
 function writeToStorage(data: ProjectData[]): void {
   memoryCache = data.map(normalizeProject);
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCache));
-    } catch (err) {
-      console.warn('Gagal menulis data ke localStorage:', err);
-    }
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryCache));
+    localStorage.setItem(PROJECT_INIT_FLAG_KEY, 'true');
+  } catch (err) {
+    console.warn('Gagal menulis data ke localStorage:', err);
   }
   // Notify all in-app subscribers
   listeners.forEach((listener) => {

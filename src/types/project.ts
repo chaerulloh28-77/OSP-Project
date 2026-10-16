@@ -203,6 +203,11 @@ export interface ProjectData {
   
   galianPanjangSelesai?: number | string; // Meter galian selesai
   galianPanjangTotal?: number | string; // Total meter target galian
+  galianAlur?: number | string; // Galian Alur (m)
+  galianCrossingJalan?: number | string; // Crossing Jalan (m)
+  galianCrossingJembatan?: number | string; // Crossing Jembatan (m)
+  galianCrossingSungai?: number | string; // Crossing Sungai / Kali (m)
+  galianCrossingTol?: number | string; // Crossing Tol (m)
   pullingPanjangSelesai?: number | string; // Meter pulling selesai
   pullingPanjangTotal?: number | string; // Total meter target pulling
   pullingCableProgress?: string; // "Pulling Cable Progress"

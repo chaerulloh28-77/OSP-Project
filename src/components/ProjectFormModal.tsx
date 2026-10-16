@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Upload,
   Calendar,
+  Ruler,
   GitMerge
 } from 'lucide-react';
 import { DocumentProjectManager } from './DocumentProjectManager';
@@ -344,9 +345,14 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           namaVendor: initialData.namaVendor?.trim() || 'PT. Telko Mandiri Perkasa',
           dateSuratPerintahRelokasi: initialData.dateSuratPerintahRelokasi || today,
           bulan: initialData.bulan || 'Maret',
-          tahun: initialData.tahun || '2026',
           panjangRelokasi: Number(initialData.panjangRelokasi) || 750,
-          jalurAkses: initialData.jalurAkses || initialData.panjangRelokasi || 750,
+          galianPanjangTotal: initialData.galianPanjangTotal !== undefined && initialData.galianPanjangTotal !== '' ? Number(initialData.galianPanjangTotal) : (Number(initialData.panjangRelokasi) || 750),
+          jalurAkses: (initialData.jalurAkses === 1250 || initialData.jalurAkses === initialData.panjangRelokasi) ? 0 : (Number(initialData.jalurAkses) || 0),
+          galianAlur: Number(initialData.galianAlur) || 0,
+          galianCrossingJalan: Number(initialData.galianCrossingJalan) || 0,
+          galianCrossingJembatan: Number(initialData.galianCrossingJembatan) || 0,
+          galianCrossingSungai: Number(initialData.galianCrossingSungai) || 0,
+          galianCrossingTol: Number(initialData.galianCrossingTol) || 0,
           tanggalSuratDinas: initialData.tanggalSuratDinas || today,
           docSuratDinas: initialData.docSuratDinas || `Surat_Dinas_${numId}.pdf`,
           tanggalSurveyBersama: initialData.tanggalSurveyBersama || today,
@@ -383,7 +389,6 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           pullingFoPanjangSelesai: initialData.pullingFoPanjangSelesai || 375,
           pullingFoPanjangTotal: initialData.pullingFoPanjangTotal || 750,
           galianPanjangSelesai: initialData.galianPanjangSelesai || 375,
-          galianPanjangTotal: initialData.galianPanjangTotal || 750,
           statusCo: initialData.statusCo || 'In Progress',
           laporanOpname: initialData.laporanOpname || 'Submitted',
           closingSap: initialData.closingSap || 'Submit dokumen SAP',
@@ -471,7 +476,13 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           bulan: 'Maret',
           tahun: '2026',
           panjangRelokasi: 750,
-          jalurAkses: 750,
+          galianPanjangTotal: 750,
+          jalurAkses: 0,
+          galianAlur: 0,
+          galianCrossingJalan: 0,
+          galianCrossingJembatan: 0,
+          galianCrossingSungai: 0,
+          galianCrossingTol: 0,
           apdRelokasi: `APD_Relokasi_${numId}.pdf`,
           kmzRelokasi: `Rute_KMZ_${numId}.kmz`,
           statusAudit: 'Review Audit',
@@ -500,7 +511,6 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           pullingFoPanjangSelesai: 375,
           pullingFoPanjangTotal: 750,
           galianPanjangSelesai: 375,
-          galianPanjangTotal: 750,
           statusCo: 'In Progress',
           laporanOpname: 'Submitted',
           closingSap: 'Submit dokumen SAP',
@@ -1227,19 +1237,43 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         [field]: value,
       };
 
-      // 1. Sync FO Relokasi with Target Meter FO
+      // 0. Auto-sum Galian Sub-Categories (Jalur Akses, Alur, Crossing Jalan, Jembatan, Sungai, Tol) -> Meter Galian Selesai
+      if (
+        field === 'jalurAkses' ||
+        field === 'galianAlur' ||
+        field === 'galianCrossingJalan' ||
+        field === 'galianCrossingJembatan' ||
+        field === 'galianCrossingSungai' ||
+        field === 'galianCrossingTol'
+      ) {
+        const akses = Number(field === 'jalurAkses' ? value : updated.jalurAkses) || 0;
+        const alur = Number(field === 'galianAlur' ? value : updated.galianAlur) || 0;
+        const cJalan = Number(field === 'galianCrossingJalan' ? value : updated.galianCrossingJalan) || 0;
+        const cJembatan = Number(field === 'galianCrossingJembatan' ? value : updated.galianCrossingJembatan) || 0;
+        const cSungai = Number(field === 'galianCrossingSungai' ? value : updated.galianCrossingSungai) || 0;
+        const cTol = Number(field === 'galianCrossingTol' ? value : updated.galianCrossingTol) || 0;
+        const sumTotal = akses + alur + cJalan + cJembatan + cSungai + cTol;
+        updated.galianPanjangSelesai = sumTotal;
+        if (!updated.galianPanjangTotal || Number(updated.galianPanjangTotal) === 0) {
+          updated.galianPanjangTotal = updated.panjangRelokasi || sumTotal;
+        }
+      }
+
+      // 1. Sync FO Relokasi / Panjang Galian (m) with Target Meter Galian / Total Panjang Galian
       if (field === 'panjangRelokasi') {
         const num = Number(value) || 0;
         updated.pullingFoPanjangTotal = num;
-        if (!updated.galianPanjangTotal || Number(updated.galianPanjangTotal) === 0) {
-          updated.galianPanjangTotal = num;
-        }
+        updated.galianPanjangTotal = num;
       }
       if (field === 'pullingFoPanjangTotal') {
-        updated.panjangRelokasi = Number(value) || 0;
-        if (!updated.galianPanjangTotal || Number(updated.galianPanjangTotal) === 0) {
-          updated.galianPanjangTotal = Number(value) || 0;
-        }
+        const num = Number(value) || 0;
+        updated.panjangRelokasi = num;
+        updated.galianPanjangTotal = num;
+      }
+      if (field === 'galianPanjangTotal') {
+        const num = Number(value) || 0;
+        updated.panjangRelokasi = num;
+        updated.pullingFoPanjangTotal = num;
       }
 
       // 3. Auto-compute Galian Sipil Progress if galian parameters or status changed
@@ -1247,6 +1281,12 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         field === 'statusConstruction' ||
         field === 'galianPanjangSelesai' ||
         field === 'galianPanjangTotal' ||
+        field === 'jalurAkses' ||
+        field === 'galianAlur' ||
+        field === 'galianCrossingJalan' ||
+        field === 'galianCrossingJembatan' ||
+        field === 'galianCrossingSungai' ||
+        field === 'galianCrossingTol' ||
         field === 'panjangRelokasi' ||
         field === 'galianSipilProgress'
       ) {
@@ -2252,18 +2292,18 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 </div>
               </div>
 
-              {/* Panjang Cable FO, Jalur Akses & Galian Sipil */}
+              {/* Panjang Cable FO & Panjang Galian Plan (m) */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between pb-1.5 border-b border-slate-200">
                   <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <HardHat className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Panjang Cable FO, Jalur Akses & Galian Sipil</span>
+                    <span>Panjang Cable FO & Panjang Galian Plan (m)</span>
                   </span>
-                  <span className="text-[11px] font-mono font-medium text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
-                    Otomatis Terhubung ke Status Construction
+                  <span className="text-[11px] font-mono font-medium text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                    Target Plan Project
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                       Panjang Cable FO (m)
@@ -2283,35 +2323,18 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Jalur Akses (m)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.jalurAkses !== undefined ? formData.jalurAkses : ''}
-                      onChange={(e) => handleChange('jalurAkses', e.target.value ? Number(e.target.value) : '')}
-                      placeholder="e.g. 150"
-                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
-                    />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">
-                      Jalur Akses dalam Meter
-                    </span>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Panjang Galian Sipil (m)
+                      Panjang Galian (m)
                     </label>
                     <input
                       type="number"
                       min="0"
                       value={formData.galianPanjangTotal !== undefined ? formData.galianPanjangTotal : ''}
                       onChange={(e) => handleChange('galianPanjangTotal', e.target.value ? Number(e.target.value) : '')}
-                      placeholder="e.g. 10000"
-                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                      placeholder="e.g. 5000"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono font-bold text-amber-950"
                     />
                     <span className="text-[10px] text-slate-500 mt-0.5 block">
-                      Target Meter Galian
+                      Target Panjang Galian (Plan)
                     </span>
                   </div>
                 </div>
@@ -3637,6 +3660,123 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                 </div>
               </div>
 
+              {/* Sub-Kategori Rincian Panjang Galian (m) Card in Status Construction */}
+              <div className="bg-amber-50/70 border border-amber-200/90 rounded-xl p-3.5 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-amber-200">
+                  <div className="flex items-center gap-2">
+                    <Ruler className="w-4 h-4 text-amber-700" />
+                    <span className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                      Panjang Galian (m)
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-mono font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded border border-amber-300">
+                    Total: {((Number(formData.jalurAkses) || 0) + (Number(formData.galianAlur) || 0) + (Number(formData.galianCrossingJalan) || 0) + (Number(formData.galianCrossingJembatan) || 0) + (Number(formData.galianCrossingSungai) || 0) + (Number(formData.galianCrossingTol) || 0)).toLocaleString('id-ID')} m
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Galian Alur (m)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.galianAlur !== undefined ? formData.galianAlur : ''}
+                      onChange={(e) => handleChange('galianAlur', e.target.value ? Number(e.target.value) : '')}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Jalur Akses (m)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.jalurAkses !== undefined ? formData.jalurAkses : ''}
+                      onChange={(e) => handleChange('jalurAkses', e.target.value ? Number(e.target.value) : '')}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Crossing Jalan (m)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.galianCrossingJalan !== undefined ? formData.galianCrossingJalan : ''}
+                      onChange={(e) => handleChange('galianCrossingJalan', e.target.value ? Number(e.target.value) : '')}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Crossing Jembatan (m)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.galianCrossingJembatan !== undefined ? formData.galianCrossingJembatan : ''}
+                      onChange={(e) => handleChange('galianCrossingJembatan', e.target.value ? Number(e.target.value) : '')}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Crossing Sungai (m)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.galianCrossingSungai !== undefined ? formData.galianCrossingSungai : ''}
+                      onChange={(e) => handleChange('galianCrossingSungai', e.target.value ? Number(e.target.value) : '')}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Crossing Tol (m)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.galianCrossingTol !== undefined ? formData.galianCrossingTol : ''}
+                      onChange={(e) => handleChange('galianCrossingTol', e.target.value ? Number(e.target.value) : '')}
+                      placeholder="0"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-amber-200/80 bg-white/80 p-2 rounded-lg">
+                  <span className="text-xs font-extrabold text-slate-800">
+                    Total Panjang Galian (Otomatis):
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.galianPanjangTotal !== undefined ? formData.galianPanjangTotal : ''}
+                      onChange={(e) => handleChange('galianPanjangTotal', e.target.value ? Number(e.target.value) : '')}
+                      className="w-32 px-2.5 py-1 text-xs rounded-md border border-amber-400 font-mono font-bold text-amber-900 bg-amber-50 focus:outline-none"
+                    />
+                    <span className="text-xs font-mono font-bold text-amber-800">Meter</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Automatic Progress Calculators (Galian & Pulling Cable FO) - Symmetrical 2-Column Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* Auto Calculated Galian Sipil Progress */}
@@ -3652,25 +3792,25 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <span className="text-[11px] font-medium text-slate-600 block mb-1">Meter Selesai</span>
+                        <span className="text-[11px] font-semibold text-slate-700 block mb-1">Meter Galian Selesai</span>
                         <input
                           type="number"
                           min="0"
-                          value={formData.galianPanjangSelesai || ''}
-                          onChange={(e) => handleChange('galianPanjangSelesai', e.target.value)}
-                          placeholder="e.g. 800"
-                          className="w-full px-2.5 py-1.5 text-xs border border-indigo-300/80 rounded-lg bg-white font-mono focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                          value={formData.galianPanjangSelesai !== undefined ? formData.galianPanjangSelesai : ''}
+                          onChange={(e) => handleChange('galianPanjangSelesai', e.target.value ? Number(e.target.value) : '')}
+                          placeholder="0"
+                          className="w-full px-2.5 py-1.5 text-xs border border-indigo-300/80 rounded-lg bg-white font-mono font-bold text-indigo-950 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <span className="text-[11px] font-medium text-slate-600 block mb-1">Target Meter</span>
+                        <span className="text-[11px] font-semibold text-slate-700 block mb-1">Target Meter Galian</span>
                         <input
                           type="number"
                           min="0"
-                          value={formData.galianPanjangTotal || formData.panjangRelokasi || ''}
-                          onChange={(e) => handleChange('galianPanjangTotal', e.target.value)}
-                          placeholder="e.g. 1000"
-                          className="w-full px-2.5 py-1.5 text-xs border border-indigo-300/80 rounded-lg bg-white font-mono focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                          value={formData.galianPanjangTotal !== undefined ? formData.galianPanjangTotal : (formData.panjangRelokasi || '')}
+                          onChange={(e) => handleChange('galianPanjangTotal', e.target.value ? Number(e.target.value) : '')}
+                          placeholder="0"
+                          className="w-full px-2.5 py-1.5 text-xs border border-indigo-300/80 rounded-lg bg-indigo-100/60 font-mono font-bold text-indigo-950 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -3679,7 +3819,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                   <div className="space-y-2 pt-1 border-t border-indigo-200/50">
                     <div className="flex items-center justify-between text-[11px] text-slate-600">
                       <span>Progres Galian: <strong className="text-indigo-950 font-bold">{formData.galianSipilProgress || '0%'}</strong></span>
-                      <span className="font-mono text-[10px] text-indigo-800 font-bold">{formData.galianSipilProgress || '0%'}</span>
+                      <span className="font-mono text-[10px] text-indigo-800 font-bold">{formData.galianPanjangSelesai || 0}m / {formData.galianPanjangTotal || formData.panjangRelokasi || 0}m ({formData.galianSipilProgress || '0%'})</span>
                     </div>
                     <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
                       <div
@@ -3688,7 +3828,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                       />
                     </div>
                     <p className="text-[10px] text-indigo-700/90 leading-tight">
-                      Otomatis dari perbandingan meter selesai / target meter galian (atau status konstruksi).
+                      Otomatis dihitung dari rasio Meter Galian Selesai ({formData.galianPanjangSelesai || 0} m) dibanding Target Meter ({formData.galianPanjangTotal || formData.panjangRelokasi || 0} m).
                     </p>
                   </div>
                 </div>

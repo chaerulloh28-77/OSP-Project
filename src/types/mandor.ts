@@ -22,9 +22,15 @@ export interface DailyMandorReport {
   // Install HH, Pole & Galvanis (Multi-Item & Jumlah)
   hhInstallItems: HhInstallItem[];
   
-  // Jalur Akses (Otomatis)
+  // Jalur Akses & Sub-Kategori Progress Galian Harian (m)
   targetMeter: number; // Target Meter
   meterSelesai: number; // Meter selesai
+  galianAlur?: number;
+  jalurAkses?: number;
+  galianCrossingJalan?: number;
+  galianCrossingJembatan?: number;
+  galianCrossingSungai?: number;
+  galianCrossingTol?: number;
   
   remarks: string; // Remarks / Catatan Harian
   createdAt: string;

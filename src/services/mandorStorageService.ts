@@ -125,24 +125,36 @@ const INITIAL_DAILY_REPORTS: DailyMandorReport[] = [
   },
 ];
 
+const MANDOR_INIT_FLAG_KEY = 'OSP_MANDOR_DATA_INITIALIZED_V1';
+
 export const mandorStorageService = {
   // Load list of mandors
   getMandors(): string[] {
     if (typeof window === 'undefined') return [...DEFAULT_MANDORS];
     try {
+      const isInitialized = localStorage.getItem(MANDOR_INIT_FLAG_KEY) === 'true';
       const stored = localStorage.getItem(MANDOR_LIST_KEY);
+
       if (stored !== null) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
+          if (!isInitialized) {
+            localStorage.setItem(MANDOR_INIT_FLAG_KEY, 'true');
+          }
           return parsed;
         }
       }
+
+      if (!isInitialized) {
+        this.saveMandors([...DEFAULT_MANDORS]);
+        return [...DEFAULT_MANDORS];
+      }
+
+      return [];
     } catch (e) {
       console.error('Failed reading mandor list from local storage:', e);
     }
-    // Default fallback ONLY on first run when key does not exist
-    this.saveMandors([...DEFAULT_MANDORS]);
-    return [...DEFAULT_MANDORS];
+    return [];
   },
 
   // Save mandor list
@@ -150,6 +162,7 @@ export const mandorStorageService = {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(MANDOR_LIST_KEY, JSON.stringify(mandors));
+      localStorage.setItem(MANDOR_INIT_FLAG_KEY, 'true');
       window.dispatchEvent(new CustomEvent('mandor-storage-updated'));
       notifyListeners();
     } catch (e) {
@@ -172,13 +185,16 @@ export const mandorStorageService = {
 
   // Delete a mandor dynamically AND remove reports assigned to this mandor
   deleteMandor(mandorName: string): string[] {
+    const target = (mandorName || '').trim().toLowerCase();
+    if (!target) return this.getMandors();
+
     const current = this.getMandors();
-    const updatedMandors = current.filter((m) => m !== mandorName);
+    const updatedMandors = current.filter((m) => m.trim().toLowerCase() !== target);
     this.saveMandors(updatedMandors);
 
     // Also remove daily reports for this deleted mandor so they don't linger
     const reports = this.getReports();
-    const updatedReports = reports.filter((r) => r.mandorName !== mandorName);
+    const updatedReports = reports.filter((r) => (r.mandorName || '').trim().toLowerCase() !== target);
     this.saveReports(updatedReports);
 
     return updatedMandors;
@@ -188,19 +204,29 @@ export const mandorStorageService = {
   getReports(): DailyMandorReport[] {
     if (typeof window === 'undefined') return INITIAL_DAILY_REPORTS;
     try {
+      const isInitialized = localStorage.getItem(MANDOR_INIT_FLAG_KEY) === 'true';
       const stored = localStorage.getItem(MANDOR_REPORTS_KEY);
+
       if (stored !== null) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
+          if (!isInitialized) {
+            localStorage.setItem(MANDOR_INIT_FLAG_KEY, 'true');
+          }
           return parsed;
         }
       }
+
+      if (!isInitialized) {
+        this.saveReports(INITIAL_DAILY_REPORTS);
+        return INITIAL_DAILY_REPORTS;
+      }
+
+      return [];
     } catch (e) {
       console.error('Failed reading daily mandor reports:', e);
     }
-    // Initialize with default sample reports ONLY on first run when key does not exist
-    this.saveReports(INITIAL_DAILY_REPORTS);
-    return INITIAL_DAILY_REPORTS;
+    return [];
   },
 
   // Save reports
@@ -208,6 +234,7 @@ export const mandorStorageService = {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(MANDOR_REPORTS_KEY, JSON.stringify(reports));
+      localStorage.setItem(MANDOR_INIT_FLAG_KEY, 'true');
       window.dispatchEvent(new CustomEvent('mandor-storage-updated'));
       notifyListeners();
     } catch (e) {
